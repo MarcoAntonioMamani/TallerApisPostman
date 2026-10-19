@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cómo se comunican las apps</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+button{padding:10px 14px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-weight:700;cursor:pointer;font-size:13px}
+button:hover{background:var(--panel2)}button.active{background:var(--orange);color:#111;border-color:var(--orange)}
+button:disabled{opacity:.4;cursor:default}
+.sep{width:1px;background:var(--border);margin:0 4px}
+.grid{display:grid;grid-template-columns:1.45fr .85fr;gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.title{font-weight:800;font-size:18px}.small{font-size:12px;color:var(--muted);line-height:1.5}
+svg{width:100%;height:auto;margin-top:10px;background:#141820;border-radius:10px;display:block}
+.wire{fill:none;stroke:#333b49;stroke-width:3}
+.wire.on{stroke:#5a6578}
+.wire.legacy{stroke-dasharray:7 7}
+.node rect{fill:var(--panel2);stroke:#4a5263;stroke-width:2}
+.node.on rect{stroke:var(--orange)}
+.node .lbl{fill:var(--text);font-size:15px;font-weight:700}
+.node .cap{fill:var(--muted);font-size:11px}
+.ep{fill:var(--muted);font-size:11px;font-family:Consolas,monospace}
+.ep.on{fill:var(--orange);font-weight:700}
+.http{margin-top:12px;font-family:Consolas,monospace;font-size:12.5px;background:#141820;border-radius:10px;padding:12px;white-space:pre-wrap;line-height:1.55;min-height:150px}
+.http .m{color:var(--orange);font-weight:700}.http .k{color:var(--blue)}.http .ok{color:var(--green);font-weight:700}.http .bad{color:var(--red);font-weight:700}.http .c{color:var(--muted)}
+.log{margin-top:12px;display:grid;gap:6px}
+.log div{background:var(--panel2);border-radius:8px;padding:8px 10px;font-size:12px;display:flex;gap:8px;opacity:.35;transition:opacity .2s}
+.log div.done{opacity:1}.log div.now{opacity:1;outline:1px solid var(--orange)}
+.log b{color:var(--orange);min-width:16px}
+.explain{margin-top:16px;line-height:1.65}.explain strong{color:var(--orange)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:7px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-2px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>¿Cómo se comunican las aplicaciones?</h1>
+<div class="sub">Web, móvil y escritorio no hablan con la base de datos ni con otros sistemas directamente: piden lo que necesitan a una <b>API</b>.
+La API aplica las reglas de negocio y decide si consulta su <b>base de datos</b> o llama a un <b>servicio externo</b>.</div>
+
+<div class="controls" id="scenarios"></div>
+<div class="controls">
+  <button id="step">⏭ Siguiente paso</button>
+  <button id="auto">▶ Reproducir</button>
+  <button id="reset">↻ Reiniciar</button>
+</div>
+
+<div class="grid">
+<section class="card">
+  <div class="title" id="scTitle"></div>
+  <div class="small" id="scSub"></div>
+  <div class="legend"><span><i style="background:var(--orange)"></i>Request (petición)</span><span><i style="background:var(--green)"></i>Response OK</span><span><i style="background:var(--red)"></i>Response con error</span></div>
+  <svg viewBox="0 0 900 470" aria-label="Diagrama de comunicación entre clientes, API, base de datos y servicio externo">
+    <g id="wires"></g>
+    <g id="nodes"></g>
+    <g id="packets"></g>
+  </svg>
+</section>
+
+<aside class="card">
+  <div class="title">Lo que viaja por el cable</div>
+  <div class="small">Mensaje HTTP del paso actual (datos ficticios)</div>
+  <div class="http" id="http"><span class="c">Presiona “Siguiente paso” o “Reproducir”.</span></div>
+  <div class="log" id="log"></div>
+</aside>
+</div>
+
+<div class="card explain">
+  <div class="title">💡 Concepto clave</div>
+  <div id="speech"></div>
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+
+/* ---------- Nodos (coordenadas del viewBox 900x470) ---------- */
+const N={
+  web:    {x:20, y:45,  w:150,h:70, icon:'🌐', lbl:'App Web',      cap:'navegador'},
+  movil:  {x:20, y:190, w:150,h:70, icon:'📱', lbl:'App Móvil',    cap:'Android / iOS'},
+  desk:   {x:20, y:335, w:150,h:70, icon:'🖥️', lbl:'App Escritorio',cap:'Windows'},
+  api:    {x:340,y:120, w:220,h:220,icon:'⚙️', lbl:'API / Backend', cap:'reglas de negocio'},
+  ext:    {x:720,y:60,  w:160,h:70, icon:'☁️', lbl:'Servicio externo',cap:'pasarela de pagos'},
+  db:     {x:720,y:300, w:160,h:70, icon:'🛢️', lbl:'Base de datos', cap:'SQL'},
+};
+const EPS=['GET    /clientes/{id}','POST   /solicitudes','PUT    /clientes/{id}','DELETE /solicitudes/{id}','POST   /pagos'];
+
+/* Rutas entre nodos: lista de puntos */
+const R={
+  'web-api':  [[170,80],[260,80],[260,170],[340,170]],
+  'movil-api':[[170,225],[340,225]],
+  'desk-api': [[170,370],[260,370],[260,290],[340,290]],
+  'api-ext':  [[560,170],[640,170],[640,95],[720,95]],
+  'api-db':   [[560,290],[640,290],[640,335],[720,335]],
+  'desk-db':  [[95,405],[95,445],[800,445],[800,370]],
+};
+const route=(a,b)=>R[a+'-'+b]||R[b+'-'+a].slice().reverse();
+
+/* ---------- Escenarios ----------
+   hop: [desde, hacia, tipo('req'|'ok'|'err'), etiqueta corta, mensaje HTTP] */
+const S={
+ get:{btn:'GET · Consultar', title:'GET — consultar un cliente', sub:'La app web pide datos. La API los busca en su base de datos y responde.',
+  ep:0, hops:[
+   ['web','api','req','GET /clientes/123',
+    '<span class="m">GET</span> /api/v1/clientes/123 HTTP/1.1\n<span class="k">Host:</span> api.demo.local\n<span class="k">Authorization:</span> Bearer &lt;token&gt;\n<span class="k">Accept:</span> application/json\n\n<span class="c">(GET no lleva body)</span>'],
+   ['api','db','req','SELECT',
+    '<span class="c">-- La API traduce la petición a una consulta</span>\n<span class="m">SELECT</span> id, nombre, estado\n  <span class="m">FROM</span> clientes\n <span class="m">WHERE</span> id = 123;'],
+   ['db','api','ok','1 fila',
+    '<span class="c">-- Resultado de la base de datos</span>\nid=123 | nombre="Cliente Demo" | estado="activo"'],
+   ['api','web','ok','200 OK',
+    'HTTP/1.1 <span class="ok">200 OK</span>\n<span class="k">Content-Type:</span> application/json\n\n{\n  "id": 123,\n  "nombre": "Cliente Demo",\n  "estado": "activo"\n}'],
+  ],
+  speech:'Este es el ciclo básico de una API: <strong>request → procesamiento → response</strong>. La app web nunca ve la base de datos; solo conoce el <strong>endpoint</strong> <code>GET /clientes/{id}</code>. Al probar una API se valida lo que vuelve: el <strong>status code</strong> (200), los <strong>headers</strong> y que el <strong>body</strong> tenga los datos correctos.'},
+
+ post:{btn:'POST · Crear', title:'POST — crear una solicitud', sub:'La app móvil envía datos en el body. La API los valida, los guarda y devuelve el recurso creado.',
+  ep:1, hops:[
+   ['movil','api','req','POST /solicitudes',
+    '<span class="m">POST</span> /api/v1/solicitudes HTTP/1.1\n<span class="k">Content-Type:</span> application/json\n<span class="k">Authorization:</span> Bearer &lt;token&gt;\n\n{\n  "clienteId": 123,\n  "monto": 5000,\n  "plazoMeses": 12\n}'],
+   ['api','db','req','INSERT',
+    '<span class="c">-- Primero valida reglas: monto > 0, cliente activo...</span>\n<span class="m">INSERT INTO</span> solicitudes\n  (cliente_id, monto, plazo)\n<span class="m">VALUES</span> (123, 5000, 12);'],
+   ['db','api','ok','id generado',
+    '<span class="c">-- La base de datos confirma</span>\n1 fila insertada · id = "SOL-0001"'],
+   ['api','movil','ok','201 Created',
+    'HTTP/1.1 <span class="ok">201 Created</span>\n<span class="k">Location:</span> /api/v1/solicitudes/SOL-0001\n\n{\n  "id": "SOL-0001",\n  "estado": "registrada"\n}'],
+  ],
+  speech:'Con <strong>POST</strong> la información viaja en el <strong>body</strong> en formato JSON. La API no guarda cualquier cosa: primero aplica <strong>reglas de negocio</strong>. Por eso una buena prueba no solo verifica el <strong>201 Created</strong>; también envía datos inválidos (monto negativo, cliente inexistente) y espera un <strong>400</strong> o <strong>422</strong>.'},
+
+ ext:{btn:'Servicio externo', title:'La API depende de otro sistema', sub:'La app de escritorio registra un pago. La API no lo procesa sola: llama a una pasarela externa.',
+  ep:4, hops:[
+   ['desk','api','req','POST /pagos',
+    '<span class="m">POST</span> /api/v1/pagos HTTP/1.1\n<span class="k">Content-Type:</span> application/json\n\n{\n  "solicitudId": "SOL-0001",\n  "monto": 450\n}'],
+   ['api','ext','req','POST /cobros',
+    '<span class="c">-- Ahora la API actúa como CLIENTE de otra API</span>\n<span class="m">POST</span> https://pasarela.ejemplo.com/cobros\n<span class="k">X-Api-Key:</span> &lt;secreto en bóveda, no en código&gt;\n\n{ "referencia": "SOL-0001", "monto": 450 }'],
+   ['ext','api','ok','200 aprobado',
+    'HTTP/1.1 <span class="ok">200 OK</span>\n\n{ "transaccion": "TX-778", "estado": "aprobado" }'],
+   ['api','db','req','INSERT pago',
+    '<span class="m">INSERT INTO</span> pagos (solicitud, monto, tx)\n<span class="m">VALUES</span> (\'SOL-0001\', 450, \'TX-778\');'],
+   ['db','api','ok','OK',
+    '1 fila insertada'],
+   ['api','desk','ok','201 Created',
+    'HTTP/1.1 <span class="ok">201 Created</span>\n\n{\n  "pagoId": "PAG-0042",\n  "transaccion": "TX-778",\n  "estado": "aprobado"\n}'],
+  ],
+  speech:'Una API puede ser <strong>servidor y cliente a la vez</strong>: recibe la petición de la app y a su vez consume la API de un tercero. Para la app de escritorio todo es una sola llamada, pero por detrás hay <strong>dos sistemas</strong>. Esto importa al probar: el tiempo de respuesta total incluye al servicio externo, y si éste falla, nuestra API también.'},
+
+ err:{btn:'Error externo', title:'¿Y si el servicio externo falla?', sub:'Mismo flujo de pago, pero la pasarela no responde a tiempo.',
+  ep:4, hops:[
+   ['desk','api','req','POST /pagos',
+    '<span class="m">POST</span> /api/v1/pagos HTTP/1.1\n<span class="k">Content-Type:</span> application/json\n\n{ "solicitudId": "SOL-0001", "monto": 450 }'],
+   ['api','ext','req','POST /cobros',
+    '<span class="m">POST</span> https://pasarela.ejemplo.com/cobros\n\n<span class="c">… esperando respuesta …</span>'],
+   ['ext','api','err','timeout',
+    '<span class="bad">✕ Sin respuesta en 10 s (timeout)</span>\n<span class="c">El servicio externo está caído o saturado.</span>'],
+   ['api','desk','err','504',
+    'HTTP/1.1 <span class="bad">504 Gateway Timeout</span>\n\n{\n  "codigo": "PAGO_NO_DISPONIBLE",\n  "mensaje": "El servicio de pagos no respondió. Intente nuevamente."\n}'],
+  ],
+  speech:'El error <strong>no está en nuestra app</strong> ni en nuestra base de datos: está en una dependencia. Una API bien construida responde un error <strong>claro y controlado</strong> (502/504 con un mensaje útil), no un 500 genérico ni deja la app colgada. Por eso también se prueban los casos negativos: <strong>¿qué pasa cuando lo que está detrás falla?</strong>'},
+
+ legacy:{btn:'Sin API (directo a BD)', title:'Escritorio conectado directo a la base de datos', sub:'Modelo cliente-servidor clásico: no hay API en medio.',
+  ep:-1, hops:[
+   ['desk','db','req','SQL directo',
+    '<span class="c">-- La app de escritorio tiene la conexión a la BD</span>\n<span class="k">Server=</span>bd.demo.local;<span class="k">User=</span>app;<span class="k">Password=</span>&lt;dentro del ejecutable&gt;\n\n<span class="m">SELECT</span> * <span class="m">FROM</span> clientes <span class="m">WHERE</span> id = 123;'],
+   ['db','desk','ok','filas',
+    '<span class="c">-- La BD devuelve filas, no JSON</span>\nid=123 | nombre="Cliente Demo" | estado="activo" | ...'],
+  ],
+  speech:'Así funcionaban (y algunas siguen funcionando) muchas aplicaciones de escritorio, en el modelo <strong>cliente-servidor</strong>. Funciona, pero tiene problemas: las <strong>credenciales de la BD viven en cada PC</strong>, las <strong>reglas de negocio se duplican</strong> en cada app, y no hay un punto único donde controlar, auditar o <strong>probar</strong>. La API resuelve eso: un solo punto de entrada, con contrato, seguridad y trazabilidad.'},
+};
+const ORDER=['get','post','ext','err','legacy'];
+
+/* ---------- Dibujo estático ---------- */
+const pts=a=>a.map(p=>p.join(',')).join(' ');
+function drawStatic(){
+  $('wires').innerHTML=Object.entries(R).map(([k,a])=>`<polyline id="w-${k}" class="wire ${k==='desk-db'?'legacy':''}" points="${pts(a)}"/>`).join('')
+   +`<text x="440" y="438" text-anchor="middle" fill="#aab3c2" font-size="11">conexión directa (sin API)</text>`;
+  let h='';
+  for(const [id,n] of Object.entries(N)){
+    h+=`<g class="node" id="n-${id}"><rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="12"/>`;
+    if(id==='api'){
+      h+=`<text x="${n.x+n.w/2}" y="${n.y+30}" text-anchor="middle" class="lbl">${n.icon} ${n.lbl}</text>
+          <text x="${n.x+n.w/2}" y="${n.y+48}" text-anchor="middle" class="cap">${n.cap}</text>
+          <text x="${n.x+18}" y="${n.y+78}" class="cap">Endpoints:</text>`;
+      EPS.forEach((e,i)=>h+=`<text id="ep-${i}" x="${n.x+18}" y="${n.y+102+i*24}" class="ep" xml:space="preserve">${e}</text>`);
+    } else {
+      h+=`<text x="${n.x+n.w/2}" y="${n.y+32}" text-anchor="middle" class="lbl">${n.icon} ${n.lbl}</text>
+          <text x="${n.x+n.w/2}" y="${n.y+52}" text-anchor="middle" class="cap">${n.cap}</text>`;
+    }
+    h+='</g>';
+  }
+  $('nodes').innerHTML=h;
+}
+
+/* ---------- Animación ---------- */
+const COLOR={req:'#f3a43b',ok:'#57c785',err:'#ef6570'};
+let sc='get', idx=-1, anim=null, autoplay=false, autoTimer=null;
+
+function polyLen(a){let L=0;for(let i=1;i<a.length;i++)L+=Math.hypot(a[i][0]-a[i-1][0],a[i][1]-a[i-1][1]);return L}
+function pointAt(a,d){
+  for(let i=1;i<a.length;i++){
+    const s=Math.hypot(a[i][0]-a[i-1][0],a[i][1]-a[i-1][1]);
+    if(d<=s){const f=d/s;return[a[i-1][0]+(a[i][0]-a[i-1][0])*f,a[i-1][1]+(a[i][1]-a[i-1][1])*f]}
+    d-=s;
+  }
+  return a.at(-1);
+}
+
+function highlight(from,to){
+  document.querySelectorAll('.wire').forEach(w=>w.classList.remove('on'));
+  document.querySelectorAll('.node').forEach(n=>n.classList.remove('on'));
+  const w=$('w-'+from+'-'+to)||$('w-'+to+'-'+from); if(w)w.classList.add('on');
+  $('n-'+from).classList.add('on'); $('n-'+to).classList.add('on');
+}
+
+function playHop(i){
+  const [from,to,kind,label,msg]=S[sc].hops[i];
+  const path=route(from,to), L=polyLen(path), dur=Math.max(900,L*3.2), color=COLOR[kind];
+  highlight(from,to);
+  $('http').innerHTML=msg;
+  renderLog(i);
+  cancelAnimationFrame(anim);
+  const t0=performance.now();
+  const tick=now=>{
+    const p=Math.min(1,(now-t0)/dur), e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+    const [x,y]=pointAt(path,e*L);
+    const tw=label.length*7+18;
+    $('packets').innerHTML=`<circle cx="${x}" cy="${y}" r="9" fill="${color}"/>
+      <circle cx="${x}" cy="${y}" r="${9+6*Math.sin(p*Math.PI)}" fill="none" stroke="${color}" opacity=".35"/>
+      <rect x="${x-tw/2}" y="${y-36}" width="${tw}" height="20" rx="6" fill="#10131a" stroke="${color}"/>
+      <text x="${x}" y="${y-22}" text-anchor="middle" fill="${color}" font-size="11" font-weight="700" font-family="Consolas,monospace">${label}</text>`;
+    if(p<1) anim=requestAnimationFrame(tick);
+    else if(autoplay){ autoTimer=setTimeout(next,1100); }
+  };
+  anim=requestAnimationFrame(tick);
+}
+
+function renderLog(cur){
+  $('log').innerHTML=S[sc].hops.map(([f,t,k,l],i)=>
+    `<div class="${i<cur?'done':i===cur?'now':''}"><b>${i+1}</b><span>${N[f].lbl} → ${N[t].lbl}: <span style="color:${COLOR[k]}">${l}</span></span></div>`).join('');
+}
+
+function next(){
+  if(idx>=S[sc].hops.length-1){ stopAuto(); return; }
+  idx++; playHop(idx);
+  $('step').disabled = idx>=S[sc].hops.length-1;
+}
+function stopAuto(){autoplay=false;clearTimeout(autoTimer);$('auto').textContent='▶ Reproducir'}
+
+function setScenario(k){
+  stopAuto(); cancelAnimationFrame(anim);
+  sc=k; idx=-1;
+  document.querySelectorAll('#scenarios button').forEach(b=>b.classList.toggle('active',b.dataset.k===k));
+  $('scTitle').textContent=S[k].title; $('scSub').textContent=S[k].sub; $('speech').innerHTML=S[k].speech;
+  EPS.forEach((_,i)=>$('ep-'+i).classList.toggle('on',i===S[k].ep));
+  document.querySelectorAll('.wire,.node').forEach(e=>e.classList.remove('on'));
+  $('packets').innerHTML='';
+  $('http').innerHTML='<span class="c">Presiona “Siguiente paso” o “Reproducir”.</span>';
+  $('step').disabled=false;
+  renderLog(-1);
+}
+
+$('scenarios').innerHTML=ORDER.map(k=>`<button data-k="${k}">${S[k].btn}</button>`).join('');
+$('scenarios').onclick=e=>{const b=e.target.closest('button');if(b)setScenario(b.dataset.k)};
+$('step').onclick=()=>{stopAuto();next()};
+$('auto').onclick=()=>{
+  if(autoplay){stopAuto();return}
+  if(idx>=S[sc].hops.length-1) setScenario(sc);
+  autoplay=true;$('auto').textContent='Ⅱ Pausar';next();
+};
+$('reset').onclick=()=>setScenario(sc);
+
+drawStatic(); setScenario('get');
+})();
+</script>
+</body></html>

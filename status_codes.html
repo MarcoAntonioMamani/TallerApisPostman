@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Status codes HTTP</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2;--gray:#8a93a3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px;max-width:950px}
+h2{font-size:20px;margin:26px 0 12px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+.fams{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.fam{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:transform .15s,border-color .15s}
+.fam:hover,.fam.on{border-color:var(--c);transform:translateY(-2px)}
+.fam .n{font-size:30px;font-weight:800;color:var(--c);font-family:Consolas,monospace}
+.fam b{display:block;margin:2px 0 4px}
+.fam span{font-size:12px;color:var(--muted);line-height:1.45}
+.f1{--c:var(--gray)}.f2{--c:var(--green)}.f3{--c:var(--blue)}.f4{--c:var(--orange)}.f5{--c:var(--red)}
+.codes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.code{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;transition:opacity .2s}
+.code.dim{opacity:.25}
+.code .num{font-family:Consolas,monospace;font-weight:800;font-size:20px;color:var(--c);min-width:44px}
+.code b{display:block;font-size:14px}
+.code span{font-size:12px;color:var(--muted);line-height:1.45}
+.game{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px}
+.ghead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.score{font-weight:800;color:var(--orange)}
+.prog{height:6px;background:var(--panel2);border-radius:9px;overflow:hidden;margin:12px 0 16px}
+.prog div{height:100%;background:var(--orange);transition:width .3s}
+.situ{font-size:20px;line-height:1.5;margin-bottom:6px}
+.ctx{font-family:Consolas,monospace;font-size:13px;color:var(--muted);background:#141820;border-radius:8px;padding:9px 12px;display:inline-block;margin-bottom:16px}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.opts button{padding:16px 10px;border:1px solid var(--border);border-radius:11px;background:var(--panel2);color:var(--text);cursor:pointer;font-family:Consolas,monospace;font-size:20px;font-weight:800}
+.opts button small{display:block;font-family:Segoe UI,Arial,sans-serif;font-size:11px;font-weight:400;color:var(--muted);margin-top:3px}
+.opts button:hover:not(:disabled){border-color:var(--orange)}
+.opts button.right{background:rgba(87,199,133,.2);border-color:var(--green)}
+.opts button.wrong{background:rgba(239,101,112,.2);border-color:var(--red)}
+.opts button:disabled{cursor:default}
+.fb{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--panel2);line-height:1.55;display:none}
+.fb.show{display:block}.fb b{color:var(--orange)}
+.next{margin-top:12px;padding:10px 16px;border:1px solid var(--orange);border-radius:9px;background:var(--orange);color:#111;font-weight:800;cursor:pointer;display:none}
+.next.show{display:inline-block}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+@media(max-width:900px){.fams{grid-template-columns:1fr 1fr}.codes{grid-template-columns:1fr}.opts{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Status codes HTTP</h1>
+<div class="sub">Cada respuesta de una API trae un <b>código de estado</b> de 3 dígitos. El <b>primer dígito</b> dice la familia: si salió bien, si el error es de quien pide o si el error es del servidor.
+Es lo primero que se valida en una prueba. Toca una familia para ver sus códigos.</div>
+
+<div class="fams" id="fams">
+  <div class="fam f1" data-f="1"><div class="n">1xx</div><b>Informativos</b><span>“Recibido, sigo procesando.” Casi nunca se ven al probar APIs.</span></div>
+  <div class="fam f2" data-f="2"><div class="n">2xx</div><b>Éxito</b><span>La petición se entendió y se procesó correctamente.</span></div>
+  <div class="fam f3" data-f="3"><div class="n">3xx</div><b>Redirección</b><span>El recurso está en otro lugar; hay que ir a otra URL.</span></div>
+  <div class="fam f4" data-f="4"><div class="n">4xx</div><b>Error del cliente</b><span>La petición está mal: datos inválidos, sin permiso, no existe.</span></div>
+  <div class="fam f5" data-f="5"><div class="n">5xx</div><b>Error del servidor</b><span>La petición era válida, pero el servidor falló al procesarla.</span></div>
+</div>
+
+<div class="codes" id="codes"></div>
+
+<h2>🎯 ¿Qué código corresponde?</h2>
+<div class="game">
+  <div class="ghead"><span class="small" id="qn"></span><span class="score" id="score"></span></div>
+  <div class="prog"><div id="bar"></div></div>
+  <div id="qbox">
+    <div class="situ" id="situ"></div>
+    <div class="ctx" id="ctx"></div>
+    <div class="opts" id="opts"></div>
+    <div class="fb" id="fb"></div>
+    <button class="next" id="next">Siguiente →</button>
+  </div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> los <strong>4xx</strong> significan “revisa lo que enviaste” y los <strong>5xx</strong> significan “el problema está del lado del servidor”.
+  Una API bien construida usa el código correcto: devolver <strong>200</strong> con un mensaje de error dentro del body, o <strong>500</strong> cuando en realidad faltaba un dato, es un defecto que también se reporta.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const CODES=[
+  [1,100,'Continue','El servidor recibió los headers y espera el resto de la petición.'],
+  [2,200,'OK','Todo salió bien. Respuesta típica de GET, PUT y PATCH.'],
+  [2,201,'Created','Se creó un recurso nuevo. Respuesta típica de POST.'],
+  [2,202,'Accepted','Se recibió, pero se procesará después (proceso asíncrono).'],
+  [2,204,'No Content','Salió bien y no hay nada que devolver. Típico de DELETE.'],
+  [3,301,'Moved Permanently','El recurso cambió de URL de forma permanente.'],
+  [3,304,'Not Modified','El recurso no cambió desde la última consulta (cache).'],
+  [4,400,'Bad Request','La petición está mal formada: JSON inválido, falta un campo obligatorio.'],
+  [4,401,'Unauthorized','No se sabe quién eres: falta el token o expiró.'],
+  [4,403,'Forbidden','Se sabe quién eres, pero no tienes permiso para esto.'],
+  [4,404,'Not Found','El recurso o la ruta no existe.'],
+  [4,409,'Conflict','Choca con el estado actual: por ejemplo, un registro duplicado.'],
+  [4,415,'Unsupported Media Type','El servidor no acepta ese formato: por ejemplo, falta Content-Type: application/json.'],
+  [4,422,'Unprocessable Entity','El formato es correcto, pero los datos no cumplen una regla de negocio.'],
+  [4,429,'Too Many Requests','Se superó el límite de peticiones permitido.'],
+  [5,500,'Internal Server Error','Error inesperado en el servidor.'],
+  [5,502,'Bad Gateway','Un servicio intermedio recibió una respuesta inválida de otro servicio.'],
+  [5,503,'Service Unavailable','El servidor no puede atender ahora: saturado o en mantenimiento.'],
+  [5,504,'Gateway Timeout','Un servicio del que dependemos no respondió a tiempo.'],
+];
+const C={1:'var(--gray)',2:'var(--green)',3:'var(--blue)',4:'var(--orange)',5:'var(--red)'};
+$('codes').innerHTML=CODES.map(([f,n,t,d])=>`<div class="code" data-f="${f}" style="--c:${C[f]}"><span class="num">${n}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('');
+let famSel=null;
+$('fams').onclick=e=>{
+  const f=e.target.closest('.fam'); if(!f) return;
+  famSel = famSel===f.dataset.f ? null : f.dataset.f;
+  document.querySelectorAll('.fam').forEach(x=>x.classList.toggle('on',x.dataset.f===famSel));
+  document.querySelectorAll('.code').forEach(x=>x.classList.toggle('dim',famSel!==null&&x.dataset.f!==famSel));
+};
+
+/* ---------- Juego ---------- */
+const Q=[
+  {s:'Consultas un cliente que existe y la API devuelve sus datos.',ctx:'GET /clientes/123',o:[200,201,204,404],a:200,
+   e:'La consulta salió bien y devuelve datos: <b>200 OK</b>.'},
+  {s:'Registras una nueva solicitud de crédito y queda guardada.',ctx:'POST /solicitudes',o:[200,201,202,204],a:201,
+   e:'Se <b>creó</b> un recurso nuevo: <b>201 Created</b>. Un 200 “funciona”, pero 201 es el código correcto para una creación.'},
+  {s:'Envías la petición sin el header Authorization.',ctx:'GET /clientes/123  (sin token)',o:[400,401,403,404],a:401,
+   e:'La API <b>no sabe quién eres</b>: <b>401 Unauthorized</b>. Lo mismo pasa cuando el token expiró.'},
+  {s:'Tu token es válido, pero tu usuario no tiene permiso para eliminar clientes.',ctx:'DELETE /clientes/123',o:[401,403,404,409],a:403,
+   e:'La API <b>sí sabe quién eres</b>, pero no tienes permiso: <b>403 Forbidden</b>. La diferencia con 401 es una pregunta clásica de entrevista.'},
+  {s:'Intentas registrar un cliente con un correo que ya existe.',ctx:'POST /clientes  { "correo": "ana@demo.local" }',o:[400,404,409,500],a:409,
+   e:'El dato choca con algo que ya existe: <b>409 Conflict</b>.'},
+  {s:'Envías un JSON mal escrito: falta cerrar una llave.',ctx:'POST /solicitudes  { "monto": 5000 ',o:[400,422,500,415],a:400,
+   e:'La petición ni siquiera se puede leer: <b>400 Bad Request</b>. Si la API respondiera 500 aquí, sería un defecto: el error es del cliente, no del servidor.'},
+  {s:'El JSON es válido, pero el monto solicitado es negativo.',ctx:'POST /solicitudes  { "monto": -100 }',o:[400,409,422,200],a:422,
+   e:'El formato es correcto, pero viola una <b>regla de negocio</b>: <b>422 Unprocessable Entity</b>. Algunas APIs usan 400 para esto; lo importante es que esté documentado y sea consistente.'},
+  {s:'Eliminas una solicitud y la API confirma sin devolver contenido.',ctx:'DELETE /solicitudes/SOL-0001',o:[200,201,204,404],a:204,
+   e:'Salió bien y no hay body que devolver: <b>204 No Content</b>.'},
+  {s:'La API depende de una pasarela de pagos que no respondió en 10 segundos.',ctx:'POST /pagos',o:[500,502,503,504],a:504,
+   e:'Un servicio del que dependemos <b>no respondió a tiempo</b>: <b>504 Gateway Timeout</b>.'},
+  {s:'Durante una prueba de carga el servidor está saturado y rechaza peticiones.',ctx:'GET /clientes  (x 500 usuarios)',o:[429,500,503,504],a:503,
+   e:'El servidor no puede atender en este momento: <b>503 Service Unavailable</b>. Si fuera un límite configurado por cliente, sería 429.'},
+];
+let qi=0, score=0;
+function render(){
+  $('qn').textContent=`Situación ${qi+1} de ${Q.length}`;
+  $('score').textContent=`✓ ${score} correctas`;
+  $('bar').style.width=(qi/Q.length*100)+'%';
+  const q=Q[qi];
+  $('situ').textContent=q.s; $('ctx').textContent=q.ctx;
+  $('opts').innerHTML=q.o.map(c=>{const d=CODES.find(x=>x[1]===c);return `<button data-c="${c}">${c}<small>${d[2]}</small></button>`}).join('');
+  $('fb').className='fb'; $('next').className='next';
+}
+$('opts').onclick=e=>{
+  const b=e.target.closest('button'); if(!b||b.disabled) return;
+  const q=Q[qi], c=+b.dataset.c, ok=c===q.a;
+  if(ok) score++;
+  document.querySelectorAll('#opts button').forEach(x=>{x.disabled=true; if(+x.dataset.c===q.a)x.classList.add('right'); else if(x===b)x.classList.add('wrong');});
+  $('fb').innerHTML=(ok?'✅ <b>¡Correcto!</b> ':'❌ <b>No exactamente.</b> ')+q.e; $('fb').className='fb show';
+  $('score').textContent=`✓ ${score} correctas`;
+  $('next').textContent = qi===Q.length-1 ? 'Ver resultado' : 'Siguiente →'; $('next').className='next show';
+};
+$('next').onclick=()=>{
+  qi++;
+  if(qi<Q.length) return render();
+  $('bar').style.width='100%'; $('qn').textContent='Resultado';
+  const msg = score>=9?'Excelente: ya sabes leer las respuestas de una API.':score>=6?'Muy bien. Repasa las diferencias 400/422 y 401/403.':'Revisa la tabla de códigos de arriba y vuelve a intentarlo.';
+  $('qbox').innerHTML=`<div class="situ">${score} de ${Q.length} correctas</div><p class="small" style="font-size:14px">${msg}</p><button class="next show" id="again">↻ Jugar de nuevo</button>`;
+  $('again').onclick=()=>location.reload();
+};
+render();
+})();
+</script>
+</body></html>

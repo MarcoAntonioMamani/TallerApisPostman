@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Taller APIs y Postman</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--orange:#f3a43b;--green:#57c785;--cyan:#59a9e6;--purple:#a982e2}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+body{display:grid;grid-template-columns:330px 1fr;grid-template-rows:100%}
+body.collapsed{grid-template-columns:0 1fr}
+body.collapsed aside{visibility:hidden}
+
+/* ---------- Panel lateral ---------- */
+aside{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.side-head{padding:18px 18px 12px;border-bottom:1px solid var(--border)}
+.side-head h1{margin:0;font-size:17px}
+.side-head p{margin:5px 0 0;font-size:12px;color:var(--muted);line-height:1.45}
+#list{margin:0;padding:10px;overflow:auto;flex:1}
+ol{list-style:none;margin:0;padding:0}
+
+/* encabezado de parte */
+.sec{margin-top:10px;border-radius:10px}
+.sec:first-child{margin-top:0}
+.sec-head{display:flex;align-items:center;gap:6px;padding:9px 8px;border-radius:9px;cursor:pointer;user-select:none;border:1px solid transparent;background:color-mix(in srgb,var(--c) 10%,transparent)}
+.sec-head:hover{border-color:color-mix(in srgb,var(--c) 50%,transparent)}
+.sec-head.current{border-color:var(--c)}
+.sec-head.drop-into{box-shadow:inset 0 0 0 2px var(--c)}
+.sec-head .chev{width:16px;color:var(--muted);font-size:11px;transition:transform .15s}
+.sec.closed .chev{transform:rotate(-90deg)}
+.sec.closed ol{display:none}
+.sec-head .label{flex:1;min-width:0}
+.sec-head .label b{display:block;font-size:13px;color:var(--c)}
+.sec-head .label small{display:block;font-size:11px;color:var(--muted)}
+.sec-head .cnt{font-size:11px;color:var(--muted);background:var(--panel2);padding:2px 7px;border-radius:999px}
+.sec.off .sec-head .label{opacity:.35;text-decoration:line-through}
+.sec.off ol{opacity:.4}
+.sec-acts button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:3px 5px;border-radius:5px}
+.sec-acts button:hover{background:var(--border);color:var(--text)}
+.sec ol{padding:4px 0 0 6px;margin-left:6px;border-left:1px dashed var(--border)}
+.sec.plain ol{border-left:0;margin-left:0;padding-left:0}
+.sec ol:empty::after{content:'Arrastra temas aquí';display:block;padding:10px;font-size:12px;color:var(--muted);font-style:italic}
+
+li{position:relative;display:flex;align-items:center;gap:8px;padding:8px;border-radius:9px;border:1px solid transparent;cursor:pointer;user-select:none;margin-bottom:3px}
+li:hover{background:var(--panel2)}
+li.current{background:var(--panel2);border-color:var(--orange)}
+li.hidden-slide .name{opacity:.35;text-decoration:line-through}
+li.dragging{opacity:.4}
+li.drop-before{box-shadow:0 -2px 0 var(--orange)}
+li.drop-after{box-shadow:0 2px 0 var(--orange)}
+.grip{display:none}
+li[draggable]{cursor:grab}
+.num{width:22px;text-align:right;color:var(--orange);font-weight:800;font-size:13px}
+.name{flex:1;font-size:13px;line-height:1.3;min-width:0}
+.name small{display:block;color:var(--muted);font-size:11px}
+.acts{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity .15s;background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:1px}
+li:hover .acts{opacity:1;pointer-events:auto}
+.acts button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:3px 5px;border-radius:5px}
+.acts button:hover{background:var(--border);color:var(--text)}
+.side-foot{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap}
+.side-foot button{flex:1}
+.side-foot .wide{flex-basis:100%;background:color-mix(in srgb,var(--green) 18%,var(--panel2));border-color:color-mix(in srgb,var(--green) 50%,var(--border))}
+.overall{padding:10px 18px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)}
+.overall .meter{height:6px;background:var(--panel2);border-radius:9px;overflow:hidden;margin-top:6px}
+.overall .meter div{height:100%;background:var(--green);transition:width .3s}
+
+/* check de avance */
+.done-chk{width:20px;height:20px;flex:0 0 20px;border-radius:6px;border:2px solid var(--border);background:none;color:#111;font-size:12px;font-weight:900;cursor:pointer;display:grid;place-items:center;padding:0;line-height:1}
+.done-chk:hover{border-color:var(--green)}
+li.done .done-chk{background:var(--green);border-color:var(--green)}
+li.done .name{color:var(--muted)}
+li.next-up{box-shadow:inset 3px 0 0 var(--green)}
+.sec-head .meter{height:4px;background:var(--panel2);border-radius:9px;overflow:hidden;margin-top:5px}
+.sec-head .meter div{height:100%;background:var(--green);transition:width .3s}
+.sec-head .cnt.full{background:var(--green);color:#111;font-weight:800}
+#markDone.on{background:var(--green);color:#111;border-color:var(--green)}
+.part .pp{margin-top:12px;font-size:12px;color:var(--muted)}
+.part .pp .meter{height:5px;background:var(--panel2);border-radius:9px;overflow:hidden;margin-top:5px}
+.part .pp .meter div{height:100%;background:var(--green)}
+.agenda > div.seen b::after{content:' ✓';color:var(--green);font-size:15px}
+
+button.btn{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;font-size:12px}
+button.btn:hover{border-color:var(--orange)}
+button.btn:disabled{opacity:.4;cursor:default}
+
+/* ---------- Escenario ---------- */
+main{position:relative;display:flex;flex-direction:column;min-width:0}
+.stage{flex:1;position:relative;overflow:hidden}
+.stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
+.stage .inline{position:absolute;inset:0;overflow:auto}
+.bar{height:48px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-top:1px solid var(--border)}
+.bar .title{flex:1;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .title b{color:var(--c,var(--muted));font-weight:700}
+.bar .count{font-weight:800;color:var(--orange);font-size:13px;min-width:56px;text-align:center}
+.progress{position:absolute;left:0;top:0;height:3px;background:var(--orange);transition:width .25s}
+
+/* ---------- Diapositivas internas (portada, portadas de parte, cierre) ---------- */
+.slide-inner{min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:48px 8vw}
+.slide-inner .kicker{color:var(--c,var(--orange));font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+.slide-inner h2{font-size:clamp(32px,5vw,58px);margin:12px 0 14px;line-height:1.05}
+.slide-inner p{color:var(--muted);font-size:clamp(15px,1.6vw,20px);line-height:1.6;max-width:820px;margin:0}
+.agenda{margin-top:30px;display:grid;gap:10px;max-width:820px}
+.agenda > div{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:13px 16px;display:flex;gap:14px;align-items:center}
+.agenda b{color:var(--c,var(--orange));font-size:20px;min-width:28px}
+.agenda small{color:var(--muted)}
+.agenda .soon{border-style:dashed;opacity:.75}
+.parts{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;max-width:1500px}
+.part{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:border-color .15s,transform .15s}
+.part:hover{border-color:var(--c);transform:translateY(-2px)}
+.part .pk{color:var(--c);font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.part h3{margin:6px 0 8px;font-size:20px}
+.part ul{margin:0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.6}
+.part .empty{color:var(--muted);font-size:13px;font-style:italic}
+.presenter{display:inline-flex;align-items:center;gap:12px;margin-top:22px;background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:6px 18px 6px 6px;cursor:pointer;transition:border-color .2s}
+.presenter:hover{border-color:var(--orange)}
+.presenter img{width:46px;height:46px;border-radius:50%;object-fit:cover;object-position:50% 35%;border:2px solid var(--orange)}
+.presenter b{display:block;font-size:14px}
+.presenter small{display:block;color:var(--muted);font-size:12px}
+.sec-big{font-size:clamp(70px,10vw,130px);font-weight:800;color:var(--c);line-height:1;opacity:.9}
+
+/* ---------- Modo proyección ---------- */
+body.present{grid-template-columns:1fr}
+body.present aside,body.present .bar{display:none}
+body.present .progress{height:4px;opacity:.85}
+body.present.idle,body.present.idle *{cursor:none!important}
+.pctl{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);display:none;gap:8px;align-items:center;
+  background:rgba(25,30,40,.92);border:1px solid var(--border);border-radius:14px;padding:8px 10px;z-index:20;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:0;transition:opacity .25s,transform .25s;backdrop-filter:blur(6px)}
+body.present .pctl{display:flex}
+body.present:not(.idle) .pctl{opacity:1;transform:translate(-50%,0)}
+.pctl .pc{font-weight:800;color:var(--orange);font-size:13px;min-width:60px;text-align:center}
+.pctl .pt{font-size:12px;color:var(--muted);max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blackout{position:fixed;inset:0;background:#000;z-index:30;display:none;align-items:flex-end;justify-content:center;padding:20px;color:#333;font-size:12px}
+.blackout.on{display:flex}
+
+/* ---------- Selector de pantalla ---------- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40;padding:16px}
+.modal.on{display:flex}
+.mbox{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px;width:min(640px,100%);max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.mbox h3{margin:0 0 4px;font-size:20px}
+.mbox .msub{color:var(--muted);font-size:13px;line-height:1.5;margin-bottom:16px}
+.screens{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.scr{background:var(--panel2);border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;text-align:left;color:var(--text);font-family:inherit;transition:border-color .15s,transform .15s}
+.scr:hover{border-color:var(--orange);transform:translateY(-2px)}
+.scr .mon{height:70px;border-radius:6px;background:linear-gradient(135deg,#2a3f8f,#4b2a7b);display:grid;place-items:center;font-size:26px;margin-bottom:10px;border:3px solid #0d0f14}
+.scr b{display:block;font-size:14px}
+.scr small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.scr .tags{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap}
+.scr .tags span{font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;background:var(--panel);color:var(--muted)}
+.scr .tags .here{color:var(--green)}
+.mnote{margin-top:14px;font-size:12.5px;color:var(--muted);line-height:1.55;background:var(--panel2);border-radius:10px;padding:10px 12px}
+.mnote kbd{background:var(--panel);border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-family:Consolas,monospace;font-size:11px;color:var(--text)}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+
+
+/* ---------- Ventana del público (proyector) ---------- */
+body.audience{grid-template-columns:1fr}
+body.audience aside,body.audience .bar,body.audience .pctl{display:none!important}
+body.audience.idle,body.audience.idle *{cursor:none!important}
+.fsHint{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);cursor:pointer}
+body.audience.needFs .fsHint{display:flex}
+.fsHint div{background:var(--panel);border:2px solid var(--orange);border-radius:16px;padding:26px 34px;text-align:center;font-size:20px;font-weight:800}
+.fsHint small{display:block;font-size:13px;color:var(--muted);font-weight:400;margin-top:6px}
+
+/* ---------- Vista del presentador ---------- */
+#presenter{position:fixed;inset:0;z-index:35;background:#0b0d12;display:none;flex-direction:column;padding:14px 16px;gap:12px}
+body.presenter #presenter{display:flex}
+.ph{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ph .timer{font-family:Consolas,monospace;font-size:30px;font-weight:800;color:var(--text)}
+.ph .clock{font-family:Consolas,monospace;font-size:16px;color:var(--muted)}
+.ph .where{flex:1;min-width:200px;font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph .where b{color:var(--c,var(--orange))}
+.ph .live{font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--panel2);color:var(--muted)}
+.ph .live.on{background:rgba(87,199,133,.18);color:var(--green)}
+.pgrid{flex:1;display:grid;grid-template-columns:1.7fr 1fr;gap:14px;min-height:0}
+.pcol{display:flex;flex-direction:column;gap:10px;min-height:0}
+.plabel{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.plabel span{color:var(--text);text-transform:none;letter-spacing:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frame{position:relative;width:100%;aspect-ratio:16/9;background:var(--bg);border:2px solid var(--border);border-radius:10px;overflow:hidden}
+.frame.now{border-color:var(--orange)}
+.frame .scaler{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;pointer-events:none}
+.frame .scaler iframe{width:100%;height:100%;border:0;background:var(--bg)}
+.frame .scaler .inline{position:absolute;inset:0;overflow:hidden}
+.frame .end{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:15px}
+.pbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pbtns .big{padding:18px;font-size:18px;font-weight:800;border-radius:12px}
+.pbtns .big.next{background:var(--orange);color:#111;border-color:var(--orange)}
+.prow{display:flex;gap:8px;flex-wrap:wrap}
+.prow .btn{flex:1}
+.upnext{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12.5px;color:var(--muted);overflow:auto;min-height:0;flex:1}
+.upnext div{padding:5px 2px;display:flex;gap:8px;cursor:pointer;border-radius:6px}
+.upnext div:hover{background:var(--panel2);color:var(--text)}
+.upnext b{color:var(--orange);min-width:22px;text-align:right}
+.upnext .ok b::after{content:'✓';color:var(--green);margin-left:3px}
+.pnote{font-size:12px;color:var(--muted);line-height:1.5}
+#pvBlack.on{background:#000;color:#fff;border-color:#fff}
+.toast{position:fixed;left:50%;top:20px;transform:translate(-50%,-20px);background:var(--panel);border:1px solid var(--orange);border-radius:12px;padding:12px 18px;font-size:14px;z-index:60;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:900px){.pgrid{grid-template-columns:1fr}}
+
+/* ---------- Break / descanso ---------- */
+#brk{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;flex-direction:column;
+  background:radial-gradient(circle at 50% 35%,#1d2433 0%,#0c0f15 70%);text-align:center;padding:24px}
+#brk.on{display:flex}
+#brk .cup{font-size:clamp(46px,7vw,84px);line-height:1;position:relative}
+#brk .cup .steam{position:absolute;left:50%;top:-8px;width:60px;margin-left:-30px;height:40px}
+#brk .cup .steam i{position:absolute;bottom:0;width:6px;height:26px;border-radius:6px;background:rgba(255,255,255,.35);filter:blur(2px);animation:steam 2.4s infinite ease-out}
+#brk .cup .steam i:nth-child(1){left:14px}#brk .cup .steam i:nth-child(2){left:28px;animation-delay:.8s}#brk .cup .steam i:nth-child(3){left:42px;animation-delay:1.6s}
+@keyframes steam{0%{transform:translateY(0) scaleY(.6);opacity:0}30%{opacity:.8}100%{transform:translateY(-34px) scaleY(1.1);opacity:0}}
+#brk h2{margin:14px 0 4px;font-size:clamp(30px,5vw,60px);letter-spacing:.01em}
+#brk .bsub{color:var(--muted);font-size:clamp(14px,1.6vw,19px)}
+#brk .ring{position:relative;width:min(46vh,380px);height:min(46vh,380px);margin:22px 0 10px}
+#brk .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+#brk .ring .time{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#brk .ring .time b{font-family:Consolas,monospace;font-size:clamp(50px,9vh,92px);font-weight:800;letter-spacing:.02em}
+#brk .ring .time span{color:var(--muted);font-size:14px;margin-top:4px}
+#brk .meta{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;color:var(--muted);font-size:15px}
+#brk .meta b{color:var(--text)}
+#brk .bctl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:22px}
+#brk .bctl .btn{font-size:14px;padding:10px 16px}
+#brk.paused .ring .time b{animation:blinkB 1s steps(1) infinite}
+@keyframes blinkB{50%{opacity:.25}}
+#brk.done{background:radial-gradient(circle at 50% 35%,#1b3a2a 0%,#0c0f15 72%)}
+#brk.done h2{color:var(--green)}
+#brk.done .ring .time b{color:var(--green);animation:pop 1s ease-in-out infinite}
+@keyframes pop{50%{transform:scale(1.06)}}
+body.audience #brk .bctl{display:none}
+.brkset .presets{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.brkset .presets button.on{background:var(--orange);color:#111;border-color:var(--orange)}
+.brkset label{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px;font-weight:700}
+.brkset input[type=text],.brkset input[type=number]{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-size:14px;font-family:inherit}
+.brkset .row{display:flex;gap:10px;align-items:center}
+.brkset .row input[type=number]{width:110px}
+.brkset .chk{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--text)}
+.brkset .where{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.brkset .wopt{background:var(--panel2);border:2px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;text-align:left;color:var(--text);font-family:inherit;font-size:13px;line-height:1.35}
+.brkset .wopt:hover{border-color:color-mix(in srgb,var(--orange) 50%,var(--border))}
+.brkset .wopt.on{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 10%,var(--panel2))}
+.brkset .wopt i{font-style:normal;font-size:20px;display:block;margin-bottom:4px}
+.brkset .wopt small{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
+.brkset .wnote{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+/* panel pequeño cuando el break se muestra en otra pantalla */
+#brkMini{position:fixed;right:16px;bottom:62px;z-index:46;width:300px;background:var(--panel);border:2px solid var(--orange);border-radius:14px;padding:14px;display:none;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+#brkMini.on{display:block}
+#brkMini.done{border-color:var(--green)}
+#brkMini .mt{display:flex;align-items:center;gap:10px}
+#brkMini .mt b{font-family:Consolas,monospace;font-size:34px;font-weight:800}
+#brkMini.done .mt b{color:var(--green)}
+#brkMini .mt span{font-size:12px;color:var(--muted);line-height:1.4}
+#brkMini .bar2{height:6px;background:var(--panel2);border-radius:9px;overflow:hidden;margin:10px 0}
+#brkMini .bar2 div{height:100%;background:var(--orange);transition:width .25s}
+#brkMini.done .bar2 div{background:var(--green)}
+#brkMini .mc{display:flex;gap:6px}
+#brkMini .mc .btn{flex:1;padding:7px 4px;font-size:12px}
+
+@media(max-width:800px){body{grid-template-columns:1fr}aside{position:fixed;z-index:5;inset:0 20% 48px 0}body.collapsed aside{display:none}.parts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<aside>
+  <div class="side-head">
+    <h1>Taller · APIs y Postman</h1>
+    <p>Arrastra los temas para reordenarlos o moverlos de una parte a otra. Toca ☐ para marcar un tema como visto, ☑ para marcar una parte completa, ▼ para colapsarla y ● para ocultarla.</p>
+  </div>
+  <div class="overall" id="overall"></div>
+  <div id="list"></div>
+  <div class="side-foot">
+    <button class="btn wide" id="goPending" title="Ir al primer tema que aún no marcaste como visto">⏭ Continuar donde me quedé</button>
+    <button class="btn" id="checkAll" title="Marcar todos los temas como vistos">☑ Marcar todo</button>
+    <button class="btn" id="uncheckAll" title="Desmarcar todos los temas">☐ Desmarcar todo</button>
+    <button class="btn" id="resetOrder" title="Volver al orden definido en SLIDES" style="flex-basis:100%">↺ Orden original</button>
+  </div>
+</aside>
+
+<main>
+  <div class="progress" id="progress"></div>
+  <div class="stage" id="stage"></div>
+  <div class="bar">
+    <button class="btn" id="toggleSide" title="Mostrar u ocultar temas (T)">☰</button>
+    <button class="btn" id="prev" title="Anterior (←)">◀</button>
+    <span class="count" id="count">1 / 1</span>
+    <button class="btn" id="next" title="Siguiente (→)">▶</button>
+    <span class="title" id="curTitle"></span>
+    <button class="btn" id="brkBtn" title="Iniciar un break con cuenta regresiva (D)">☕ Break</button>
+    <button class="btn" id="markDone" title="Marcar este tema como visto (V)">☐ Visto</button>
+    <button class="btn" id="fs" title="Proyectar en pantalla completa (P o F5)" style="background:var(--orange);color:#111;border-color:var(--orange)">📽 Proyectar</button>
+  </div>
+</main>
+
+<!-- controles flotantes del modo proyección -->
+<div class="pctl" id="pctl">
+  <button class="btn" id="pPrev" title="Anterior (←)">◀</button>
+  <span class="pc" id="pCount"></span>
+  <button class="btn" id="pNext" title="Siguiente (→)">▶</button>
+  <span class="pt" id="pTitle"></span>
+  <button class="btn" id="pDone" title="Marcar como visto (V)">☐ Visto</button>
+  <button class="btn" id="pBreak" title="Break (D)">☕</button>
+  <button class="btn" id="pBlack" title="Pantalla negra (B)">⬛</button>
+  <button class="btn" id="pExit" title="Salir (Esc)">✕ Salir</button>
+</div>
+<div class="blackout" id="blackout">Pantalla en negro · presiona B para volver</div>
+
+
+<!-- ventana del público: aviso para entrar a pantalla completa -->
+<div class="fsHint" id="fsHint"><div>📽 Clic aquí para pantalla completa<small>Esta ventana es la que ve el público. Se controla desde la vista del presentador.</small></div></div>
+
+<div class="toast" id="toast"></div>
+<!-- configuración del break -->
+<div class="modal" id="brkModal">
+  <div class="mbox brkset">
+    <h3>☕ Iniciar un break</h3>
+    <div class="msub">Se muestra una pantalla de descanso con cuenta regresiva. Si estás proyectando, también aparece en el proyector.</div>
+    <label>Duración</label>
+    <div class="presets" id="brkPresets"><button class="btn" data-m="5">5 min</button><button class="btn" data-m="10">10 min</button><button class="btn" data-m="15">15 min</button><button class="btn" data-m="20">20 min</button></div>
+    <div class="row"><input type="number" id="brkMin" min="1" max="180" value="15"><span class="small">minutos</span></div>
+    <label>Mensaje</label>
+    <input type="text" id="brkMsg" maxlength="60" value="Break · ya volvemos">
+    <label class="chk"><input type="checkbox" id="brkSound" checked> 🔔 Sonar al terminar (y un aviso suave al faltar 1 minuto)</label>
+    <label>¿Dónde mostrarlo?</label>
+    <div class="where" id="brkWhere"></div>
+    <div class="wnote" id="brkWNote"></div>
+    <div class="mfoot"><button class="btn" id="brkCancel">Cancelar</button><button class="btn" id="brkStart" style="background:var(--orange);color:#111;border-color:var(--orange)">▶ Iniciar break</button></div>
+  </div>
+</div>
+
+<!-- panel pequeño: el break se ve en otra pantalla -->
+<div id="brkMini">
+  <div class="mt"><b id="bmTime">15:00</b><span id="bmTxt">☕ Break en curso<br>se está mostrando en <b id="bmWhere">el proyector</b></span></div>
+  <div class="bar2"><div id="bmBar"></div></div>
+  <div class="mc"><button class="btn" id="bmMinus">−1</button><button class="btn" id="bmPause">⏸</button><button class="btn" id="bmPlus">+1</button><button class="btn" id="bmStop" style="background:var(--orange);color:#111;border-color:var(--orange)">✕ Fin</button></div>
+</div>
+
+<!-- pantalla de break -->
+<div id="brk">
+  <div class="cup"><span class="steam"><i></i><i></i><i></i></span>☕</div>
+  <h2 id="brkTitle">Break · ya volvemos</h2>
+  <div class="bsub" id="brkSub">Tómate un café, estira las piernas</div>
+  <div class="ring">
+    <svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="none" stroke="#262d3a" stroke-width="12"/>
+      <circle id="brkArc" cx="100" cy="100" r="88" fill="none" stroke="#f3a43b" stroke-width="12" stroke-linecap="round" stroke-dasharray="552.9" stroke-dashoffset="0"/></svg>
+    <div class="time"><b id="brkTime">15:00</b><span id="brkState">restantes</span></div>
+  </div>
+  <div class="meta"><span>Volvemos a las <b id="brkAt">--:--</b></span><span>Hora actual <b id="brkNow">--:--</b></span><span id="brkNextW">Al volver: <b id="brkNext"></b></span></div>
+  <div class="bctl">
+    <button class="btn" id="brkMinus">− 1 min</button>
+    <button class="btn" id="brkPause">⏸ Pausar</button>
+    <button class="btn" id="brkPlus">+ 1 min</button>
+    <button class="btn" id="brkStop" style="background:var(--orange);color:#111;border-color:var(--orange)">✕ Terminar break</button>
+  </div>
+</div>
+
+
+<!-- vista del presentador -->
+<div id="presenter">
+  <div class="ph">
+    <span class="timer" id="pvTimer" title="Tiempo de presentación">00:00:00</span>
+    <button class="btn" id="pvTimerReset" title="Reiniciar cronómetro">⟲</button>
+    <span class="clock" id="pvClock"></span>
+    <span class="where" id="pvWhere"></span>
+    <span class="live" id="pvLive">● Proyector desconectado</span>
+  </div>
+  <div class="pgrid">
+    <div class="pcol">
+      <div class="plabel">Ahora en el proyector <span id="pvNowT"></span></div>
+      <div class="frame now" id="pvNow"></div>
+      <div class="pnote">💡 Las demos interactivas (botones, animaciones, juegos) se usan directamente en la pantalla del proyector: lleva el mouse a esa pantalla y haz clic. Esta vista es una copia de referencia.</div>
+    </div>
+    <div class="pcol">
+      <div class="plabel">Siguiente <span id="pvNextT"></span></div>
+      <div class="frame" id="pvNext"></div>
+      <div class="pbtns">
+        <button class="btn big" id="pvPrev">◀ Anterior</button>
+        <button class="btn big next" id="pvNextBtn">Siguiente ▶</button>
+      </div>
+      <div class="prow">
+        <span class="btn" style="text-align:center;cursor:default" id="pvCount">1 / 1</span>
+        <button class="btn" id="pvDone" title="Marcar como visto (V)">☐ Visto</button>
+        <button class="btn" id="pvBlack" title="Pantalla negra en el proyector (B)">⬛ Negro</button>
+        <button class="btn" id="pvBreak" title="Break con cuenta regresiva (D)">☕ Break</button>
+        <button class="btn" id="pvEnd" title="Terminar la presentación">✕ Terminar</button>
+      </div>
+      <div class="plabel">Próximos temas</div>
+      <div class="upnext" id="pvList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- selector de pantalla -->
+<div class="modal" id="screenModal">
+  <div class="mbox">
+    <h3>📽 ¿En qué pantalla quieres proyectar?</h3>
+    <div class="msub" id="mSub">Buscando pantallas conectadas…</div>
+    <div class="screens" id="screens"></div>
+    <div class="mnote" id="mNote"></div>
+    <div class="mfoot">
+      <button class="btn" id="mManual" title="Abre la ventana del público para arrastrarla al proyector a mano">🪟 Vista del presentador (mover ventana a mano)</button>
+      <button class="btn" id="mCancel">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   PARTES DEL TALLER
+   Cada parte con "cover:true" genera su propia portada automáticamente,
+   con la lista de temas que contiene.
+   ===================================================================== */
+const SECTIONS = [
+  { id:'inicio', label:null },
+  { id:'p1', n:1, label:'Conceptos de APIs', subtitle:'Qué es una API, cómo se comunica y cómo leer sus mensajes', color:'#59a9e6', cover:true },
+  { id:'p2', n:2, label:'Postman paso a paso', subtitle:'De tu primer request a pruebas automatizadas', color:'#f3a43b', cover:true,
+    planned:['Colecciones: crear, editar, duplicar, importar y exportar','El formato JSON'] },
+  { id:'reto', n:3, label:'Reto', subtitle:'Tarea práctica: pruebas de una API de reservas', color:'#57c785', cover:true },
+  { id:'ci', n:4, label:'Git, GitHub y Jenkins', subtitle:'Tus pruebas en un repositorio y ejecutándose solas con reporte Allure', color:'#4fc1c9', cover:true },
+  { id:'perf', n:5, label:'Performance', subtitle:'Cómo se comporta una API cuando muchos la usan', color:'#a982e2', cover:true },
+  { id:'fin', label:null },
+];
+
+/* =====================================================================
+   CATÁLOGO DE TEMAS
+   Para agregar un ejemplo nuevo: copia el .html a esta carpeta y añade
+   una entrada con un id único y la parte (section) a la que pertenece.
+     { id, section, title, subtitle, src: 'archivo.html' }  -> iframe
+     { id, section, title, subtitle, html: '...' }          -> diapositiva interna
+   ===================================================================== */
+const SLIDES = [
+  { id:'portada', section:'inicio', title:'Portada', subtitle:'Presentación del taller', html:'PORTADA' },
+  { id:'sobre-mi', section:'inicio', title:'Sobre mí', subtitle:'Marco Antonio Mamani Chura', src:'sobre_mi.html' },
+
+  { id:'que-es-api', section:'p1', title:'¿Qué es una API?', subtitle:'Analogía del restaurante y ejemplos', src:'que_es_api.html' },
+  { id:'api-comunicacion', section:'p1', title:'Cómo se comunican las apps', subtitle:'Clientes, API, BD y servicios externos', src:'api_comunicacion_apps.html' },
+  { id:'anatomia', section:'p1', title:'Anatomía de un endpoint', subtitle:'URL, puerto, parámetros, headers y body', src:'anatomia_endpoint.html' },
+  { id:'req-res', section:'p1', title:'Request y response por dentro', subtitle:'Estructura, headers y tipos de respuesta', src:'request_response.html' },
+  { id:'metodos', section:'p1', title:'Métodos HTTP', subtitle:'GET, POST, PUT, PATCH, DELETE', src:'metodos_http.html' },
+  { id:'api-bd', section:'p1', title:'De la API a la base de datos', subtitle:'SELECT, INSERT, SPs, pool y errores comunes', src:'api_base_datos.html' },
+  { id:'status', section:'p1', title:'Status codes', subtitle:'Familias, códigos y juego', src:'status_codes.html' },
+  { id:'rest-soap', section:'p1', title:'REST vs SOAP', subtitle:'Diferencias, ventajas y ejemplos', src:'rest_vs_soap.html' },
+  { id:'devtools', section:'p1', title:'Descubre las APIs de una web', subtitle:'DevTools · Network · Copy as cURL', src:'devtools_network.html' },
+  { id:'tipos-pruebas', section:'p1', title:'Tipos de pruebas de una API', subtitle:'Funcionales, carga y seguridad', src:'tipos_pruebas_api.html' },
+  { id:'repaso', section:'p1', title:'Repaso', subtitle:'Preguntas y ejercicio en equipos', src:'repaso_apis.html' },
+
+  { id:'pm-swagger', section:'p2', title:'La documentación de una API', subtitle:'Swagger / OpenAPI · Petstore', src:'pm_swagger.html' },
+  { id:'pm-que-es', section:'p2', title:'¿Qué es Postman?', subtitle:'Usos, instalación y la interfaz', src:'pm_que_es.html' },
+  { id:'pm-workspaces', section:'p2', title:'Workspaces', subtitle:'Tu espacio de trabajo', src:'pm_workspaces.html' },
+  { id:'pm-primer', section:'p2', title:'Mi primer request', subtitle:'GET a Petstore y guardarlo', src:'pm_primer_request.html' },
+  { id:'pm-variables', section:'p2', title:'Variables y environments', subtitle:'Alcances, secretos y variables dinámicas', src:'pm_variables.html' },
+  { id:'pm-crud', section:'p2', title:'CRUD con datos en ejecución', subtitle:'GET, POST, PUT, DELETE encadenados', src:'pm_crud.html' },
+  { id:'pm-auth', section:'p2', title:'Autenticación', subtitle:'Basic, API Key, Bearer y herencia', src:'pm_auth.html' },
+  { id:'pm-tests', section:'p2', title:'Scripts y tests', subtitle:'Pre-request, post-response y aserciones', src:'pm_tests.html' },
+  { id:'pm-runner', section:'p2', title:'Collection Runner', subtitle:'Ejecutar la suite de un clic', src:'pm_runner.html' },
+  { id:'pm-orden', section:'p2', title:'Controlar el orden de ejecución', subtitle:'Run order, setNextRequest y skipRequest', src:'pm_orden.html' },
+  { id:'pm-agendar', section:'p2', title:'Agendar ejecuciones', subtitle:'Scheduled runs desde el Runner', src:'pm_agendar.html' },
+  { id:'pm-cli', section:'p2', title:'Ejecutar desde la terminal (CLI)', subtitle:'Newman, Postman CLI y Jenkins', src:'pm_cli.html' },
+  { id:'pm-newman', section:'p2', title:'Newman a fondo', subtitle:'Instalar en Windows, reportes y automatizar', src:'pm_newman.html' },
+  { id:'pm-allure', section:'p2', title:'Allure Report', subtitle:'Reportes con historial y tendencias', src:'pm_allure.html' },
+  { id:'pm-datos', section:'p2', title:'Datos desde CSV y JSON', subtitle:'Pruebas data-driven', src:'pm_datos.html' },
+  { id:'pm-monitor', section:'p2', title:'Postman Monitors', subtitle:'Vigilar la API las 24 horas', src:'pm_monitor.html' },
+
+  { id:'vus', section:'perf', title:'Cómo funcionan los VUs', subtitle:'Concurrencia vs throughput', src:'k6_vus_concurrencia_demo.html' },
+  { id:'hpa', section:'perf', title:'VUs, Pods, HPA y 503', subtitle:'Saturación y recuperación', src:'k6_hpa_pods_503_simulacion_v4.html' },
+
+  { id:'reto-booker', section:'reto', title:'Reto: QA del Hostal Andino', subtitle:'Tarea individual con Restful Booker', src:'reto_booker.html' },
+  // Parte 4 · Git, GitHub y Jenkins
+  { id:'ci-git', section:'ci', title:'Git y GitHub', subtitle:'Tu proyecto en un repositorio', src:'ci_git.html' },
+  { id:'ci-git-cmd', section:'ci', title:'Comandos de Git', subtitle:'commit, ramas, push, pull, reset y revert', src:'ci_git_comandos.html' },
+  { id:'ci-jenkins', section:'ci', title:'¿Qué es Jenkins?', subtitle:'CI/CD, vocabulario y estados de un build', src:'ci_jenkins.html' },
+  { id:'ci-instalar', section:'ci', title:'Instalar y preparar Jenkins', subtitle:'Java, plugins, herramientas y credenciales', src:'ci_instalar.html' },
+  { id:'ci-primer-job', section:'ci', title:'Tu primer job', subtitle:'hola-jenkins: cada parte de Jenkins sin repositorio', src:'ci_primer_job.html' },
+  { id:'ci-pipeline', section:'ci', title:'El Jenkinsfile', subtitle:'Pipeline desde GitHub con Newman y Allure', src:'ci_pipeline.html' },
+  { id:'ci-ejecutar', section:'ci', title:'Ejecutar con parámetros', subtitle:'Build with Parameters y reporte Allure', src:'ci_ejecutar.html' },
+
+  { id:'cierre', section:'fin', title:'Cierre', subtitle:'Ideas clave', html:'CIERRE' },
+];
+
+const KEY = 'tallerApis.v3';
+const AUDIENCE = new URLSearchParams(location.search).get('view') === 'audience';
+const byId = Object.fromEntries(SLIDES.map(s => [s.id, s]));
+const secById = Object.fromEntries(SECTIONS.map(s => [s.id, s]));
+const $ = id => document.getElementById(id);
+const coverId = sid => 'sec:' + sid;
+const isCover = id => id.startsWith('sec:');
+
+/* ---------- Estado (orden, parte de cada tema, ocultos) ---------- */
+function defaults(){
+  return { order: SLIDES.map(s => s.id), sec: Object.fromEntries(SLIDES.map(s => [s.id, s.section])),
+           hidden: [], hiddenSec: [], closed: [], done: [], current: null };
+}
+function loadState(){
+  const d = defaults(); let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+  const order = (saved.order || []).filter(id => byId[id]);
+  // temas nuevos: se insertan después del tema que los precede en SLIDES (o al final si no hay)
+  SLIDES.forEach((s, k) => {
+    if (order.includes(s.id)) return;
+    const prev = SLIDES.slice(0, k).reverse().find(p => order.includes(p.id));
+    if (prev) order.splice(order.indexOf(prev.id) + 1, 0, s.id); else order.push(s.id);
+  });
+  const sec = { ...d.sec, ...(saved.sec || {}) };
+  Object.keys(sec).forEach(id => { if (!byId[id] || !secById[sec[id]]) sec[id] = byId[id]?.section; });
+  return { order, sec,
+    hidden: (saved.hidden || []).filter(id => byId[id]),
+    hiddenSec: (saved.hiddenSec || []).filter(id => secById[id]),
+    closed: (saved.closed || []).filter(id => secById[id]),
+    done: (saved.done || []).filter(id => byId[id]),
+    current: saved.current };
+}
+function saveState(){ if (AUDIENCE) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {} }
+
+let state = loadState();
+
+const slidesIn = sid => state.order.filter(id => state.sec[id] === sid);
+function sequence(){                    // orden real de la presentación
+  const seq = [];
+  SECTIONS.forEach(S => {
+    if (state.hiddenSec.includes(S.id)) return;
+    if (S.cover) seq.push(coverId(S.id));
+    slidesIn(S.id).forEach(id => { if (!state.hidden.includes(id)) seq.push(id); });
+  });
+  return seq;
+}
+function titleOf(id){
+  if (isCover(id)) return secById[id.slice(4)].label;
+  return byId[id].title;
+}
+function secOf(id){ return isCover(id) ? secById[id.slice(4)] : secById[state.sec[id]]; }
+if (!sequence().includes(state.current)) state.current = sequence()[0];
+
+/* ---------- Lista lateral agrupada ---------- */
+let dragId = null;
+function trackable(){ return sequence().filter(id => !isCover(id)); }
+function firstPending(){ return trackable().find(id => !state.done.includes(id)); }
+function renderList(){
+  const seq = sequence(), pending = firstPending();
+  $('list').innerHTML = SECTIONS.map(S => {
+    const ids = slidesIn(S.id), off = state.hiddenSec.includes(S.id), closed = state.closed.includes(S.id);
+    const items = ids.map(id => {
+      const s = byId[id], hid = state.hidden.includes(id) || off;
+      const n = seq.includes(id) ? seq.indexOf(id) + 1 : '–';
+      const done = state.done.includes(id);
+      return `<li draggable="true" data-id="${id}" class="${id===state.current?'current':''} ${hid?'hidden-slide':''} ${done?'done':''} ${id===pending?'next-up':''}">
+        <span class="grip">⋮⋮</span><button class="done-chk" data-act="done" title="${done?'Desmarcar':'Marcar como visto'}">${done?'✓':''}</button><span class="num">${n}</span>
+        <span class="name">${s.title}<small>${s.subtitle||''}</small></span>
+        <span class="acts">
+          <button data-act="up" title="Subir">▲</button>
+          <button data-act="down" title="Bajar">▼</button>
+          <button data-act="hide" title="${state.hidden.includes(id)?'Mostrar':'Ocultar en la presentación'}">${state.hidden.includes(id)?'◌':'●'}</button>
+        </span></li>`;
+    }).join('');
+    if (!S.label) return `<div class="sec plain" data-sec="${S.id}"><ol data-sec="${S.id}">${items}</ol></div>`;
+    const vis = ids.filter(id => !state.hidden.includes(id)), visibleCount = vis.length;
+    const doneCount = vis.filter(id => state.done.includes(id)).length;
+    const pct = visibleCount ? Math.round(doneCount / visibleCount * 100) : 0;
+    const allDone = visibleCount && doneCount === visibleCount;
+    return `<div class="sec ${closed?'closed':''} ${off?'off':''}" data-sec="${S.id}" style="--c:${S.color}">
+      <div class="sec-head ${state.current===coverId(S.id)?'current':''}" data-sec="${S.id}">
+        <span class="chev" data-sact="toggle">▼</span>
+        <span class="label"><b>Parte ${S.n} · ${S.label}</b><small>${S.subtitle}</small>${visibleCount?`<div class="meter"><div style="width:${pct}%"></div></div>`:''}</span>
+        <span class="cnt ${allDone?'full':''}" title="vistos / total">${visibleCount?`${doneCount}/${visibleCount}`:'0'}</span>
+        <span class="sec-acts">${visibleCount?`<button data-sact="done" title="${allDone?'Desmarcar toda la parte':'Marcar toda la parte como vista'}">${allDone?'☐':'☑'}</button>`:''}<button data-sact="hide" title="${off?'Mostrar esta parte':'Ocultar toda la parte'}">${off?'◌':'●'}</button></span>
+      </div>
+      <ol data-sec="${S.id}">${items}</ol></div>`;
+  }).join('');
+}
+
+$('list').addEventListener('click', e => {
+  const head = e.target.closest('.sec-head');
+  if (head) {
+    const sid = head.dataset.sec, sact = e.target.dataset.sact;
+    if (sact === 'toggle') state.closed = state.closed.includes(sid) ? state.closed.filter(x => x !== sid) : [...state.closed, sid];
+    else if (sact === 'done') {
+      const ids = slidesIn(sid).filter(id => !state.hidden.includes(id));
+      const all = ids.every(id => state.done.includes(id));
+      state.done = all ? state.done.filter(x => !ids.includes(x)) : [...new Set([...state.done, ...ids])];
+    }
+    else if (sact === 'hide') {
+      state.hiddenSec = state.hiddenSec.includes(sid) ? state.hiddenSec.filter(x => x !== sid) : [...state.hiddenSec, sid];
+      if (!sequence().length) state.hiddenSec = state.hiddenSec.filter(x => x !== sid);
+    }
+    else if (!state.hiddenSec.includes(sid)) state.current = coverId(sid);
+    return refresh();
+  }
+  const li = e.target.closest('li'); if (!li) return;
+  const id = li.dataset.id, act = e.target.dataset.act;
+  if (act === 'up' || act === 'down') {
+    const sib = slidesIn(state.sec[id]), k = sib.indexOf(id), other = sib[act === 'up' ? k-1 : k+1];
+    if (other) { const a = state.order.indexOf(id), b = state.order.indexOf(other); [state.order[a], state.order[b]] = [state.order[b], state.order[a]]; }
+  }
+  else if (act === 'done') toggleDone(id);
+  else if (act === 'hide') {
+    state.hidden = state.hidden.includes(id) ? state.hidden.filter(x => x !== id) : [...state.hidden, id];
+    if (!sequence().length) state.hidden = state.hidden.filter(x => x !== id);
+  }
+  else if (!act && sequence().includes(id)) state.current = id;
+  refresh();
+});
+
+/* Arrastrar: sobre un tema = antes/después de él (y pasa a su parte); sobre un encabezado = al inicio de esa parte */
+function clearDrop(){ document.querySelectorAll('.drop-before,.drop-after,.drop-into').forEach(x => x.classList.remove('drop-before','drop-after','drop-into')); }
+$('list').addEventListener('dragstart', e => {
+  const li = e.target.closest('li'); if (!li) return;
+  dragId = li.dataset.id; li.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', dragId); } catch(_) {}
+});
+$('list').addEventListener('dragover', e => {
+  if (!dragId) return;
+  const li = e.target.closest('li'), head = e.target.closest('.sec-head'), ol = e.target.closest('ol');
+  if (!li && !head && !ol) return;
+  e.preventDefault(); clearDrop();
+  if (li) { const r = li.getBoundingClientRect(); li.classList.add(e.clientY < r.top + r.height/2 ? 'drop-before' : 'drop-after'); }
+  else if (head) head.classList.add('drop-into');
+  else ol.closest('.sec').querySelector('.sec-head')?.classList.add('drop-into');
+});
+$('list').addEventListener('drop', e => {
+  if (!dragId) return;
+  e.preventDefault();
+  const li = e.target.closest('li'), cont = e.target.closest('.sec');
+  state.order = state.order.filter(x => x !== dragId);
+  if (li && li.dataset.id !== dragId) {
+    const target = li.dataset.id, after = li.classList.contains('drop-after');
+    state.sec[dragId] = state.sec[target];
+    state.order.splice(state.order.indexOf(target) + (after ? 1 : 0), 0, dragId);
+  } else if (cont) {
+    const sid = cont.dataset.sec, first = slidesIn(sid).filter(x => x !== dragId)[0];
+    state.sec[dragId] = sid;
+    if (first) state.order.splice(state.order.indexOf(first), 0, dragId);
+    else state.order.push(dragId);
+  } else state.order.push(dragId);
+  dragId = null; clearDrop(); refresh();
+});
+$('list').addEventListener('dragend', () => { dragId = null; clearDrop(); renderList(); });
+
+$('resetOrder').onclick = () => { const c = state.current, d = state.done; state = defaults(); state.current = c; state.done = d; refresh(); };
+
+/* ---------- Diapositivas generadas ---------- */
+function htmlPortada(){
+  const parts = SECTIONS.filter(S => S.cover && !state.hiddenSec.includes(S.id)).map(S => {
+    const ids = slidesIn(S.id).filter(id => !state.hidden.includes(id));
+    const plan = S.planned || [];
+    const list = `<ul>${ids.map(id => `<li>${byId[id].title}</li>`).join('')}`
+      + (plan.length ? (ids.length ? `<li style="opacity:.6">+ ${plan.length} temas en preparación</li>` : plan.slice(0,5).map(t => `<li>${t}</li>`).join('') + (plan.length>5?'<li>…</li>':'')) : '')
+      + `</ul>`;
+    const d = ids.filter(id => state.done.includes(id)).length;
+    const pp = ids.length ? `<div class="pp">${d} de ${ids.length} vistos<div class="meter"><div style="width:${Math.round(d/ids.length*100)}%"></div></div></div>` : '';
+    return `<div class="part" data-go="${coverId(S.id)}" style="--c:${S.color}"><div class="pk">Parte ${S.n}</div><h3>${S.label}</h3>${list}${pp}</div>`;
+  }).join('');
+  return `<div class="slide-inner">
+    <div class="kicker">Taller · APIs y Postman</div>
+    <h2>¿Qué es una API<br>y cómo se prueba?</h2>
+    <p>De entender cómo se comunican las aplicaciones a probar APIs en Postman, automatizarlas con Git y Jenkins, y una mirada a cómo se comportan bajo carga.</p>
+    <div class="presenter" data-go="sobre-mi"><img src="img/marco.jpg" alt=""><div><small>Presentado por</small><b>Marco Antonio Mamani Chura</b><small>Sr. QA Automation Engineer · BancoSol</small></div></div>
+    <div class="parts">${parts}</div></div>`;
+}
+function htmlCover(S){
+  const ids = slidesIn(S.id).filter(id => !state.hidden.includes(id));
+  const plan = S.planned || [];
+  const rows = ids.map((id,i) => `<div data-go="${id}" class="${state.done.includes(id)?'seen':''}" style="cursor:pointer"><b>${i+1}</b><span>${byId[id].title}<br><small>${byId[id].subtitle||''}</small></span></div>`).join('')
+    + plan.map((t,i) => `<div class="soon"><b>${ids.length+i+1}</b><span>${t}<br><small>en preparación</small></span></div>`).join('');
+  const many = ids.length + plan.length > 8;
+  return `<div class="slide-inner" style="--c:${S.color}">
+    <div class="sec-big">0${S.n}</div>
+    <div class="kicker">Parte ${S.n}</div>
+    <h2>${S.label}</h2>
+    <p>${S.subtitle}</p>
+    <div class="agenda" ${many ? 'style="grid-template-columns:1fr 1fr;max-width:1100px"' : ''}>${rows}</div></div>`;
+}
+function htmlCierre(){
+  return `<div class="slide-inner">
+    <div class="kicker">Para llevarse</div>
+    <h2>Ideas clave</h2>
+    <div class="agenda" style="--c:#59a9e6">
+      <div><b>1</b><span>Una <strong>API</strong> es el intermediario entre aplicaciones: recibe un request y devuelve un response, según un contrato.</span></div>
+      <div><b>2</b><span>Un <strong>endpoint</strong> es método + ruta. El método dice la acción; la URL dice sobre qué recurso.</span></div>
+      <div><b>3</b><span>El <strong>status code</strong> es lo primero que se valida, pero no lo único: también el body, los tiempos y las reglas de negocio.</span></div>
+      <div style="--c:#f3a43b"><b>4</b><span><strong>Postman</strong> permite repetir, organizar y automatizar esas validaciones.</span></div>
+      <div style="--c:#a982e2"><b>5</b><span>Que una API funcione con un usuario no garantiza que funcione con muchos: para eso están las <strong>pruebas de carga</strong>.</span></div>
+    </div></div>`;
+}
+
+/* ---------- Escenario ---------- */
+let shownId = null;
+function renderStage(force){
+  if (typeof presenterOn !== 'undefined' && presenterOn) return;
+  const id = state.current, generated = isCover(id) || !byId[id].src;
+  if (!force && !generated && shownId === id) return;       // no recargar una demo si solo cambió el orden
+  shownId = id;
+  if (!generated) {
+    $('stage').innerHTML = `<iframe src="${byId[id].src}" title="${byId[id].title}"></iframe>`;
+    $('stage').firstChild.addEventListener('load', () => setTimeout(() => window.focus(), 50));
+    return;
+  }
+  const html = isCover(id) ? htmlCover(secById[id.slice(4)]) : id === 'portada' ? htmlPortada() : id === 'cierre' ? htmlCierre() : byId[id].html;
+  $('stage').innerHTML = `<div class="inline">${html}</div>`;
+}
+$('stage').addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'); if (!g) return;
+  if (sequence().includes(g.dataset.go)) { state.current = g.dataset.go; refresh(); }
+});
+
+function refresh(){
+  const seq = sequence(); if (!seq.includes(state.current)) state.current = seq[0];
+  const i = seq.indexOf(state.current), S = secOf(state.current);
+  renderList(); renderStage();
+  $('count').textContent = `${i+1} / ${seq.length}`;
+  $('curTitle').innerHTML = (S && S.label ? `<b style="--c:${S.color}">Parte ${S.n}</b> · ` : '') + titleOf(state.current);
+  $('progress').style.width = ((i+1) / seq.length * 100) + '%';
+  $('progress').style.background = S?.color || 'var(--orange)';
+  $('prev').disabled = i === 0; $('next').disabled = i === seq.length-1;
+  const trk = !isCover(state.current), dn = state.done.includes(state.current);
+  $('markDone').disabled = !trk;
+  $('markDone').classList.toggle('on', trk && dn);
+  $('markDone').textContent = trk && dn ? '✓ Visto' : '☐ Visto';
+  const all = trackable(), d = all.filter(id => state.done.includes(id)).length;
+  $('overall').innerHTML = `Avance del taller: <b style="color:var(--text)">${d} de ${all.length}</b> temas vistos (${all.length?Math.round(d/all.length*100):0}%)<div class="meter"><div style="width:${all.length?d/all.length*100:0}%"></div></div>`;
+  const fp = firstPending();
+  $('goPending').disabled = !fp;
+  $('goPending').textContent = fp ? '⏭ Continuar donde me quedé' : '🎉 Todo visto';
+  $('checkAll').disabled = d === all.length; $('uncheckAll').disabled = d === 0;
+  $('pCount').textContent = `${i+1} / ${seq.length}`;
+  $('pTitle').textContent = titleOf(state.current);
+  $('pPrev').disabled = i === 0; $('pNext').disabled = i === seq.length-1;
+  $('pDone').disabled = !trk; $('pDone').textContent = trk && dn ? '✓ Visto' : '☐ Visto';
+  $('pDone').style.cssText = trk && dn ? 'background:var(--green);color:#111;border-color:var(--green)' : '';
+  if (typeof updatePresenter === 'function') updatePresenter();
+  saveState();
+}
+function toggleDone(id){
+  if (isCover(id)) return;
+  state.done = state.done.includes(id) ? state.done.filter(x => x !== id) : [...state.done, id];
+}
+$('markDone').onclick = () => { toggleDone(state.current); refresh(); };
+$('goPending').onclick = () => {
+  const p = firstPending(); if (!p) return;
+  state.current = p;
+  state.closed = state.closed.filter(x => x !== state.sec[p]);   // abrir su parte si estaba colapsada
+  refresh();
+  document.querySelector(`li[data-id="${p}"]`)?.scrollIntoView({block:'center',behavior:'smooth'});
+};
+$('checkAll').onclick = () => { state.done = [...new Set([...state.done, ...trackable()])]; refresh(); };
+$('uncheckAll').onclick = () => {
+  if (state.done.length && !confirm('¿Desmarcar todos los temas vistos?')) return;
+  state.done = []; refresh();
+};
+function go(delta){
+  const seq = sequence(), i = seq.indexOf(state.current) + delta;
+  if (i >= 0 && i < seq.length) { state.current = seq[i]; refresh(); }
+}
+
+$('prev').onclick = () => go(-1);
+$('next').onclick = () => go(1);
+$('toggleSide').onclick = () => document.body.classList.toggle('collapsed');
+/* ---------- Modo proyección ---------- */
+const NOTE_KEYS = 'En proyección: <kbd>←</kbd> <kbd>→</kbd> navegar · <kbd>V</kbd> marcar visto · <kbd>B</kbd> pantalla negra · <kbd>Esc</kbd> salir.';
+async function enterPresent(screen){
+  closeModal();
+  try {
+    await document.documentElement.requestFullscreen(screen ? { screen } : undefined);
+  } catch (e) {
+    try { await document.documentElement.requestFullscreen(); } catch (_) {}
+  }
+}
+function setPresent(on){
+  document.body.classList.toggle('present', on);
+  if (!on) { $('blackout').classList.remove('on'); document.body.classList.remove('idle'); }
+  else wake();
+}
+document.addEventListener('fullscreenchange', () => setPresent(!!document.fullscreenElement));
+
+let idleT = null;
+function wake(){
+  document.body.classList.remove('idle');
+  clearTimeout(idleT);
+  idleT = setTimeout(() => { if (document.body.classList.contains('present')) document.body.classList.add('idle'); }, 2500);
+}
+document.addEventListener('mousemove', () => { if (document.body.classList.contains('present')) wake(); });
+
+let curScreen = null;
+function screenCard(sc, i, current){
+  const here = current && sc.left === current.left && sc.top === current.top;
+  const name = sc.label || (sc.isInternal ? 'Pantalla del equipo' : `Pantalla ${i+1}`);
+  const tags = [sc.isPrimary ? '<span>Principal</span>' : '', sc.isInternal ? '<span>Integrada</span>' : '<span>Externa / proyector</span>',
+                here ? '<span class="here">Aquí está esta ventana</span>' : ''].join('');
+  const mode = here ? 'Solo pantalla completa aquí' : '📽 Proyectar aquí + vista del presentador en esta pantalla';
+  return `<button class="scr" data-i="${i}"><div class="mon">${sc.isInternal ? '💻' : '📽'}</div>
+    <b>${name}</b><small>${sc.width} × ${sc.height}</small><div class="tags">${tags}</div><small style="margin-top:8px;color:var(--text)">${mode}</small></button>`;
+}
+let screenList = [];
+async function openProjector(){
+  $('screenModal').classList.add('on');
+  $('screens').innerHTML = '';
+  $('mNote').innerHTML = NOTE_KEYS;
+  if (!('getScreenDetails' in window)) {
+    $('mSub').innerHTML = 'Este navegador no permite elegir pantalla. Se proyectará en la pantalla donde está esta ventana.';
+    $('screens').innerHTML = `<button class="scr" data-i="-1"><div class="mon">🖥</div><b>Esta pantalla</b><small>${screen.width} × ${screen.height}</small></button>`;
+    $('mNote').innerHTML = 'Para usar el proyector: arrastra esta ventana a esa pantalla y vuelve a presionar <b>Proyectar</b>. En Windows, <kbd>Win</kbd>+<kbd>P</kbd> cambia entre duplicar y extender.<br>' + NOTE_KEYS;
+    return;
+  }
+  try {
+    const det = await window.getScreenDetails();
+    screenList = det.screens;
+    if (screenList.length === 1) {
+      $('mSub').innerHTML = 'Solo se detecta <b>una pantalla</b>. Si conectaste un proyector, en Windows presiona <kbd>Win</kbd>+<kbd>P</kbd> y elige <b>Extender</b> para que aparezca aquí.';
+    } else {
+      $('mSub').innerHTML = `Se detectaron <b>${screenList.length} pantallas</b>. Elige dónde mostrar la presentación:`;
+    }
+    curScreen = det.currentScreen;
+    $('screens').innerHTML = screenList.map((sc, i) => screenCard(sc, i, det.currentScreen)).join('');
+    det.onscreenschange = () => { if ($('screenModal').classList.contains('on')) openProjector(); };
+  } catch (e) {
+    $('mSub').innerHTML = 'No se otorgó permiso para ver las pantallas conectadas. Se puede proyectar en <b>esta pantalla</b>.';
+    $('screens').innerHTML = `<button class="scr" data-i="-1"><div class="mon">🖥</div><b>Esta pantalla</b><small>${screen.width} × ${screen.height}</small></button>`;
+    $('mNote').innerHTML = 'Para elegir pantalla, permite “Administración de ventanas” desde el ícono del candado en la barra de direcciones.<br>' + NOTE_KEYS;
+  }
+}
+function closeModal(){ $('screenModal').classList.remove('on'); }
+$('screens').onclick = e => {
+  const b = e.target.closest('.scr'); if (!b) return;
+  const i = +b.dataset.i, sc = i >= 0 ? screenList[i] : null;
+  const here = !sc || (curScreen && sc.left === curScreen.left && sc.top === curScreen.top);
+  if (here) enterPresent(sc); else startPresenter(sc);
+};
+$('mCancel').onclick = closeModal;
+$('mManual').onclick = () => startPresenter(null);
+$('screenModal').onclick = e => { if (e.target.id === 'screenModal') closeModal(); };
+
+$('fs').onclick = openProjector;
+$('pPrev').onclick = () => go(-1);
+$('pNext').onclick = () => go(1);
+$('pDone').onclick = () => $('markDone').click();
+$('pBlack').onclick = () => $('blackout').classList.toggle('on');
+$('blackout').onclick = () => $('blackout').classList.remove('on');
+$('pExit').onclick = () => document.exitFullscreen();
+
+document.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea,select')) return;
+  if (AUDIENCE) {                       // en el proyector, las teclas controlan al presentador
+    if (['ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); bc && bc.postMessage({ t:'nav', d:1 }); }
+    else if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); bc && bc.postMessage({ t:'nav', d:-1 }); }
+    else if (e.key.toLowerCase() === 'b') { const on = !$('blackout').classList.contains('on'); $('blackout').classList.toggle('on', on); bc && bc.postMessage({ t:'black', on }); }
+    return;
+  }
+  if (['ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); go(1); }
+  else if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
+  else if (e.key === 'Home') { state.current = sequence()[0]; refresh(); }
+  else if (e.key === 'End') { state.current = sequence().at(-1); refresh(); }
+  else if (e.key.toLowerCase() === 't') document.body.classList.toggle('collapsed');
+  else if (e.key === 'F5' || e.key.toLowerCase() === 'p' || e.key.toLowerCase() === 'f') { e.preventDefault(); if (!document.fullscreenElement) openProjector(); }
+  else if (e.key.toLowerCase() === 'b' && presenterOn) toggleBlack();
+  else if (e.key.toLowerCase() === 'b' && document.body.classList.contains('present')) $('blackout').classList.toggle('on');
+  else if (e.key === 'Escape') closeModal();
+  else if (e.key.toLowerCase() === 'v') $('markDone').click();
+});
+
+/* =====================================================================
+   VISTA DEL PRESENTADOR + VENTANA DEL PÚBLICO
+   Las dos ventanas se sincronizan con BroadcastChannel (mismo origen).
+   ===================================================================== */
+const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('taller-deck') : null;
+let audWin = null, presenterOn = false, pvStart = 0, pvTick = null, blackOn = false, lastPing = 0;
+
+function previewHTML(id){
+  if (!id) return '<div class="end">Fin de la presentación</div>';
+  if (!isCover(id) && byId[id].src) return `<div class="scaler"><iframe src="${byId[id].src}" tabindex="-1"></iframe></div>`;
+  const html = isCover(id) ? htmlCover(secById[id.slice(4)]) : id === 'portada' ? htmlPortada() : id === 'cierre' ? htmlCierre() : byId[id].html;
+  return `<div class="scaler"><div class="inline">${html}</div></div>`;
+}
+function fitScalers(){
+  document.querySelectorAll('#presenter .frame').forEach(f => {
+    const sc = f.querySelector('.scaler'); if (sc) sc.style.transform = `scale(${f.clientWidth / 1280})`;
+  });
+}
+window.addEventListener('resize', fitScalers);
+let pvShown = { now:null, next:null };
+function updatePresenter(){
+  if (!presenterOn) return;
+  const seq = sequence(), i = seq.indexOf(state.current), nxt = seq[i+1] || null, S = secOf(state.current);
+  // solo recargar un iframe si cambió su tema (en temas generados, siempre re-renderizar para reflejar avance)
+  if (pvShown.now !== state.current || !byId[state.current]?.src) { $('pvNow').innerHTML = previewHTML(state.current); pvShown.now = state.current; }
+  if (pvShown.next !== nxt || !(nxt && byId[nxt]?.src)) { $('pvNext').innerHTML = previewHTML(nxt); pvShown.next = nxt; }
+  fitScalers();
+  $('pvNowT').textContent = titleOf(state.current);
+  $('pvNextT').textContent = nxt ? titleOf(nxt) : '—';
+  $('pvWhere').innerHTML = (S && S.label ? `<b style="--c:${S.color}">Parte ${S.n} · ${S.label}</b>` : '<b>Taller · APIs y Postman</b>');
+  $('pvCount').textContent = `${i+1} / ${seq.length}`;
+  $('pvPrev').disabled = i === 0; $('pvNextBtn').disabled = !nxt;
+  const trk = !isCover(state.current), dn = state.done.includes(state.current);
+  $('pvDone').disabled = !trk; $('pvDone').textContent = trk && dn ? '✓ Visto' : '☐ Visto';
+  $('pvDone').style.cssText = trk && dn ? 'background:var(--green);color:#111;border-color:var(--green)' : '';
+  $('pvList').innerHTML = seq.slice(i+1, i+9).map((id, k) =>
+    `<div data-go="${id}" class="${state.done.includes(id)?'ok':''}"><b>${i+k+2}</b><span>${titleOf(id)}</span></div>`).join('') || '<div>No hay más temas.</div>';
+  send({ t:'go', id: state.current, black: blackOn });
+}
+$('pvList').onclick = e => { const g = e.target.closest('[data-go]'); if (g) { state.current = g.dataset.go; refresh(); } };
+function send(m){ if (bc) bc.postMessage(m); }
+
+function fmt(ms){ const t = Math.floor(ms/1000), h = Math.floor(t/3600), m = Math.floor(t%3600/60), s2 = t%60; return [h,m,s2].map(x => String(x).padStart(2,'0')).join(':'); }
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 3500);
+}
+function tickPresenter(){
+  if (!audWin || audWin.closed) { endPresenter('Proyección finalizada: se cerró la ventana del proyector.'); return; }
+  $('pvTimer').textContent = fmt(Date.now() - pvStart);
+  $('pvClock').textContent = new Date().toLocaleTimeString('es-BO', { hour:'2-digit', minute:'2-digit' });
+  const alive = audWin && !audWin.closed && Date.now() - lastPing < 4000;
+  $('pvLive').textContent = alive ? '● Proyector conectado' : '● Proyector desconectado';
+  $('pvLive').classList.toggle('on', !!alive);
+}
+
+function startPresenter(sc){
+  closeModal();
+  const feat = sc ? `popup,left=${sc.availLeft},top=${sc.availTop},width=${sc.availWidth},height=${sc.availHeight}` : 'popup,width=1280,height=720';
+  audWin = window.open(location.pathname + '?view=audience', 'tallerProyector', feat);
+  if (!audWin) { alert('El navegador bloqueó la ventana del proyector. Permite las ventanas emergentes para este sitio y vuelve a intentarlo.'); return; }
+  presenterOn = true; blackOn = false; pvStart = Date.now(); pvShown = { now:null, next:null };
+  document.body.classList.add('presenter');
+  $('stage').innerHTML = ''; shownId = null;                 // la vista principal no necesita su propia copia
+  clearInterval(pvTick); pvTick = setInterval(tickPresenter, 500); tickPresenter();
+  $('pvBlack').classList.remove('on');
+  updatePresenter();
+}
+function endPresenter(msg){
+  if (!presenterOn) return;
+  presenterOn = false; clearInterval(pvTick);
+  send({ t:'end' });
+  try { if (audWin && !audWin.closed) audWin.close(); } catch(_) {}
+  audWin = null;
+  document.body.classList.remove('presenter');
+  $('pvNow').innerHTML = $('pvNext').innerHTML = '';
+  renderStage(true);
+  refresh();
+  toast(msg || 'Proyección finalizada.');
+}
+function toggleBlack(){
+  blackOn = !blackOn; $('pvBlack').classList.toggle('on', blackOn);
+  send({ t:'black', on: blackOn });
+}
+
+$('pvPrev').onclick = () => go(-1);
+$('pvNextBtn').onclick = () => go(1);
+$('pvDone').onclick = () => $('markDone').click();
+$('pvBlack').onclick = toggleBlack;
+$('pvEnd').onclick = () => endPresenter();
+$('pvTimerReset').onclick = () => { pvStart = Date.now(); tickPresenter(); };
+window.addEventListener('beforeunload', () => { if (presenterOn) send({ t:'end' }); });
+
+if (bc && !AUDIENCE) bc.onmessage = ({ data: m }) => {
+  if (!presenterOn) return;
+  if (m.t === 'ready' || m.t === 'ping') { lastPing = Date.now(); if (m.t === 'ready') send({ t:'go', id: state.current, black: blackOn }); }
+  if (m.t === 'nav') go(m.d);
+  if (m.t === 'closed') setTimeout(() => { if (!audWin || audWin.closed) endPresenter('Proyección finalizada: se cerró la ventana del proyector.'); }, 800);
+  if (m.t === 'black') { blackOn = m.on; $('pvBlack').classList.toggle('on', blackOn); }
+};
+
+/* ---------- Comportamiento de la ventana del público ---------- */
+if (AUDIENCE) {
+  document.body.classList.add('audience');
+  document.title = 'Proyector · Taller APIs';
+  const showFsHint = () => document.body.classList.toggle('needFs', !document.fullscreenElement);
+  document.addEventListener('fullscreenchange', showFsHint); showFsHint();
+  $('fsHint').onclick = () => document.documentElement.requestFullscreen().catch(() => {});
+  let idleA = null;
+  document.addEventListener('mousemove', () => { document.body.classList.remove('idle'); clearTimeout(idleA); idleA = setTimeout(() => document.body.classList.add('idle'), 2500); });
+  if (bc) {
+    bc.onmessage = ({ data: m }) => {
+      if (m.t === 'go') {
+        const st = loadState(); state = st; state.current = m.id;
+        renderStage(); const seq = sequence(), i = seq.indexOf(m.id), S = secOf(m.id);
+        $('progress').style.width = ((i+1) / seq.length * 100) + '%'; $('progress').style.background = S?.color || 'var(--orange)';
+        $('blackout').classList.toggle('on', !!m.black);
+      }
+      if (m.t === 'black') $('blackout').classList.toggle('on', m.on);
+      if (m.t === 'end') window.close();
+    };
+    bc.postMessage({ t:'ready' });
+    setInterval(() => bc.postMessage({ t:'ping' }), 1500);
+    window.addEventListener('pagehide', () => bc.postMessage({ t:'closed' }));
+  }
+}
+
+/* =====================================================================
+   BREAK: pantalla de descanso con cuenta regresiva (tecla D)
+   Se sincroniza con la ventana del proyector por BroadcastChannel.
+   ===================================================================== */
+const BRK_KEY = 'tallerApis.break';
+let brk = null, brkTick = null, audioCtx = null, warned = false, rang = false;
+let brkTarget = { where:'here' }, brkWin = null, brkScreens = [], brkCur = null;
+const BREAK_WIN = AUDIENCE && new URLSearchParams(location.search).get('brk') === '1';   // ventana abierta solo para el break
+function brkPrefs(){ try { return JSON.parse(localStorage.getItem(BRK_KEY)) || {}; } catch(e) { return {}; } }
+function brkRemain(){ return !brk ? 0 : brk.paused ? brk.remain : Math.max(0, brk.end - Date.now()); }
+const two = n => String(n).padStart(2, '0');
+function fmtMs(ms){ const t = Math.ceil(ms / 1000); return `${two(Math.floor(t / 60))}:${two(t % 60)}`; }
+const hhmm = d => d.toLocaleTimeString('es-BO', { hour:'2-digit', minute:'2-digit' });
+
+function chime(notes, gap){
+  if (AUDIENCE || !brk || !brk.sound) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime + .05;
+    notes.forEach((f, i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+      const t = t0 + i * gap; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.35, t + .02); g.gain.exponentialRampToValueAtTime(.001, t + 1.1);
+      o.start(t); o.stop(t + 1.2);
+    });
+  } catch(e) {}
+}
+function brkRender(){
+  const mini = !AUDIENCE && !!brk && brk.where === 'remote';
+  const on = !!brk && !mini; $('brk').classList.toggle('on', on);
+  $('brkMini').classList.toggle('on', mini);
+  if (mini && brkWin && brkWin.closed) {          // cerraron a mano la ventana del break: mostrarlo aquí
+    brkWin = null; brk.where = 'here'; toast('Se cerró la ventana del break: ahora se muestra en esta pantalla.');
+    return brkRender();
+  }
+  if (mini) {
+    const rem = brkRemain(), done = rem <= 0;
+    $('brkMini').classList.toggle('done', done);
+    $('bmTime').textContent = done ? '00:00' : fmtMs(rem);
+    $('bmTxt').innerHTML = done ? '✅ <b>¡Tiempo cumplido!</b><br>Presiona Fin para continuar' : `☕ Break ${brk.paused ? 'en pausa' : 'en curso'}<br>se muestra en <b>${brk.whereName || 'otra pantalla'}</b>`;
+    $('bmBar').style.width = (brk.total ? Math.max(0, Math.min(1, rem / brk.total)) * 100 : 0) + '%';
+    $('bmPause').textContent = brk.paused ? '▶' : '⏸';
+    $('bmPause').disabled = $('bmMinus').disabled = $('bmPlus').disabled = done;
+    if (!done && !brk.paused && rem <= 60000 && !warned) { warned = true; chime([880], .3); }
+    if (done && !rang) { rang = true; chime([784, 988, 1175, 1568], .22); setTimeout(() => chime([784, 988, 1175, 1568], .22), 1600); }
+    return;
+  }
+  if (!on) return;
+  const rem = brkRemain(), done = rem <= 0;
+  $('brk').classList.toggle('done', done); $('brk').classList.toggle('paused', !!brk.paused && !done);
+  $('brkTitle').textContent = done ? '¡Volvemos! 🎉' : brk.msg;
+  $('brkSub').textContent = done ? 'Se terminó el descanso: continuamos con el taller' : brk.paused ? 'Break en pausa' : 'Tómate un café, estira las piernas';
+  $('brkTime').textContent = done ? '00:00' : fmtMs(rem);
+  $('brkState').textContent = done ? 'tiempo cumplido' : brk.paused ? 'en pausa' : 'restantes';
+  const frac = brk.total ? Math.max(0, Math.min(1, rem / brk.total)) : 0;
+  $('brkArc').style.strokeDashoffset = String(552.9 * (1 - frac));
+  $('brkArc').style.stroke = done ? '#57c785' : rem < 60000 ? '#ef6570' : '#f3a43b';
+  $('brkAt').textContent = brk.paused ? '— (en pausa)' : hhmm(new Date(brk.end));
+  $('brkNow').textContent = hhmm(new Date());
+  $('brkNext').textContent = brk.next || ''; $('brkNextW').style.display = brk.next ? '' : 'none';
+  $('brkPause').textContent = brk.paused ? '▶ Continuar' : '⏸ Pausar';
+  $('brkPause').disabled = $('brkMinus').disabled = $('brkPlus').disabled = done;
+  $('brkStop').textContent = done ? '✓ Continuar con el taller' : '✕ Terminar break';
+  if (!AUDIENCE) {
+    if (!done && !brk.paused && rem <= 60000 && !warned) { warned = true; chime([880], .3); }
+    if (done && !rang) { rang = true; chime([784, 988, 1175, 1568], .22); setTimeout(() => chime([784, 988, 1175, 1568], .22), 1600); }
+  }
+}
+function brkSend(){ if (bc && !AUDIENCE) bc.postMessage({ t:'break', brk: brk && brk.where !== 'here' ? brk : null }); }
+function brkStart(min, msg, sound, target){
+  const total = Math.round(min * 60000);
+  const t = target || { where:'here' };
+  brk = { total, end: Date.now() + total, paused: false, remain: total, msg, sound, next: titleOf(state.current), where: t.where, whereName: t.name || '' };
+  if (t.screen !== undefined) {                  // abrir una ventana solo para el break en la pantalla elegida
+    const sc = t.screen;
+    const feat = sc ? `popup,left=${sc.availLeft},top=${sc.availTop},width=${sc.availWidth},height=${sc.availHeight}` : 'popup,width=1280,height=720';
+    brkWin = window.open(location.pathname + '?view=audience&brk=1', 'tallerBreak', feat);
+    if (!brkWin) { brk.where = 'here'; toast('El navegador bloqueó la ventana: el break se muestra aquí. Permite las ventanas emergentes para este sitio.'); }
+  }
+  warned = total <= 60000; rang = false;
+  try { localStorage.setItem(BRK_KEY, JSON.stringify({ min, msg, sound })); } catch(e) {}
+  clearInterval(brkTick); brkTick = setInterval(brkRender, 250);
+  brkRender(); brkSend();
+}
+function brkStop(){
+  brk = null; clearInterval(brkTick); brkRender(); brkSend();
+  try { if (brkWin && !brkWin.closed) brkWin.close(); } catch(e) {}
+  brkWin = null;
+}
+function brkAdd(ms){
+  if (!brk) return;
+  if (brk.paused) brk.remain = Math.max(1000, brk.remain + ms); else brk.end = Math.max(Date.now() + 1000, brk.end + ms);
+  brk.total = Math.max(brk.total, brkRemain()); if (brkRemain() > 60000) warned = false;
+  brkRender(); brkSend();
+}
+function brkPause(){
+  if (!brk || brkRemain() <= 0) return;
+  if (brk.paused) { brk.end = Date.now() + brk.remain; brk.paused = false; } else { brk.remain = brkRemain(); brk.paused = true; }
+  brkRender(); brkSend();
+}
+function openBreak(){
+  if (AUDIENCE) return;
+  const pr = brkPrefs();
+  $('brkMin').value = pr.min || 15; $('brkMsg').value = pr.msg || 'Break · ya volvemos'; $('brkSound').checked = pr.sound !== false;
+  markPreset(); buildWhere(); $('brkModal').classList.add('on'); setTimeout(() => $('brkMin').focus(), 50);
+}
+function whereOpt(key, icon, name, sub, target){ return { key, icon, name, sub, target }; }
+let whereOpts = [];
+function paintWhere(){
+  $('brkWhere').innerHTML = whereOpts.map((o, i) => `<button class="wopt ${i === 0 ? 'on' : ''}" data-i="${i}"><i>${o.icon}</i><b>${o.name}</b><small>${o.sub}</small></button>`).join('');
+  brkTarget = whereOpts[0]?.target || { where:'here' };
+}
+async function buildWhere(){
+  const projecting = presenterOn && audWin && !audWin.closed;
+  $('brkWNote').innerHTML = '';
+  if (projecting) {
+    whereOpts = [
+      whereOpt('both', '📽💻', 'Proyector y esta pantalla', 'Todos ven el reloj, también tú', { where:'both', name:'el proyector' }),
+      whereOpt('remote', '📽', 'Solo en el proyector', 'Aquí verás un panel pequeño con el reloj', { where:'remote', name:'el proyector' }),
+      whereOpt('here', '💻', 'Solo en esta pantalla', 'El proyector sigue mostrando la diapositiva', { where:'here' }),
+    ];
+    paintWhere(); return;
+  }
+  whereOpts = [ whereOpt('here', '💻', 'Esta pantalla', 'Pantalla completa del break aquí', { where:'here' }) ];
+  paintWhere();
+  if (!('getScreenDetails' in window)) {
+    $('brkWNote').innerHTML = 'Este navegador no permite elegir otra pantalla. Usa la opción <b>Ventana aparte</b> y arrástrala al proyector.';
+  } else {
+    try {
+      const det = await window.getScreenDetails();
+      brkScreens = det.screens; brkCur = det.currentScreen;
+      const others = brkScreens.filter(sc => !(sc.left === brkCur.left && sc.top === brkCur.top));
+      others.forEach((sc, k) => {
+        const name = sc.label || (sc.isInternal ? 'Pantalla del equipo' : `Pantalla ${k + 2}`);
+        whereOpts.push(whereOpt('scr' + k, sc.isInternal ? '💻' : '📽', name, `${sc.width} × ${sc.height} · aquí verás un panel pequeño`, { where:'remote', screen: sc, name }));
+      });
+      if (!others.length) $('brkWNote').innerHTML = 'Solo se detecta <b>una pantalla</b>. Si conectaste el proyector, en Windows presiona <kbd>Win</kbd>+<kbd>P</kbd> → <b>Extender</b> y vuelve a abrir el break.';
+    } catch(e) {
+      $('brkWNote').innerHTML = 'Para elegir pantalla, permite “Administración de ventanas” en el candado de la barra de direcciones.';
+    }
+  }
+  whereOpts.push(whereOpt('win', '🪟', 'Ventana aparte', 'Se abre una ventana que puedes arrastrar a cualquier pantalla', { where:'remote', screen: null, name:'la ventana aparte' }));
+  const sel = $('brkWhere').querySelector('.wopt.on')?.dataset.i || 0;
+  paintWhere();
+  if ($('brkWhere').children[sel]) $('brkWhere').children[sel].click();
+}
+$('brkWhere').onclick = e => {
+  const b = e.target.closest('.wopt'); if (!b) return;
+  document.querySelectorAll('#brkWhere .wopt').forEach(x => x.classList.toggle('on', x === b));
+  brkTarget = whereOpts[+b.dataset.i].target;
+};
+function markPreset(){ document.querySelectorAll('#brkPresets button').forEach(b => b.classList.toggle('on', +b.dataset.m === +$('brkMin').value)); }
+$('brkPresets').onclick = e => { const b = e.target.closest('button'); if (!b) return; $('brkMin').value = b.dataset.m; markPreset(); };
+$('brkMin').oninput = markPreset;
+$('brkCancel').onclick = () => $('brkModal').classList.remove('on');
+$('brkModal').onclick = e => { if (e.target.id === 'brkModal') $('brkModal').classList.remove('on'); };
+$('brkStart').onclick = () => {
+  const min = Math.min(180, Math.max(1, parseFloat($('brkMin').value) || 15));
+  $('brkModal').classList.remove('on');
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch(e) {}   // habilitar sonido con este clic
+  brkStart(min, ($('brkMsg').value || 'Break · ya volvemos').trim(), $('brkSound').checked, brkTarget);
+};
+$('brkMinus').onclick = () => brkAdd(-60000);
+$('bmMinus').onclick = () => brkAdd(-60000);
+$('bmPlus').onclick = () => brkAdd(60000);
+$('bmPause').onclick = brkPause;
+$('bmStop').onclick = brkStop;
+$('brkPlus').onclick = () => brkAdd(60000);
+$('brkPause').onclick = brkPause;
+$('brkStop').onclick = brkStop;
+$('brkBtn').onclick = openBreak;
+$('pvBreak').onclick = openBreak;
+$('pBreak').onclick = openBreak;
+
+/* teclado: con el break abierto, las teclas lo controlan y no cambian de diapositiva */
+document.addEventListener('keydown', e => {
+  if (AUDIENCE) return;
+  if ($('brkModal').classList.contains('on')) {
+    if (e.key === 'Enter') { e.preventDefault(); $('brkStart').click(); }
+    if (e.key === 'Escape') $('brkModal').classList.remove('on');
+    e.stopImmediatePropagation(); return;
+  }
+  if (brk && brk.where !== 'remote') {
+    const k = e.key;
+    if (k === ' ') brkPause(); else if (k === '+' || k === 'ArrowUp') brkAdd(60000); else if (k === '-' || k === 'ArrowDown') brkAdd(-60000);
+    else if (k === 'Escape' || k === 'Enter') brkStop();
+    e.preventDefault(); e.stopImmediatePropagation(); return;
+  }
+  if (e.key.toLowerCase() === 'd' && !(e.target.closest && e.target.closest('input,textarea,select'))) { e.preventDefault(); e.stopImmediatePropagation(); openBreak(); }
+}, true);
+
+/* sincronización con el proyector */
+if (bc) bc.addEventListener('message', ({ data: m }) => {
+  if (AUDIENCE && m.t === 'break') {
+    brk = m.brk; clearInterval(brkTick);
+    if (brk) brkTick = setInterval(brkRender, 250);
+    brkRender();
+    if (!brk && BREAK_WIN) window.close();       // la ventana se abrió solo para el break
+  }
+  if (!AUDIENCE && m.t === 'ready' && brk) brkSend();      // el proyector se conectó durante un break
+});
+
+if (!AUDIENCE) refresh(); else renderStage();
+</script>
+</body>
+</html>

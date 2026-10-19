@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Request y response por dentro</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2;--teal:#7fd6c8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px;max-width:950px}
+h2{font-size:20px;margin:28px 0 12px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+button{padding:9px 13px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-weight:700;cursor:pointer;font-size:13px}
+button:hover{background:var(--panel2)}button.active{background:var(--orange);color:#111;border-color:var(--orange)}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+
+/* ---------- Mensajes ---------- */
+.msgs{display:grid;grid-template-columns:1fr 150px 1fr;gap:14px;align-items:stretch}
+.msg{background:#141820;border:1px solid var(--border);border-radius:12px;overflow:hidden;font-family:Consolas,monospace;font-size:12.5px;line-height:1.55}
+.msg .ttl{font-family:Segoe UI,Arial,sans-serif;font-weight:800;font-size:15px;padding:10px 14px;background:var(--panel2)}
+.zone{padding:8px 14px;white-space:pre-wrap;word-break:break-word;border-left:4px solid transparent;transition:background .25s,border-color .25s,opacity .25s;cursor:pointer}
+.zone.start{--z:var(--orange)}.zone.headers{--z:var(--blue)}.zone.blank{--z:var(--muted);min-height:26px}.zone.body{--z:var(--green)}
+.zone:hover,.zone.on{border-left-color:var(--z);background:color-mix(in srgb,var(--z) 14%,transparent)}
+.msgs.focus .zone:not(.on){opacity:.35}
+.labels{display:flex;flex-direction:column;justify-content:space-around;gap:8px;padding-top:42px}
+.labels div{text-align:center;font-size:12px;font-weight:800;padding:8px 6px;border-radius:9px;background:var(--panel);border:1px solid var(--border);cursor:pointer;transition:border-color .2s}
+.labels div.on{border-color:var(--z)}
+.labels .start{--z:var(--orange);color:var(--orange)}.labels .headers{--z:var(--blue);color:var(--blue)}.labels .blank{--z:var(--muted);color:var(--muted)}.labels .body{--z:var(--green);color:var(--green)}
+.explain{margin-top:14px;background:var(--panel2);border-radius:10px;padding:13px 15px;line-height:1.6;min-height:70px}
+.explain b{color:var(--orange)}
+.k{color:var(--blue)}.v{color:var(--text)}.m{color:var(--orange);font-weight:700}.ok{color:var(--green);font-weight:700}.a{color:var(--blue)}.s{color:var(--green)}.t{color:var(--purple)}.c{color:var(--muted)}
+
+/* ---------- Headers ---------- */
+.hgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.hcard{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 14px;transition:opacity .2s}
+.hcard.dim{opacity:.2}
+.hcard code{font-family:Consolas,monospace;color:var(--blue);font-weight:700;font-size:13px}
+.hcard .dir{float:right;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--panel2)}
+.dir.req{color:var(--orange)}.dir.res{color:var(--green)}.dir.both{color:var(--purple)}
+.hcard p{margin:6px 0 4px;font-size:13px;color:var(--muted);line-height:1.45}
+.hcard .ex{font-family:Consolas,monospace;font-size:11.5px;color:var(--text);background:#141820;border-radius:6px;padding:5px 8px;display:block;word-break:break-all}
+
+/* ---------- Tipos de respuesta ---------- */
+.types{display:grid;grid-template-columns:260px 1fr;gap:16px}
+.tlist{display:flex;flex-direction:column;gap:8px}
+.tlist button{text-align:left;padding:12px 14px;display:flex;gap:10px;align-items:center}
+.tlist button span{font-size:22px}
+.tlist button small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.tlist button.active small{color:#3a2a10}
+.tview pre{margin:10px 0 0;background:#141820;border-radius:10px;padding:14px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;min-height:250px}
+.ct{display:inline-block;font-family:Consolas,monospace;font-size:13px;background:var(--panel2);padding:6px 10px;border-radius:8px;margin-top:8px}
+.ct b{color:var(--blue)}
+.where{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.where div{background:var(--panel2);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.5;color:var(--muted)}
+.where b{display:block;color:var(--text);font-size:12px;margin-bottom:2px}
+.preview{margin-top:10px;background:#fff;color:#222;border-radius:10px;padding:14px;font-family:Arial,sans-serif;display:none}
+.preview.show{display:block}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+@media(max-width:900px){.msgs{grid-template-columns:1fr}.labels{flex-direction:row;flex-wrap:wrap;padding-top:0}.hgrid{grid-template-columns:1fr}.types{grid-template-columns:1fr}.where{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Request y response por dentro</h1>
+<div class="sub">Todo mensaje HTTP, sea una petición o una respuesta, tiene la <b>misma estructura de 4 partes</b>.
+Toca cada parte, o usa <b>Paso a paso</b>, para ver qué contiene. Ejemplo: una app consulta un cliente (datos ficticios).</div>
+
+<div class="controls">
+  <button id="stepBtn">⏭ Paso a paso</button>
+  <button id="allBtn">Ver todo</button>
+</div>
+
+<div class="msgs" id="msgs">
+  <div class="msg">
+    <div class="ttl" style="color:var(--orange)">➜ REQUEST</div>
+    <div class="zone start" data-z="start"><span class="m">GET</span> /api/v1/clientes/123 HTTP/1.1</div>
+    <div class="zone headers" data-z="headers"><span class="k">Host:</span> api-qa.demo.local
+<span class="k">User-Agent:</span> PostmanRuntime/7.39.0
+<span class="k">Accept:</span> application/json
+<span class="k">Accept-Encoding:</span> gzip, deflate, br
+<span class="k">Authorization:</span> Bearer eyJhbGciOi…
+<span class="k">Connection:</span> keep-alive</div>
+    <div class="zone blank" data-z="blank"><span class="c">↵ (línea vacía)</span></div>
+    <div class="zone body" data-z="body"><span class="c">(vacío: un GET no envía datos)</span></div>
+  </div>
+
+  <div class="labels" id="labels">
+    <div class="start" data-z="start">① Línea de inicio</div>
+    <div class="headers" data-z="headers">② Headers</div>
+    <div class="blank" data-z="blank">③ Línea vacía</div>
+    <div class="body" data-z="body">④ Body</div>
+  </div>
+
+  <div class="msg">
+    <div class="ttl" style="color:var(--green)">⬅ RESPONSE</div>
+    <div class="zone start" data-z="start">HTTP/1.1 <span class="ok">200 OK</span></div>
+    <div class="zone headers" data-z="headers"><span class="k">Date:</span> Thu, 01 Oct 2026 14:30:00 GMT
+<span class="k">Content-Type:</span> application/json; charset=utf-8
+<span class="k">Content-Length:</span> 84
+<span class="k">Cache-Control:</span> no-store
+<span class="k">X-Request-Id:</span> 7f3c2a91-…</div>
+    <div class="zone blank" data-z="blank"><span class="c">↵ (línea vacía)</span></div>
+    <div class="zone body" data-z="body">{
+  <span class="a">"id"</span>: 123,
+  <span class="a">"nombre"</span>: <span class="s">"Ana Rojas"</span>,
+  <span class="a">"estado"</span>: <span class="s">"activo"</span>
+}</div>
+  </div>
+</div>
+<div class="explain" id="explain">Toca una parte del mensaje para ver su explicación.</div>
+
+<h2>Headers más comunes</h2>
+<div class="controls" id="hfilter">
+  <button data-f="all" class="active">Todos</button>
+  <button data-f="req">Solo en request</button>
+  <button data-f="res">Solo en response</button>
+</div>
+<div class="hgrid" id="hgrid"></div>
+
+<h2>Tipos de respuesta</h2>
+<div class="small" style="font-size:14px;margin:-4px 0 14px">Una API puede responder en distintos formatos. El header <b style="color:var(--blue)">Content-Type</b> le dice al cliente qué tipo de contenido viene en el body y cómo interpretarlo.</div>
+<div class="types">
+  <div class="tlist" id="tlist"></div>
+  <div class="card tview" id="tview"></div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> la <strong>línea de inicio</strong> dice qué se pide (o cómo salió), los <strong>headers</strong> dan información sobre el mensaje, la <strong>línea vacía</strong> marca dónde terminan y el <strong>body</strong> lleva los datos.
+  En Postman, la respuesta muestra cada parte por separado: el <strong>status</strong> arriba a la derecha y las pestañas <strong>Body</strong> (con vistas Pretty, Raw y Preview) y <strong>Headers</strong>.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+
+/* ---------- Partes del mensaje ---------- */
+const Z={
+ start:'<b>① Línea de inicio.</b> En el <b>request</b> indica el <b>método</b> (GET), la <b>ruta</b> del recurso y la versión del protocolo. En el <b>response</b> indica la versión, el <b>status code</b> (200) y su texto (OK). Es lo primero que se lee de cada mensaje.',
+ headers:'<b>② Headers.</b> Pares <code>Nombre: valor</code> con información <b>sobre</b> el mensaje: quién lo envía, qué formato acepta o devuelve, credenciales, tamaño, cache… No son los datos en sí, sino su “etiqueta”.',
+ blank:'<b>③ Línea vacía.</b> Una línea en blanco que separa los headers del body. Parece un detalle, pero es obligatoria: así el servidor y el cliente saben dónde terminan los headers.',
+ body:'<b>④ Body.</b> Los <b>datos</b> del mensaje. En el request lo usan POST, PUT y PATCH para enviar información; un GET normalmente va vacío. En el response trae el resultado: aquí un JSON con el cliente.',
+};
+const ORDER=['start','headers','blank','body'];
+let stepI=-1;
+function focus(z){
+  $('msgs').classList.toggle('focus',!!z);
+  document.querySelectorAll('.zone,.labels div').forEach(e=>e.classList.toggle('on',e.dataset.z===z));
+  $('explain').innerHTML=z?Z[z]:'Toca una parte del mensaje para ver su explicación.';
+}
+document.querySelectorAll('.zone,.labels div').forEach(e=>e.onclick=()=>{stepI=ORDER.indexOf(e.dataset.z);focus(e.dataset.z)});
+$('stepBtn').onclick=()=>{stepI=(stepI+1)%ORDER.length;focus(ORDER[stepI])};
+$('allBtn').onclick=()=>{stepI=-1;focus(null)};
+
+/* ---------- Headers ---------- */
+const H=[
+ ['Content-Type','both','Formato del body que se está enviando.','Content-Type: application/json'],
+ ['Accept','req','Formato que el cliente quiere recibir.','Accept: application/json'],
+ ['Authorization','req','Credenciales para que la API sepa quién eres.','Authorization: Bearer eyJhbGciOi…'],
+ ['User-Agent','req','Qué programa hace la petición (navegador, Postman, app).','User-Agent: PostmanRuntime/7.39.0'],
+ ['Host','req','Servidor al que va dirigida la petición.','Host: api-qa.demo.local'],
+ ['Cookie','req','Cookies que el navegador devuelve al servidor.','Cookie: SESION=a81f…'],
+ ['Set-Cookie','res','El servidor le pide al cliente que guarde una cookie.','Set-Cookie: SESION=a81f…; HttpOnly; Secure'],
+ ['Cache-Control','both','Reglas de cache: si se puede guardar la respuesta y por cuánto tiempo.','Cache-Control: no-store'],
+ ['Content-Length','both','Tamaño del body en bytes.','Content-Length: 84'],
+ ['Location','res','URL del recurso recién creado (201) o del destino de una redirección (301).','Location: /api/v1/clientes/124'],
+ ['Content-Disposition','res','Indica que el body es un archivo para descargar y su nombre.','Content-Disposition: attachment; filename="extracto.pdf"'],
+ ['X-Request-Id','both','Identificador único de la petición, útil para rastrearla en los logs.','X-Request-Id: 7f3c2a91-…'],
+];
+const DIR={req:'REQUEST',res:'RESPONSE',both:'AMBOS'};
+$('hgrid').innerHTML=H.map(([n,d,p,e])=>`<div class="hcard" data-d="${d}"><span class="dir ${d}">${DIR[d]}</span><code>${n}</code><p>${p}</p><span class="ex">${e.replace(/</g,'&lt;')}</span></div>`).join('');
+$('hfilter').onclick=e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#hfilter button').forEach(x=>x.classList.toggle('active',x===b));
+  const f=b.dataset.f;
+  document.querySelectorAll('.hcard').forEach(c=>c.classList.toggle('dim',f!=='all'&&c.dataset.d!==f&&c.dataset.d!=='both'));
+};
+
+/* ---------- Tipos de respuesta ---------- */
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const T=[
+ {k:'json',ico:'🧾',n:'JSON',d:'El más común en APIs REST',ct:'application/json',
+  body:`{
+  "id": 123,
+  "nombre": "Ana Rojas",
+  "estado": "activo",
+  "productos": ["caja de ahorro", "tarjeta"]
+}`,
+  where:['APIs REST de apps web y móviles','Fácil de leer y de validar en Postman con pm.response.json()'],
+  note:'Objetos entre <code>{ }</code>, listas entre <code>[ ]</code>, y pares <code>"clave": valor</code>.'},
+ {k:'xml',ico:'📐',n:'XML',d:'Servicios SOAP y sistemas legados',ct:'application/xml',
+  body:`<cliente>
+  <id>123</id>
+  <nombre>Ana Rojas</nombre>
+  <estado>activo</estado>
+  <productos>
+    <producto>caja de ahorro</producto>
+    <producto>tarjeta</producto>
+  </productos>
+</cliente>`,
+  where:['Servicios SOAP (siempre XML)','Integraciones antiguas y algunos reguladores'],
+  note:'Los mismos datos que el JSON, pero con etiquetas de apertura y cierre. Es más largo de escribir y de leer.'},
+ {k:'html',ico:'🌐',n:'HTML',d:'Páginas web',ct:'text/html; charset=utf-8',
+  body:`<!DOCTYPE html>
+<html>
+  <body>
+    <h1>Cliente: Ana Rojas</h1>
+    <p>Estado: activo</p>
+  </body>
+</html>`,
+  preview:'<h3 style="margin:0 0 6px">Cliente: Ana Rojas</h3><p style="margin:0">Estado: activo</p>',
+  where:['Cuando se pide una página web, no una API','Error común: un endpoint de API que devuelve una página de error HTML en lugar de JSON'],
+  note:'Está pensado para que un navegador lo <b>dibuje</b>. En Postman se puede ver con la vista <b>Preview</b>.'},
+ {k:'text',ico:'📝',n:'Texto plano',d:'Mensajes simples',ct:'text/plain',
+  body:`OK`,
+  where:['Endpoints de salud: GET /health → "OK"','Mensajes de error muy simples'],
+  note:'Sin estructura: solo texto. Útil para respuestas mínimas, difícil de validar si trae mucha información.'},
+ {k:'pdf',ico:'📄',n:'Archivo (PDF)',d:'Descargas: extractos, reportes',ct:'application/pdf',
+  body:`%PDF-1.7
+%âãÏÓ
+1 0 obj << /Type /Catalog /Pages 2 0 R >>
+endobj
+… (datos binarios) …`,
+  extra:'Content-Disposition: attachment; filename="extracto.pdf"',
+  where:['Descargar un extracto o comprobante','En Postman: botón “Save response to file”'],
+  note:'El body no es texto legible sino <b>binario</b>. El header <code>Content-Disposition</code> indica que es un archivo y su nombre.'},
+ {k:'img',ico:'🖼️',n:'Imagen',d:'Fotos, logos, códigos QR',ct:'image/png',
+  body:`‰PNG
+␚
+IHDR … (datos binarios) …`,
+  where:['Generar o descargar un código QR','Fotos de perfil, documentos escaneados'],
+  note:'También es binario. Postman la muestra directamente como imagen en la pestaña Body.'},
+];
+$('tlist').innerHTML=T.map(t=>`<button data-k="${t.k}"><span>${t.ico}</span><div>${t.n}<small>${t.d}</small></div></button>`).join('');
+function showType(k){
+  const t=T.find(x=>x.k===k);
+  document.querySelectorAll('#tlist button').forEach(b=>b.classList.toggle('active',b.dataset.k===k));
+  $('tview').innerHTML=`<b style="font-size:17px">${t.ico} ${t.n}</b>
+    <div><span class="ct"><b>Content-Type:</b> ${t.ct}</span>${t.extra?` <span class="ct"><b>${esc(t.extra.split(':')[0])}:</b>${esc(t.extra.split(':').slice(1).join(':'))}</span>`:''}</div>
+    <pre>${esc(t.body)}</pre>
+    ${t.preview?`<div class="small" style="margin-top:10px">Vista <b>Preview</b> (como lo dibuja un navegador):</div><div class="preview show">${t.preview}</div>`:''}
+    <p class="small" style="font-size:13px;margin:10px 0 0">${t.note}</p>
+    <div class="where"><div><b>¿Dónde se ve?</b>${t.where[0]}</div><div><b>Dato útil</b>${t.where[1]}</div></div>`;
+}
+$('tlist').onclick=e=>{const b=e.target.closest('button');if(b)showType(b.dataset.k)};
+showType('json');
+})();
+</script>
+</body></html>

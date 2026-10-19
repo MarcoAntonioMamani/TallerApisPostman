@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tipos de pruebas de una API</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2;--teal:#7fd6c8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px;max-width:980px}
+h2{font-size:20px;margin:26px 0 12px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+button{padding:9px 13px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-weight:700;cursor:pointer;font-size:13px}
+button:hover{background:var(--panel2)}
+button:disabled{opacity:.45;cursor:default}
+
+/* ---------- pestañas de tipo ---------- */
+.types{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.type{background:var(--panel);border:2px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;text-align:left;color:var(--text);font-family:inherit;transition:border-color .15s,transform .15s}
+.type:hover{transform:translateY(-2px)}
+.type.active{border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--panel))}
+.type .ic{font-size:28px}
+.type b{display:block;font-size:18px;margin:6px 0 2px;color:var(--c)}
+.type .q{font-size:15px;font-weight:700}
+.type small{display:block;color:var(--muted);font-size:12.5px;margin-top:6px;line-height:1.45}
+.t-func{--c:var(--green)}.t-load{--c:var(--purple)}.t-sec{--c:var(--red)}
+
+.panel{display:none}.panel.on{display:block}
+.intro{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+.intro .card p{margin:0;line-height:1.6;color:var(--muted);font-size:14px}
+.intro .card p b{color:var(--text)}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.tools span{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--panel2);color:var(--text)}
+.checks{margin:6px 0 0;padding-left:18px;line-height:1.75;font-size:13.5px;color:var(--muted)}
+.checks b{color:var(--text)}
+
+/* ---------- ejecutor de casos ---------- */
+.runner{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+.rhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.rhead .sum{margin-left:auto;font-size:13px;font-weight:800}
+.rhead .sum .p{color:var(--green)}.rhead .sum .f{color:var(--red)}
+svg{width:100%;height:auto;display:block;background:#141820;border-radius:10px}
+.cases{margin-top:10px;display:grid;gap:6px}
+.case{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;background:var(--panel2);border:1px solid transparent;border-radius:9px;padding:9px 11px;cursor:pointer;font-size:13px;transition:border-color .2s,background .2s}
+.case:hover{border-color:var(--border)}
+.case.sel{border-color:var(--orange)}
+.case.running{background:#2a2418}
+.case .st{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:13px;background:#141820;color:var(--muted)}
+.case.pass .st{background:var(--green);color:#111}
+.case.fail .st{background:var(--red);color:#111}
+.case .nm b{display:block;font-size:13px}
+.case .nm code{font-family:Consolas,monospace;font-size:11.5px;color:var(--muted)}
+.case .res{font-family:Consolas,monospace;font-size:12px;font-weight:700;color:var(--muted);text-align:right}
+.case.pass .res{color:var(--green)}.case.fail .res{color:var(--red)}
+.detail h4{margin:0 0 4px;font-size:15px}
+.detail .kv{display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:13px;margin-top:10px}
+.detail .kv span:nth-child(odd){color:var(--muted);font-weight:700;font-size:12px}
+.detail code,.detail pre{font-family:Consolas,monospace;font-size:12px}
+.detail pre{margin:0;background:#141820;border-radius:8px;padding:8px 10px;white-space:pre-wrap;word-break:break-word}
+.asserts{margin-top:10px;display:grid;gap:5px}
+.asserts div{font-size:12.5px;padding:6px 9px;border-radius:7px;background:var(--panel2);display:flex;gap:8px}
+.asserts .ok{color:var(--green)}.asserts .ko{color:var(--red)}
+.bug{margin-top:10px;border-radius:9px;padding:10px 12px;font-size:13px;line-height:1.55}
+.bug.ko{background:rgba(239,101,112,.12);border:1px solid rgba(239,101,112,.5)}
+.bug.ok{background:rgba(87,199,133,.1);border:1px solid rgba(87,199,133,.4)}
+.bug b{color:var(--text)}
+
+/* ---------- carga ---------- */
+.profiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.prof{background:var(--panel);border:2px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;color:var(--text);font-family:inherit}
+.prof.active{border-color:var(--purple);background:color-mix(in srgb,var(--purple) 10%,var(--panel))}
+.prof b{display:block;font-size:14px}
+.prof small{display:block;color:var(--muted);font-size:11.5px;line-height:1.4;margin-top:3px}
+.prof svg{background:none;height:34px;margin-top:6px}
+.lgrid{display:grid;grid-template-columns:1.5fr .5fr;gap:14px}
+.lmetrics{display:grid;gap:8px}
+.lm{background:var(--panel2);border-radius:10px;padding:10px;text-align:center}
+.lm b{display:block;font-size:22px}
+.lm span{font-size:11px;color:var(--muted)}
+.lm.bad b{color:var(--red)}.lm.good b{color:var(--green)}
+.thr{margin-top:10px;display:grid;gap:6px}
+.thr div{font-size:12.5px;padding:7px 9px;border-radius:8px;background:var(--panel2);display:flex;justify-content:space-between;gap:8px}
+.thr .ok{color:var(--green);font-weight:800}.thr .ko{color:var(--red);font-weight:800}.thr .pend{color:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:4px;margin-right:5px;vertical-align:middle;border-radius:2px}
+.verdict{margin-top:10px;border-radius:10px;padding:11px 13px;font-size:13.5px;line-height:1.55;background:var(--panel2);min-height:46px}
+.verdict b{color:var(--text)}
+
+/* ---------- errores comunes y otros tipos ---------- */
+.mistakes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.mk{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.5;color:var(--muted);display:flex;gap:10px}
+.mk .x{color:var(--red);font-weight:900}
+.mk b{color:var(--text)}
+.others{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.others div{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.others b{display:block;color:var(--text);font-size:14px;margin-bottom:3px}
+.warn{margin-top:10px;font-size:12.5px;color:var(--muted);background:rgba(239,101,112,.08);border:1px dashed rgba(239,101,112,.5);border-radius:10px;padding:9px 12px}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+@media(max-width:900px){.types,.intro,.runner,.lgrid,.mistakes{grid-template-columns:1fr}.profiles{grid-template-columns:1fr 1fr}.others{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Tipos de pruebas de una API</h1>
+<div class="sub">Una misma API se prueba desde distintos ángulos. Cada tipo de prueba responde una <b>pregunta diferente</b> y encuentra <b>defectos distintos</b>.
+Elige un tipo y ejecuta los ejemplos animados (datos y API ficticios).</div>
+
+<div class="types" id="types">
+  <button class="type t-func active" data-t="func"><span class="ic">✅</span><b>Funcionales</b><span class="q">¿Hace lo correcto?</span><small>Verifican que cada endpoint responda lo esperado: datos, status, reglas de negocio y errores.</small></button>
+  <button class="type t-load" data-t="load"><span class="ic">📈</span><b>De carga / rendimiento</b><span class="q">¿Aguanta cuando muchos la usan?</span><small>Miden tiempos de respuesta, capacidad y errores con muchos usuarios simultáneos.</small></button>
+  <button class="type t-sec" data-t="sec"><span class="ic">🔐</span><b>De seguridad</b><span class="q">¿Está protegida?</span><small>Verifican que solo quien debe pueda ver o modificar cada dato, y que la API no se pueda abusar.</small></button>
+</div>
+
+<!-- =================== FUNCIONALES =================== -->
+<section class="panel on" id="p-func">
+  <div class="intro">
+    <div class="card"><p><b>Prueba funcional:</b> se envía un request con datos conocidos y se compara la respuesta real contra la <b>esperada</b>. No basta con que “responda”: tiene que responder <b>correctamente</b>, también cuando los datos son inválidos.</p>
+      <div class="tools"><span>Postman</span><span>Newman</span><span>Karate</span><span>REST Assured</span></div></div>
+    <div class="card"><b style="font-size:14px">Qué se valida</b>
+      <ul class="checks"><li><b>Status code</b> correcto (200, 201, 404…)</li><li><b>Body</b>: campos, tipos y valores</li><li><b>Reglas de negocio</b> y casos negativos</li><li><b>Efecto en los datos</b> (consultar después)</li></ul></div>
+  </div>
+  <div class="runner" data-suite="func"></div>
+</section>
+
+<!-- =================== CARGA =================== -->
+<section class="panel" id="p-load">
+  <div class="intro">
+    <div class="card"><p><b>Prueba de carga:</b> se simulan muchos <b>usuarios virtuales (VUs)</b> llamando a la API al mismo tiempo, y se miden los tiempos y errores. Se define antes qué es aceptable (<b>umbrales</b>), por ejemplo: <i>el 95 % de las respuestas en menos de 800 ms y menos de 1 % de errores</i>.</p>
+      <div class="tools"><span>k6</span><span>JMeter</span><span>Gatling</span><span>Grafana</span></div></div>
+    <div class="card"><b style="font-size:14px">Qué se mide</b>
+      <ul class="checks"><li><b>p95</b>: el tiempo en que responde el 95 % de los requests</li><li><b>Throughput</b>: requests por segundo</li><li><b>% de errores</b> (5xx, timeouts)</li><li><b>Capacidad</b>: cuántos usuarios soporta</li></ul></div>
+  </div>
+  <div class="profiles" id="profiles"></div>
+  <div class="lgrid">
+    <div class="card">
+      <div class="rhead"><button id="lPlay">▶ Ejecutar prueba</button><button id="lReset">↻ Reiniciar</button><span class="small" id="lClock" style="margin-left:auto"></span></div>
+      <svg id="lane" viewBox="0 0 760 64"></svg>
+      <svg id="chart" viewBox="0 0 760 260" style="margin-top:8px"></svg>
+      <div class="legend"><span><i style="background:var(--purple)"></i>Usuarios virtuales (VUs)</span><span><i style="background:var(--blue)"></i>Tiempo de respuesta p95</span><span><i style="background:var(--red)"></i>% de errores</span><span><i style="background:var(--orange)"></i>Umbral p95 = 800 ms</span></div>
+      <div class="verdict" id="lVerdict"></div>
+    </div>
+    <div>
+      <div class="lmetrics">
+        <div class="lm" id="mV"><b>0</b><span>VUs activos</span></div>
+        <div class="lm" id="mR"><b>0</b><span>requests / s</span></div>
+        <div class="lm" id="mP"><b>—</b><span>p95</span></div>
+        <div class="lm" id="mE"><b>0 %</b><span>errores</span></div>
+      </div>
+      <div class="thr" id="thr"></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== SEGURIDAD =================== -->
+<section class="panel" id="p-sec">
+  <div class="intro">
+    <div class="card"><p><b>Prueba de seguridad:</b> se intenta usar la API <b>como no se debería</b>: sin credenciales, con permisos de otro usuario, con datos maliciosos o abusando de ella. Lo esperado es que la API <b>lo impida</b> con una respuesta controlada (401, 403, 400, 429…).</p>
+      <div class="tools"><span>Postman</span><span>OWASP ZAP</span><span>Burp Suite</span><span>OWASP API Top 10</span></div></div>
+    <div class="card"><b style="font-size:14px">Qué se valida</b>
+      <ul class="checks"><li><b>Autenticación</b>: sin token o con token vencido</li><li><b>Autorización</b>: acceder a datos de otro usuario</li><li><b>Validación</b> de entradas maliciosas</li><li><b>Exposición</b> de datos y <b>límite</b> de intentos</li></ul></div>
+  </div>
+  <div class="runner" data-suite="sec"></div>
+  <div class="warn">⚠ Las pruebas de seguridad se ejecutan <b>solo en ambientes de prueba y con autorización</b>. Probar la seguridad de un sistema sin permiso no es una prueba: es un ataque.</div>
+</section>
+
+<h2 id="mkTitle">Errores comunes al hacer pruebas funcionales</h2>
+<div class="mistakes" id="mistakes"></div>
+
+<h2>Otros tipos de prueba que vas a escuchar</h2>
+<div class="others">
+  <div><b>🔥 Smoke</b>Unas pocas pruebas rápidas para confirmar que la API “está viva” después de un despliegue.</div>
+  <div><b>🔁 Regresión</b>Volver a ejecutar las pruebas existentes para confirmar que un cambio no rompió lo que ya funcionaba.</div>
+  <div><b>📜 Contrato</b>Verificar que la API cumple su documentación (OpenAPI / WSDL): campos, tipos y formatos.</div>
+  <div><b>🔗 Integración</b>Probar la API junto con los sistemas de los que depende: BD, servicios externos, colas.</div>
+  <div><b>🧭 End-to-end</b>Un flujo completo de negocio: login → crear → consultar → pagar, de punta a punta.</div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> los tres tipos se complementan. Una API puede pasar todas las pruebas <strong>funcionales</strong> y aun así caerse con 100 usuarios (<strong>carga</strong>) o dejar que un cliente vea los datos de otro (<strong>seguridad</strong>).
+  En este taller, la <strong>Parte 2</strong> trabaja las funcionales con Postman y la <strong>Parte 3</strong> las de carga.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* =================== CASOS =================== */
+const SUITES={
+ func:{runner:'🧪 Postman',color:'#57c785',cases:[
+  {n:'Consultar cliente existente',req:'GET /clientes/123',exp:'200 · nombre = "Ana Rojas"',got:'200 · nombre = "Ana Rojas"',ms:142,
+   as:[['status es 200',1],['nombre es "Ana Rojas"',1],['responde en menos de 1 s',1]],ok:true,
+   why:'El camino feliz funciona: status, datos y tiempo correctos.'},
+  {n:'Cliente que no existe',req:'GET /clientes/999',exp:'404 Not Found',got:'404 Not Found',ms:61,
+   as:[['status es 404',1],['body trae un mensaje de error',1]],ok:true,
+   why:'Un caso negativo bien resuelto: la API distingue “no existe” de “error del servidor”.'},
+  {n:'Monto negativo en una solicitud',req:'POST /solicitudes  { "monto": -100 }',exp:'400 o 422 (dato inválido)',got:'201 Created',ms:188,
+   as:[['status es 400 o 422',0],['no se crea la solicitud',0]],ok:false,
+   why:'<b>Defecto encontrado:</b> la API acepta un monto negativo y crea la solicitud. Falta una <b>regla de negocio</b>. Este error nunca aparece si solo se prueba el camino feliz.'},
+  {n:'Falta un campo obligatorio',req:'POST /clientes  { "nombre": "" }',exp:'400 · "nombre es obligatorio"',got:'500 Internal Server Error',ms:95,
+   as:[['status es 400',0],['mensaje indica el campo',0]],ok:false,
+   why:'<b>Defecto encontrado:</b> un dato faltante provoca un <b>500</b>. El error es del cliente, así que la API debería validarlo y responder 400 con un mensaje claro.'},
+  {n:'Actualizar y verificar el cambio',req:'PATCH /clientes/123 → GET /clientes/123',exp:'200 · estado = "inactivo"',got:'200 · estado = "inactivo"',ms:210,
+   as:[['PATCH responde 200',1],['el GET posterior muestra el cambio',1]],ok:true,
+   why:'Se verifica el <b>efecto en los datos</b>, no solo la respuesta del PATCH.'},
+ ]},
+ sec:{runner:'🕵️ Prueba de seguridad',color:'#ef6570',cases:[
+  {n:'Request sin token',req:'GET /clientes/123  (sin Authorization)',exp:'401 Unauthorized',got:'401 Unauthorized',ms:40,
+   as:[['status es 401',1],['no devuelve datos',1]],ok:true,
+   why:'La API exige autenticación: sin token, no hay datos.'},
+  {n:'Token vencido',req:'GET /clientes/123  (token de ayer)',exp:'401 Unauthorized',got:'401 Unauthorized',ms:38,
+   as:[['status es 401',1]],ok:true,
+   why:'Los tokens expiran y la API lo respeta.'},
+  {n:'Ver los datos de OTRO cliente',req:'GET /clientes/124  (token del cliente 123)',exp:'403 Forbidden',got:'200 OK + datos del cliente 124',ms:120,
+   as:[['status es 403',0],['no devuelve datos ajenos',0]],ok:false,
+   why:'<b>Defecto crítico:</b> la API valida <i>que</i> hay un token, pero no <i>de quién</i> es. Cambiando el id en la URL se ven datos de otro cliente. Es la vulnerabilidad más común en APIs (<b>autorización a nivel de objeto</b>).'},
+  {n:'Texto malicioso en un filtro',req:"GET /clientes?nombre=x' OR '1'='1",exp:'200 · [] o 400',got:'200 · []',ms:55,
+   as:[['no devuelve todos los registros',1],['no responde 500',1]],ok:true,
+   why:'La API usa consultas parametrizadas: el texto se trata como dato, no como instrucción.'},
+  {n:'La respuesta expone datos de más',req:'GET /clientes/123',exp:'Solo datos necesarios',got:'200 · incluye "clave_hash" y tarjeta completa',ms:118,
+   as:[['no incluye contraseñas ni hashes',0],['tarjeta enmascarada (**** 4321)',0]],ok:false,
+   why:'<b>Defecto encontrado:</b> la API devuelve campos internos y sensibles “porque estaban en la tabla”. Aunque la app no los muestre, cualquiera puede verlos en la respuesta.'},
+  {n:'20 intentos de login seguidos',req:'POST /auth/login  × 20 con clave incorrecta',exp:'429 Too Many Requests a partir del 5º',got:'401 en los 20 intentos',ms:900,
+   as:[['bloquea o limita tras 5 intentos',0]],ok:false,
+   why:'<b>Defecto encontrado:</b> no hay límite de intentos. Alguien podría probar miles de contraseñas sin ser frenado.'},
+ ]},
+};
+
+/* =================== EJECUTOR =================== */
+function buildRunner(root){
+  const key=root.dataset.suite, S=SUITES[key];
+  root.innerHTML=`<div class="card">
+      <div class="rhead"><button class="run">▶ Ejecutar todas</button><button class="rst">↻ Reiniciar</button><span class="sum"></span></div>
+      <svg viewBox="0 0 620 110"><g class="scn"></g><g class="pk"></g></svg>
+      <div class="cases">${S.cases.map((c,i)=>`<div class="case" data-i="${i}"><span class="st">${i+1}</span>
+        <span class="nm"><b>${c.n}</b><code>${esc(c.req)}</code></span><span class="res">—</span></div>`).join('')}</div>
+    </div>
+    <div class="card detail"><div class="dt"></div></div>`;
+  const scn=root.querySelector('.scn'), pk=root.querySelector('.pk');
+  scn.innerHTML=`<rect x="14" y="25" width="150" height="60" rx="12" fill="#222936" stroke="#4a5263" stroke-width="2"/>
+    <text x="89" y="60" text-anchor="middle" fill="#f5f7fb" font-size="14" font-weight="700">${S.runner}</text>
+    <rect x="456" y="25" width="150" height="60" rx="12" fill="#222936" stroke="#4a5263" stroke-width="2" class="apiBox"/>
+    <text x="531" y="55" text-anchor="middle" fill="#f5f7fb" font-size="14" font-weight="700">⚙️ API</text>
+    <text x="531" y="73" text-anchor="middle" fill="#aab3c2" font-size="11">ambiente de pruebas</text>
+    <line x1="164" y1="44" x2="456" y2="44" stroke="#333b49" stroke-width="3"/>
+    <line x1="164" y1="68" x2="456" y2="68" stroke="#333b49" stroke-width="3" stroke-dasharray="5 6"/>`;
+  let runId=0, results=[], sel=0;
+  const rows=[...root.querySelectorAll('.case')];
+  function detail(i){
+    sel=i; rows.forEach((r,k)=>r.classList.toggle('sel',k===i));
+    const c=S.cases[i], r=results[i];
+    root.querySelector('.dt').innerHTML=`<h4>${i+1}. ${c.n}</h4>
+      <div class="kv"><span>Request</span><pre>${esc(c.req)}</pre><span>Esperado</span><code>${esc(c.exp)}</code>
+      <span>Obtenido</span><code style="color:${r===undefined?'var(--muted)':r?'var(--green)':'var(--red)'}">${r===undefined?'(sin ejecutar)':esc(c.got)}</code></div>
+      ${r===undefined?'<div class="small" style="margin-top:12px">Ejecuta las pruebas para ver el resultado.</div>':
+       `<div class="asserts">${c.as.map(([t,ok])=>`<div class="${ok?'ok':'ko'}">${ok?'✓':'✗'} <span style="color:var(--text)">${t}</span></div>`).join('')}</div>
+        <div class="bug ${r?'ok':'ko'}">${c.why}</div>`}`;
+  }
+  function summary(){
+    const p=results.filter(x=>x===true).length, f=results.filter(x=>x===false).length;
+    root.querySelector('.sum').innerHTML=results.length?`<span class="p">✓ ${p} pasaron</span> · <span class="f">✗ ${f} fallaron</span>`:'';
+  }
+  function reset(){runId++;results=[];pk.innerHTML='';rows.forEach(r=>{r.className='case';r.querySelector('.res').textContent='—'});summary();detail(0);root.querySelector('.run').disabled=false}
+  function travel(x0,x1,y,color,label,id){
+    return new Promise(res=>{const t0=performance.now(),dur=850;
+      const tick=now=>{ if(id!==runId){pk.innerHTML='';return res()}
+        const p=Math.min(1,(now-t0)/dur),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2,x=x0+(x1-x0)*e,w=Math.min(280,label.length*6.4+18);
+        pk.innerHTML=`<circle cx="${x}" cy="${y}" r="7" fill="${color}"/><rect x="${x-w/2}" y="${y-30}" width="${w}" height="19" rx="5" fill="#10131a" stroke="${color}"/>
+          <text x="${x}" y="${y-17}" text-anchor="middle" fill="${color}" font-size="10.5" font-weight="700" font-family="Consolas,monospace">${esc(label)}</text>`;
+        if(p<1)requestAnimationFrame(tick);else res()};requestAnimationFrame(tick)});
+  }
+  async function runAll(){
+    reset(); const id=runId; root.querySelector('.run').disabled=true;
+    for(let i=0;i<S.cases.length;i++){
+      if(id!==runId) return;
+      const c=S.cases[i], row=rows[i]; row.classList.add('running'); detail(i);
+      const short=c.req.length>40?c.req.slice(0,38)+'…':c.req;
+      await travel(170,450,44,'#f3a43b',short,id);
+      await new Promise(r=>setTimeout(r,250));
+      const got=c.got.length>34?c.got.slice(0,32)+'…':c.got;
+      await travel(450,170,68,c.ok?'#57c785':'#ef6570',got,id);
+      if(id!==runId) return;
+      results[i]=c.ok; row.classList.remove('running'); row.classList.add(c.ok?'pass':'fail');
+      row.querySelector('.st').textContent=c.ok?'✓':'✗'; row.querySelector('.res').textContent=c.got.split(' ')[0]+' · '+c.ms+' ms';
+      summary(); detail(i);
+      await new Promise(r=>setTimeout(r,c.ok?500:1400));
+    }
+    pk.innerHTML=''; root.querySelector('.run').disabled=false;
+    const firstFail=results.findIndex(x=>x===false); if(firstFail>=0) detail(firstFail);
+  }
+  root.querySelector('.run').onclick=runAll;
+  root.querySelector('.rst').onclick=reset;
+  rows.forEach((r,i)=>r.onclick=()=>detail(i));
+  reset();
+  return {reset};
+}
+const runners={};
+document.querySelectorAll('.runner').forEach(r=>runners[r.dataset.suite]=buildRunner(r));
+
+/* =================== CARGA =================== */
+const CAP=100;  // capacidad ficticia de la API (VUs)
+const PROFILES={
+ load:{n:'Carga',d:'La cantidad de usuarios <b>esperada</b>, sostenida.',max:220,dur:24,
+  vus:t=>t<.2?t/.2*70:t<.85?70:70*(1-(t-.85)/.15),
+  verdict:(pass)=>pass?'<b>✓ Aprobada.</b> Con 70 usuarios —la carga esperada— el p95 se mantiene bajo 800 ms y casi no hay errores. La API cumple con lo que se espera de ella.':'' },
+ stress:{n:'Estrés',d:'Subir usuarios <b>más allá</b> de lo esperado hasta encontrar el límite.',max:220,dur:26,
+  vus:t=>t<.9?t/.9*200:200*(1-(t-.9)/.1),
+  verdict:()=>'<b>✗ Se encontró el límite:</b> hasta ~100 usuarios la API responde bien; desde ahí el tiempo se dispara y aparecen errores. Ese es el <b>punto de quiebre</b>. El objetivo de esta prueba no es “pasar”, sino <b>saber dónde se rompe</b> y cómo falla.'},
+ spike:{n:'Pico',d:'Un salto <b>brusco</b> de usuarios, como al abrir una promoción.',max:220,dur:24,
+  vus:t=>t<.3?20:t<.36?20+(t-.3)/.06*150:t<.56?170:t<.62?170-(t-.56)/.06*150:20,
+  verdict:()=>'<b>✗ No soportó el pico:</b> durante el salto a 170 usuarios hubo errores y tiempos altos. Lo positivo: al bajar la carga, la API <b>se recuperó</b>. Esta prueba mira ambas cosas: cómo aguanta el golpe y si vuelve a la normalidad.'},
+ soak:{n:'Resistencia',d:'Carga normal durante <b>mucho tiempo</b> (horas).',max:220,dur:28,
+  vus:t=>t<.08?t/.08*60:60,
+  drift:t=>t>.3?Math.pow((t-.3)/.7,2)*2600:0,
+  verdict:()=>'<b>✗ Se degrada con el tiempo:</b> con la misma carga, el tiempo de respuesta sube poco a poco hasta superar el umbral. Es la señal típica de una <b>fuga de memoria</b> o de conexiones que no se liberan: un problema que una prueba de 5 minutos nunca mostraría.'},
+};
+function sample(P,t){
+  const v=P.vus(t); let lat=110+2.2*Math.min(v,CAP)+(v>CAP?(v-CAP)*24:0)+(P.drift?P.drift(t):0);
+  let err=v>CAP*1.1?Math.min(45,(v-CAP*1.1)*.55):0;
+  if(P.drift&&lat>2000) err=Math.min(12,(lat-2000)/80);
+  const noise=1+(Math.sin(t*90)+Math.sin(t*37))*.04;
+  lat*=noise;
+  const rps=Math.round(v/((lat/1000)+.6));
+  return {v,lat,err,rps};
+}
+let prof='load', lRun=0, lData=[];
+const W=760,H=260,PL=44,PR=50,PT=14,PB=30, cw=W-PL-PR, ch=H-PT-PB;
+const xs=t=>PL+t*cw, yv=v=>PT+ch-(v/220)*ch, yl=l=>PT+ch-(Math.min(l,3000)/3000)*ch, ye=e=>PT+ch-(e/50)*ch;
+function drawAxes(){
+  let g='';
+  for(let i=0;i<=4;i++){const y=PT+ch*i/4;g+=`<line x1="${PL}" x2="${W-PR}" y1="${y}" y2="${y}" stroke="#262d3a"/>
+    <text x="${PL-6}" y="${y+4}" text-anchor="end" fill="#8a93a3" font-size="10">${Math.round(220-55*i)}</text>
+    <text x="${W-PR+6}" y="${y+4}" fill="#59a9e6" font-size="10">${(3-0.75*i).toFixed(2).replace(/\.?0+$/,'')} s</text>`}
+  g+=`<line x1="${PL}" x2="${W-PR}" y1="${yl(800)}" y2="${yl(800)}" stroke="#f3a43b" stroke-dasharray="7 5" stroke-width="1.5"/>
+    <text x="${W-PR-4}" y="${yl(800)-5}" text-anchor="end" fill="#f3a43b" font-size="10">umbral 800 ms</text>
+    <line x1="${PL}" x2="${xs(1)}" y1="${yv(CAP)}" y2="${yv(CAP)}" stroke="#a982e2" stroke-dasharray="2 5" opacity=".6"/>
+    <text x="${PL+4}" y="${yv(CAP)-5}" fill="#a982e2" font-size="10" opacity=".8">capacidad ≈ ${CAP} VUs</text>
+    <text x="${PL}" y="${H-8}" fill="#8a93a3" font-size="10">${prof==='soak'?'0 h':'0 min'}</text><text x="${W-PR}" y="${H-8}" text-anchor="end" fill="#8a93a3" font-size="10">${prof==='soak'?'8 h':'10 min'} →</text>
+    <text x="8" y="12" fill="#a982e2" font-size="10">VUs</text>`;
+  return g;
+}
+function drawChart(cursor){
+  const d=lData;
+  const pts=k=>d.map(p=>`${xs(p.t).toFixed(1)},${(k==='v'?yv(p.v):k==='l'?yl(p.lat):ye(p.err)).toFixed(1)}`).join(' ');
+  const area=d.length?`M${xs(d[0].t)},${yv(0)} L${pts('v').replace(/ /g,' L')} L${xs(d.at(-1).t)},${yv(0)} Z`:'';
+  const bars=d.filter((p,i)=>i%2===0&&p.err>.2).map(p=>`<rect x="${xs(p.t)-1.5}" y="${ye(p.err)}" width="3" height="${PT+ch-ye(p.err)}" fill="#ef6570" opacity=".75"/>`).join('');
+  $('chart').innerHTML=drawAxes()+(area?`<path d="${area}" fill="rgba(169,130,226,.18)" stroke="#a982e2" stroke-width="2"/>`:'')+bars
+    +(d.length>1?`<polyline points="${pts('l')}" fill="none" stroke="#59a9e6" stroke-width="2.5"/>`:'')
+    +(cursor!==undefined?`<line x1="${xs(cursor)}" x2="${xs(cursor)}" y1="${PT}" y2="${PT+ch}" stroke="#fff" opacity=".25"/>`:'');
+}
+let laneDots=[];
+function drawLane(s){
+  // puntos que viajan de k6 a la API: cantidad según VUs, rojos si hay errores
+  const want=Math.min(26,Math.round(s.v/7));
+  while(laneDots.length<want) laneDots.push({x:120+Math.random()*20,sp:2+Math.random()*2,err:false});
+  laneDots=laneDots.slice(0,Math.max(want,0));
+  laneDots.forEach(d=>{d.x+=d.sp*Math.max(.35,1/(1+s.lat/900)); if(d.x>600){d.x=120;d.err=Math.random()*100<s.err}});
+  $('lane').innerHTML=`<rect x="8" y="12" width="100" height="40" rx="9" fill="#222936" stroke="#4a5263"/><text x="58" y="37" text-anchor="middle" fill="#f5f7fb" font-size="13" font-weight="700">k6 · ${Math.round(s.v)} VUs</text>
+    <rect x="612" y="12" width="140" height="40" rx="9" fill="#222936" stroke="${s.err>1?'#ef6570':s.lat>800?'#f3a43b':'#4a5263'}" stroke-width="2"/><text x="682" y="37" text-anchor="middle" fill="#f5f7fb" font-size="13" font-weight="700">⚙️ API ${s.lat>800?'🥵':''}</text>
+    <line x1="108" y1="32" x2="612" y2="32" stroke="#333b49" stroke-width="2"/>
+    ${laneDots.map(d=>`<circle cx="${d.x}" cy="${32+((d.x*7)%14-7)}" r="4" fill="${d.err?'#ef6570':'#a982e2'}"/>`).join('')}`;
+}
+function thresholds(final){
+  const d=lData, n=d.length;
+  const p95=n?Math.max(...d.map(p=>p.lat)):0, errAvg=n?d.reduce((a,p)=>a+p.err,0)/n:0;
+  const ok1=p95<800, ok2=errAvg<1;
+  $('thr').innerHTML=`<div><span>p95 &lt; 800 ms</span><span class="${!n?'pend':final?(ok1?'ok':'ko'):(p95>=800?'ko':'pend')}">${!n?'pendiente':final||p95>=800?(ok1?'✓ cumple':'✗ falla'):'…'}</span></div>
+    <div><span>errores &lt; 1 %</span><span class="${!n?'pend':final?(ok2?'ok':'ko'):'pend'}">${!n?'pendiente':final?(ok2?'✓ cumple':'✗ falla')+` (${errAvg.toFixed(1).replace('.',',')} %)`:'…'}</span></div>`;
+  return ok1&&ok2;
+}
+function setMetrics(s){
+  $('mV').querySelector('b').textContent=Math.round(s.v);
+  $('mR').querySelector('b').textContent=s.rps;
+  $('mP').querySelector('b').textContent=s.lat>=1000?(s.lat/1000).toFixed(1).replace('.',',')+' s':Math.round(s.lat)+' ms';
+  $('mP').className='lm '+(s.lat>800?'bad':'good');
+  $('mE').querySelector('b').textContent=s.err.toFixed(1).replace('.',',')+' %';
+  $('mE').className='lm '+(s.err>=1?'bad':'good');
+}
+function lReset(){
+  lRun++; lData=[]; laneDots=[]; drawChart(); drawLane({v:0,lat:100,err:0});
+  setMetrics({v:0,lat:0,err:0,rps:0}); $('mP').querySelector('b').textContent='—'; $('mP').className='lm';$('mE').className='lm';
+  thresholds(false); $('lPlay').disabled=false; $('lClock').textContent='';
+  $('lVerdict').innerHTML=`<b>${PROFILES[prof].n}:</b> ${PROFILES[prof].d} Presiona <b>Ejecutar prueba</b>.`;
+}
+function lPlay(){
+  lReset(); const id=lRun, P=PROFILES[prof], t0=performance.now(); $('lPlay').disabled=true;
+  let lastSample=-1;
+  const tick=now=>{
+    if(id!==lRun) return;
+    const t=Math.min(1,(now-t0)/(P.dur*1000/2.2));
+    if(t-lastSample>=.006||t===1){const s=sample(P,t);lData.push({t,...s});lastSample=t;setMetrics(s);thresholds(false)}
+    const cur=lData.at(-1)||{v:0,lat:100,err:0};
+    drawChart(t); drawLane(cur);
+    $('lClock').textContent=prof==='soak'?`${(t*8).toFixed(1).replace('.',',')} h de 8 h`:`${Math.floor(t*10)}:${String(Math.floor(t*600)%60).padStart(2,'0')} de 10:00 min`;
+    if(t<1) requestAnimationFrame(tick);
+    else { const pass=thresholds(true); drawChart(); $('lVerdict').innerHTML=pass?P.verdict(true):P.verdict(false); $('lPlay').disabled=false; }
+  };
+  requestAnimationFrame(tick);
+}
+function profIcon(P){
+  const pts=[];for(let i=0;i<=40;i++){const t=i/40;pts.push(`${(t*120).toFixed(1)},${(32-P.vus(t)/220*30).toFixed(1)}`)}
+  return `<svg viewBox="0 0 120 34" preserveAspectRatio="none"><polyline points="${pts.join(' ')}" fill="none" stroke="#a982e2" stroke-width="2"/></svg>`;
+}
+$('profiles').innerHTML=Object.entries(PROFILES).map(([k,P])=>`<button class="prof ${k===prof?'active':''}" data-p="${k}"><b>${P.n}</b><small>${P.d}</small>${profIcon(P)}</button>`).join('');
+$('profiles').onclick=e=>{const b=e.target.closest('.prof');if(!b)return;prof=b.dataset.p;
+  document.querySelectorAll('.prof').forEach(x=>x.classList.toggle('active',x===b));lReset()};
+$('lPlay').onclick=lPlay; $('lReset').onclick=lReset;
+
+/* =================== ERRORES COMUNES =================== */
+const MISTAKES={
+ func:{t:'Errores comunes al hacer pruebas funcionales',l:[
+  ['Probar solo el camino feliz','Los defectos suelen estar en los datos inválidos, vacíos o en los límites (0, negativos, textos muy largos).'],
+  ['Validar solo el status 200','Una respuesta 200 puede traer datos incorrectos. Hay que validar el body y las reglas de negocio.'],
+  ['No verificar el efecto en los datos','Después de un POST, PUT o DELETE, consultar de nuevo y confirmar que el cambio realmente ocurrió (y solo una vez).'],
+  ['Pruebas que dependen unas de otras sin control','Si la prueba 3 usa un dato que creó la 2, debe guardarlo en una variable; no asumir ids fijos que pueden no existir.'],
+ ]},
+ load:{t:'Errores comunes al hacer pruebas de carga',l:[
+  ['Probar en un ambiente mucho más pequeño y “multiplicar”','El rendimiento no escala en línea recta: los resultados de un ambiente reducido no se pueden extrapolar a producción.'],
+  ['Mirar solo el promedio','El promedio esconde a los usuarios lentos. Se usa el p95 / p99 y el % de errores.'],
+  ['No definir umbrales antes de probar','Sin criterios de aceptación (p95, errores), el resultado se vuelve una opinión.'],
+  ['Usar siempre los mismos datos','Repetir el mismo id hace que todo salga de la cache y el sistema parezca más rápido de lo que es.'],
+ ]},
+ sec:{t:'Errores comunes al hacer pruebas de seguridad',l:[
+  ['Probar solo con un usuario administrador','Con permisos totales nunca se ve un 403. Hay que probar con varios roles y con usuarios distintos.'],
+  ['Confiar en que la app (frontend) ya valida','La API se puede llamar directamente desde Postman o curl: debe validar todo por su cuenta.'],
+  ['Guardar tokens o claves reales en las colecciones','Las colecciones se comparten y sincronizan. Usar datos ficticios y variables sin valor inicial para los secretos.'],
+  ['No probar el acceso a recursos de otro usuario','Cambiar el id en la URL es la prueba más simple y la que más vulnerabilidades encuentra.'],
+ ]},
+};
+function showMistakes(k){
+  $('mkTitle').textContent=MISTAKES[k].t;
+  $('mistakes').innerHTML=MISTAKES[k].l.map(([a,b])=>`<div class="mk"><span class="x">✗</span><div><b>${a}.</b> ${b}</div></div>`).join('');
+}
+
+/* =================== PESTAÑAS =================== */
+$('types').onclick=e=>{
+  const b=e.target.closest('.type'); if(!b) return; const k=b.dataset.t;
+  document.querySelectorAll('.type').forEach(x=>x.classList.toggle('active',x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+k));
+  showMistakes(k);
+  Object.values(runners).forEach(r=>r.reset()); lReset();
+};
+showMistakes('func'); lReset();
+})();
+</script>
+</body></html>

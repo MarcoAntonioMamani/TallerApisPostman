@@ -1,0 +1,21 @@
+# Solución del reto: solo para el instructor, nunca se publica
+postman/reto/solucion/
+
+# Respaldos locales
+respaldos/
+
+# Configuración local del editor
+.claude/
+
+# Dependencias y resultados de ejecuciones
+node_modules/
+reports/
+allure-results/
+allure-report/
+newman/
+__pycache__/
+*.pyc
+
+# Secretos (no debería haber ninguno, pero por las dudas)
+.env
+*.local.json

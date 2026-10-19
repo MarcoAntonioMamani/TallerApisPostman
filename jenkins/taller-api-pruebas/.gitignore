@@ -1,0 +1,12 @@
+# Dependencias (se instalan con npm install)
+node_modules/
+
+# Resultados y reportes (los genera cada ejecución)
+reports/
+allure-results/
+allure-report/
+newman/
+
+# Nunca subir secretos ni environments con valores reales
+*.local.json
+.env

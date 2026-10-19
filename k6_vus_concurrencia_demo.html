@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>k6 - Cómo funcionan los VUs</title>
+<style>
+:root{
+  --bg:#101218; --panel:#191c24; --panel2:#222631; --text:#f5f7fb;
+  --muted:#aeb5c3; --line:#3b414f; --green:#7bc96f; --orange:#f39c3d;
+  --cyan:#52b7d8; --red:#ef6b73; --purple:#a879d8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1180px;margin:auto;padding:28px}
+header{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}
+h1{margin:0;font-size:32px} .sub{color:var(--muted);margin-top:7px;line-height:1.5}
+.badge{background:var(--panel2);padding:9px 14px;border-radius:999px;color:var(--orange);font-weight:700;white-space:nowrap}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+button{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:11px 16px;border-radius:9px;cursor:pointer;font-weight:700}
+button:hover{background:var(--panel2)} button.active{background:var(--orange);color:#111;border-color:var(--orange)}
+.grid{display:grid;grid-template-columns:1.55fr .75fr;gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.title{font-size:18px;font-weight:800;margin-bottom:4px}.small{font-size:13px;color:var(--muted)}
+svg{width:100%;height:auto;margin-top:12px;background:#14171e;border-radius:12px}
+.track{stroke:#343a46;stroke-width:3;stroke-linecap:round}
+.vu{fill:var(--cyan)} .request{fill:var(--orange)}
+.api{fill:#20242d;stroke:#525967;stroke-width:2}
+.metrics{display:grid;gap:12px}.metric{background:var(--panel2);border-radius:11px;padding:15px}
+.metric .label{color:var(--muted);font-size:13px}.metric .value{font-size:29px;font-weight:800;margin-top:3px}
+.lesson{margin-top:18px;line-height:1.65}.lesson strong{color:var(--orange)}
+.compare{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+.box{text-align:center;background:var(--panel2);padding:15px;border-radius:10px;border:1px solid var(--line)}
+.box b{font-size:24px}.key{margin-top:18px;border-left:5px solid var(--orange);padding:15px 18px;background:var(--panel2);line-height:1.65}
+footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.compare{grid-template-columns:repeat(2,1fr)}header{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>k6 · Cómo funcionan los VUs</h1>
+    <div class="sub">Demostración visual de concurrencia: <b>1 → 2 → 5 → 10 VUs</b>.<br>
+    Los VUs representan usuarios virtuales concurrentes; no una cantidad fija de requests por segundo.</div>
+  </div>
+  <div class="badge">Performance Testing</div>
+</header>
+
+<div class="controls">
+  <button class="stage active" data-vus="1">1 VU</button>
+  <button class="stage" data-vus="2">2 VUs</button>
+  <button class="stage" data-vus="5">5 VUs</button>
+  <button class="stage" data-vus="10">10 VUs</button>
+  <button id="auto">▶ Presentación automática</button>
+  <button id="pause">Ⅱ Pausar</button>
+  <button id="reset">↻ Reiniciar</button>
+</div>
+
+<div class="grid">
+<div class="card">
+  <div class="title">Usuarios virtuales enviando carga</div>
+  <div class="small">La latencia de cada iteración varía entre 600 y 1800 ms para representar un caso más realista.</div>
+  <svg viewBox="0 0 780 420" aria-label="Simulación de VUs">
+    <text x="35" y="30" fill="#aeb5c3" font-size="13">VUs</text>
+    <text x="330" y="30" fill="#aeb5c3" font-size="13">Requests en ejecución</text>
+    <text x="675" y="30" fill="#aeb5c3" font-size="13">API</text>
+    <rect x="655" y="48" width="100" height="325" rx="16" class="api"/>
+    <text x="705" y="188" text-anchor="middle" fill="#f5f7fb" font-size="19" font-weight="700">Endpoint</text>
+    <text x="705" y="214" text-anchor="middle" fill="#aeb5c3" font-size="12">procesando</text>
+    <text id="apiCount" x="705" y="249" text-anchor="middle" fill="#f39c3d" font-size="30" font-weight="800">1</text>
+    <text x="705" y="270" text-anchor="middle" fill="#aeb5c3" font-size="11">VU activo</text>
+    <g id="lanes"></g><g id="requests"></g>
+  </svg>
+</div>
+
+<div class="metrics">
+  <div class="metric"><div class="label">Concurrencia configurada</div><div id="vusValue" class="value">1 VU</div></div>
+  <div class="metric"><div class="label">Requests completados</div><div id="completed" class="value">0</div></div>
+  <div class="metric"><div class="label">Throughput del último segundo</div><div id="rps" class="value">0 req/s</div></div>
+  <div class="metric"><div class="label">Concepto</div><div class="small" style="margin-top:7px">El throughput cambia aunque la cantidad de VUs permanezca fija.</div></div>
+</div>
+</div>
+
+<div class="card lesson">
+  <div id="lessonTitle" class="title">Etapa 1 — 1 VU</div>
+  <div id="lessonText">Tenemos <strong>un usuario virtual</strong>. Envía una petición y permanece ocupado hasta terminar su iteración. Si el flujo tarda 1,5 segundos, ese VU no puede completar mágicamente una petición cada segundo.</div>
+</div>
+
+<div class="compare">
+ <div class="box"><b>1</b><div class="small">VU concurrente</div></div>
+ <div class="box"><b>2</b><div class="small">VUs concurrentes</div></div>
+ <div class="box"><b>5</b><div class="small">VUs concurrentes</div></div>
+ <div class="box"><b>10</b><div class="small">VUs concurrentes</div></div>
+</div>
+
+<div class="key">
+<strong>Idea clave:</strong><br>
+10 VUs no significa 10 requests por segundo. Significa que hay 10 usuarios virtuales ejecutando trabajo concurrentemente.
+Si el endpoint responde rápido, esos mismos usuarios pueden completar más iteraciones por segundo.
+Si responde lento, permanecen ocupados más tiempo y el throughput disminuye.
+<strong>Concurrencia y throughput están relacionados, pero no son lo mismo.</strong>
+</div>
+
+<footer>Demostración educativa · k6 Performance Testing · Los valores de latencia y throughput son simulados.</footer>
+</div>
+
+<script>
+(()=>{
+ const stages=[1,2,5,10];
+ const lanes=document.getElementById('lanes'), requests=document.getElementById('requests');
+ const vusValue=document.getElementById('vusValue'), apiCount=document.getElementById('apiCount');
+ const completedEl=document.getElementById('completed'), rpsEl=document.getElementById('rps');
+ const lessonTitle=document.getElementById('lessonTitle'), lessonText=document.getElementById('lessonText');
+ let current=1, items=[], running=true, last=performance.now(), completed=0, secCompleted=0, lastRps=performance.now(), autoTimer=null;
+ const lessons={
+  1:'Tenemos <strong>un usuario virtual</strong>. Envía una petición y permanece ocupado hasta terminar su iteración. Si el flujo tarda 1,5 segundos, ese VU no puede completar mágicamente una petición cada segundo.',
+  2:'Ahora tenemos <strong>2 VUs trabajando concurrentemente</strong>. Cada usuario avanza de forma independiente y sus peticiones pueden terminar en momentos diferentes.',
+  5:'Con <strong>5 VUs</strong> aumentamos la concurrencia y la presión sobre el sistema. Sin embargo, 5 VUs no significa automáticamente 5 requests por segundo.',
+  10:'Llegamos a <strong>10 VUs</strong>. Son diez usuarios virtuales ejecutando el flujo simultáneamente. Si las iteraciones son rápidas pueden producir más de 10 requests/s; si son lentas pueden producir menos. <strong>10 VUs ≠ 10 req/s.</strong>'
+ };
+ function build(){
+   let h=''; items=[];
+   for(let i=0;i<current;i++){
+     const y=current===1?210:70+i*(280/(current-1));
+     h+=`<circle cx="42" cy="${y}" r="14" class="vu"/><text x="42" y="${y+4}" text-anchor="middle" fill="#101218" font-size="10" font-weight="700">${i+1}</text><line x1="70" y1="${y}" x2="645" y2="${y}" class="track"/>`;
+     items.push({y,elapsed:Math.random()*500,duration:600+Math.random()*1200});
+   }
+   lanes.innerHTML=h;
+ }
+ function setStage(n){
+   current=n; completed=0; secCompleted=0;
+   document.querySelectorAll('.stage').forEach(b=>b.classList.toggle('active',Number(b.dataset.vus)===n));
+   vusValue.textContent=n+(n===1?' VU':' VUs'); apiCount.textContent=n;
+   completedEl.textContent='0'; rpsEl.textContent='0 req/s';
+   lessonTitle.textContent=`Etapa ${stages.indexOf(n)+1} — ${n}${n===1?' VU':' VUs'}`;
+   lessonText.innerHTML=lessons[n]; build();
+ }
+ function frame(now){
+   const dt=Math.min(now-last,70); last=now;
+   if(running){
+     let h='';
+     items.forEach(it=>{
+       it.elapsed+=dt;
+       if(it.elapsed>=it.duration){
+         it.elapsed=0; it.duration=600+Math.random()*1200;
+         completed++; secCompleted++; completedEl.textContent=completed;
+       }
+       const p=it.elapsed/it.duration, x=80+p*555;
+       h+=`<circle cx="${x.toFixed(1)}" cy="${it.y}" r="7" class="request"/><text x="${Math.min(x+12,620)}" y="${it.y-10}" fill="#aeb5c3" font-size="9">${Math.round(it.duration)} ms</text>`;
+     });
+     requests.innerHTML=h;
+     if(now-lastRps>=1000){rpsEl.textContent=secCompleted+' req/s';secCompleted=0;lastRps=now;}
+   }
+   requestAnimationFrame(frame);
+ }
+ document.querySelectorAll('.stage').forEach(b=>b.addEventListener('click',()=>{clearInterval(autoTimer);setStage(Number(b.dataset.vus));running=true;}));
+ document.getElementById('auto').addEventListener('click',()=>{
+   clearInterval(autoTimer); running=true; let idx=stages.indexOf(current);
+   autoTimer=setInterval(()=>{idx=(idx+1)%stages.length;setStage(stages[idx]);},5000);
+ });
+ document.getElementById('pause').addEventListener('click',()=>{running=false;clearInterval(autoTimer);});
+ document.getElementById('reset').addEventListener('click',()=>{clearInterval(autoTimer);running=true;setStage(1);});
+ setStage(1); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

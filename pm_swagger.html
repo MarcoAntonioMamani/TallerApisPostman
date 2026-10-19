@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La documentación de una API</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+/* ---------- réplica de Swagger UI (tema claro, como el original) ---------- */
+.sw{background:#fff;color:#3b4151;border-radius:10px;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;font-size:13px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+.sw-top{background:#1b1b1b;padding:9px 14px;display:flex;align-items:center;gap:12px}
+.sw-top .lg{color:#fff;font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px}
+.sw-top .lg i{width:22px;height:22px;border-radius:50%;background:#85ea2d;display:grid;place-items:center;color:#1b1b1b;font-style:normal;font-size:12px}
+.sw-top .ex{flex:1;display:flex}
+.sw-top .ex span{flex:1;background:#fff;border-radius:4px 0 0 4px;padding:5px 9px;font-family:Consolas,monospace;font-size:12px;color:#333}
+.sw-top .ex b{background:#62a03f;color:#fff;padding:5px 14px;border-radius:0 4px 4px 0;font-size:12px}
+.sw-scroll{max-height:560px;overflow:auto;padding:14px 18px}
+.sw-info h2{margin:0;font-size:26px;color:#3b4151;display:flex;align-items:center;gap:8px}
+.sw-info h2 small{font-size:10px;background:#7d8492;color:#fff;border-radius:57px;padding:2px 7px;font-weight:700}
+.sw-info h2 small.oas{background:#89bf04}
+.sw-info .base{font-family:Consolas,monospace;font-size:12px;color:#3b4151;margin:4px 0}
+.sw-info .base a{color:#4990e2}
+.sw-info p{margin:8px 0;font-size:13px;line-height:1.5;color:#3b4151}
+.sw-scheme{display:flex;align-items:flex-end;justify-content:space-between;padding:12px 0;margin:8px 0 6px;border-top:1px solid #eee;border-bottom:1px solid #eee}
+.sw-scheme .sch label{font-size:11px;font-weight:700;display:block;margin-bottom:3px}
+.sw-scheme .sch span{border:2px solid #41444e;border-radius:4px;padding:4px 10px;font-weight:700;font-size:12px}
+.sw-auth{border:2px solid #49cc90;color:#49cc90;border-radius:4px;padding:6px 18px;font-weight:700;background:#fff}
+.sw-tag{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid rgba(59,65,81,.3);cursor:pointer;margin-top:8px}
+.sw-tag b{font-size:20px}
+.sw-tag span{font-size:12.5px;color:#3b4151;flex:1}
+.sw-op{border:1px solid;border-radius:4px;margin:7px 0;overflow:hidden}
+.sw-op .oh{display:flex;align-items:center;gap:10px;padding:6px;cursor:pointer}
+.sw-op .vb{min-width:72px;text-align:center;color:#fff;font-weight:700;border-radius:3px;padding:6px 0;font-size:13px}
+.sw-op .pa{font-family:Consolas,monospace;font-weight:700;font-size:14px;color:#3b4151}
+.sw-op .su{font-size:12.5px;color:#3b4151;flex:1}
+.sw-op .lk{color:#999}
+.sw-op.get{border-color:#61affe;background:rgba(97,175,254,.1)}.sw-op.get .vb{background:#61affe}
+.sw-op.post{border-color:#49cc90;background:rgba(73,204,144,.1)}.sw-op.post .vb{background:#49cc90}
+.sw-op.put{border-color:#fca130;background:rgba(252,161,48,.1)}.sw-op.put .vb{background:#fca130}
+.sw-op.delete{border-color:#f93e3e;background:rgba(249,62,62,.1)}.sw-op.delete .vb{background:#f93e3e}
+.sw-op.dep{opacity:.55}.sw-op.dep .pa{text-decoration:line-through}
+.sw-op .ob{background:#fff;border-top:1px solid rgba(0,0,0,.1);padding:10px 14px;display:none}
+.sw-op.open .ob{display:block}
+.sw-op .ob h5{margin:10px 0 6px;font-size:13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding-bottom:5px}
+.sw-op .ob h5 .try{border:2px solid #49cc90;color:#49cc90;padding:3px 12px;border-radius:4px;font-size:12px;cursor:pointer}
+.sw-op .ob h5 .try.on{border-color:#ff6060;color:#ff6060}
+.sw-op table{width:100%;border-collapse:collapse;font-size:12.5px}
+.sw-op td{padding:7px 4px;vertical-align:top;border-bottom:1px solid #f0f0f0}
+.sw-op td.pn{width:190px}
+.sw-op td.pn b{font-family:Consolas,monospace;font-size:13px}
+.sw-op td.pn .rq{color:red;font-size:10px;margin-left:3px}
+.sw-op td.pn small{display:block;color:#888;font-size:11px;font-style:italic}
+.sw-op .inp{border:1px solid #d9d9d9;border-radius:4px;padding:5px 8px;font-family:Consolas,monospace;font-size:12px;background:#fff;display:inline-block;min-width:180px}
+.sw-op pre{margin:4px 0;background:#333;color:#fff;border-radius:4px;padding:9px 11px;font-family:Consolas,monospace;font-size:11.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto}
+.sw-op .rc{font-family:Consolas,monospace;font-weight:700;width:60px}
+.sw-op .exe{display:block;width:100%;background:#4990e2;color:#fff;border-radius:4px;padding:8px;text-align:center;font-weight:700;cursor:pointer;margin:10px 0}
+.sw-op .ok{color:#49cc90}
+.sw-models{border:1px solid rgba(59,65,81,.3);border-radius:4px;margin-top:18px;padding:10px 14px}
+.sw-models h4{margin:0 0 8px;font-size:18px}
+.sw-model{margin:6px 0;font-family:Consolas,monospace;font-size:12px;cursor:pointer}
+.sw-model b{font-family:"Segoe UI",Arial,sans-serif;font-size:14px}
+.sw-model pre{display:none;margin:6px 0;background:#f7f7f7;color:#3b4151;border-radius:4px;padding:8px 10px;white-space:pre-wrap}
+.sw-model.open pre{display:block}
+.sw .hl{outline:3px solid #f3a43b;outline-offset:3px;border-radius:6px;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(243,164,59,.55)}50%{box-shadow:0 0 0 8px rgba(243,164,59,0)}}
+
+/* recorrido */
+.tour{display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start}
+.tour .steps{position:sticky;top:10px}
+.parts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.oaf{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.oaf pre{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;max-height:300px;overflow:auto}
+.y-k{color:#9cdcfe}.y-s{color:#ce9178}.y-c{color:#6a9955}
+@media(max-width:1000px){.tour,.oaf{grid-template-columns:1fr}.parts{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>La documentación de una API: Swagger / OpenAPI</h1>
+<div class="sub">Antes de abrir Postman hay que saber <b>qué se puede pedir</b> a la API. Eso lo dice su <b>documentación</b>. El estándar más usado es <b>OpenAPI</b> (antes llamado Swagger), y la página que lo muestra de forma visual es <b>Swagger UI</b>.
+Abajo hay una réplica interactiva del <b>Swagger Petstore</b>, una API pública de práctica que usaremos en todo el taller. Recorre sus partes o explórala libremente: haz clic en los endpoints.</div>
+
+<div class="tour">
+  <div class="steps" id="tourSteps">
+    <div class="sh"><b>¿Qué contiene?</b><span id="tcnt"></span></div>
+    <ol id="tlist"></ol>
+    <div class="ctl"><button class="btn" id="tprev">◀</button><button class="btn pri" id="tnext">Empezar ▶</button></div>
+    <div class="explain" id="texp">Presiona <b>Empezar</b> para recorrer las partes de la documentación.</div>
+  </div>
+  <div class="sw" id="sw">
+    <div class="sw-top"><span class="lg"><i>{…}</i>Swagger.</span><div class="ex"><span>https://petstore.swagger.io/v2/swagger.json</span><b>Explore</b></div></div>
+    <div class="sw-scroll" id="swScroll">
+      <div class="sw-info" data-z="info">
+        <h2>Swagger Petstore <small>1.0.7</small> <small class="oas">OAS 2.0</small></h2>
+        <div class="base" data-z="base">[ Base URL: petstore.swagger.io/v2 ]<br><a>https://petstore.swagger.io/v2/swagger.json</a></div>
+        <p>This is a sample server Petstore server. You can find out more about Swagger at swagger.io. For this sample, you can use the api key <code style="color:#3b4151">special-key</code> to test the authorization filters.</p>
+      </div>
+      <div class="sw-scheme"><div class="sch" data-z="schemes"><label>Schemes</label><span>HTTPS ▾</span></div><span class="sw-auth" data-z="auth">Authorize 🔓</span></div>
+      <div id="ops"></div>
+      <div class="sw-models" data-z="models"><h4>Models</h4><div id="models"></div></div>
+    </div>
+  </div>
+</div>
+
+<h2>Del archivo OpenAPI a Postman en un paso</h2>
+<div class="oaf">
+  <div class="card"><b>📄 El archivo detrás de la página</b>
+    <div class="small" style="font-size:13px;margin-top:4px">Swagger UI solo <b>dibuja</b> un archivo JSON o YAML que describe toda la API. Ese archivo es el <b>contrato</b>. Este es un fragmento del de Petstore:</div>
+<pre><span class="y-k">"host"</span>: <span class="y-s">"petstore.swagger.io"</span>,
+<span class="y-k">"basePath"</span>: <span class="y-s">"/v2"</span>,
+<span class="y-k">"paths"</span>: {
+  <span class="y-k">"/pet/{petId}"</span>: {
+    <span class="y-k">"get"</span>: {
+      <span class="y-k">"summary"</span>: <span class="y-s">"Find pet by ID"</span>,
+      <span class="y-k">"parameters"</span>: [{ <span class="y-k">"name"</span>: <span class="y-s">"petId"</span>, <span class="y-k">"in"</span>: <span class="y-s">"path"</span>,
+                       <span class="y-k">"required"</span>: true, <span class="y-k">"type"</span>: <span class="y-s">"integer"</span> }],
+      <span class="y-k">"responses"</span>: {
+        <span class="y-k">"200"</span>: { <span class="y-k">"description"</span>: <span class="y-s">"successful operation"</span> },
+        <span class="y-k">"404"</span>: { <span class="y-k">"description"</span>: <span class="y-s">"Pet not found"</span> }
+      }
+    }
+  }
+}</pre></div>
+  <div class="card"><b>⚡ Importarlo a Postman</b>
+    <div class="small" style="font-size:13px;margin-top:4px">Postman puede leer ese archivo y crear una <b>colección con todos los endpoints</b>, ya armados:</div>
+    <ol style="margin:10px 0 0;padding-left:20px;line-height:1.85;font-size:14px">
+      <li>En Postman, botón <b>Import</b> (arriba a la izquierda).</li>
+      <li>Pega la URL <code>https://petstore.swagger.io/v2/swagger.json</code></li>
+      <li>Elige <b>Postman Collection</b> y presiona <b>Import</b>.</li>
+      <li>Aparece la colección <b>Swagger Petstore</b> con carpetas <i>pet</i>, <i>store</i> y <i>user</i>.</li>
+    </ol>
+    <div class="note">💡 En el taller armaremos los requests <b>a mano</b> para entender cada parte. En el trabajo diario, importar la documentación ahorra mucho tiempo.</div>
+  </div>
+</div>
+
+<h2>Dónde practicar</h2>
+<div class="parts">
+  <div class="tile"><b class="h">🐶 Swagger Petstore</b>Mascotas, órdenes y usuarios. CRUD completo.<br><a href="https://petstore.swagger.io" target="_blank">petstore.swagger.io</a></div>
+  <div class="tile"><b class="h">🧪 httpbin</b>Endpoints para probar headers y autenticación: <code>/basic-auth/{usuario}/{clave}</code>.<br><a href="https://httpbin.org" target="_blank">httpbin.org</a></div>
+  <div class="tile"><b class="h">🛒 DummyJSON</b>Productos, usuarios y login con token (Bearer).<br><a href="https://dummyjson.com/docs" target="_blank">dummyjson.com/docs</a></div>
+  <div class="tile"><b class="h">🏨 Restful Booker</b>Reservas con token: ideal para encadenar requests.<br><a href="https://restful-booker.herokuapp.com/apidoc/index.html" target="_blank">restful-booker…/apidoc</a></div>
+</div>
+<div class="note warn">⚠ Son APIs <b>públicas y compartidas</b>: lo que crees ahí lo puede ver cualquiera, y lo que crean otros puede cambiar tus resultados. Usa siempre <b>datos ficticios</b> e <b>ids propios</b> (por ejemplo, tu número de lista + fecha), nunca información real.</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> la documentación es el <strong>contrato</strong> de la API: dice qué endpoints existen, qué datos reciben, qué responden y cómo autenticarse.
+  Al probar, la pregunta siempre es: <strong>¿la API hace lo que dice su documentación?</strong> Si responde algo que no está documentado, o no responde lo que promete, es un hallazgo.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const PET=`{
+  "id": 1001,
+  "category": { "id": 1, "name": "Perros" },
+  "name": "Firulais",
+  "photoUrls": [ "string" ],
+  "tags": [ { "id": 0, "name": "string" } ],
+  "status": "available"
+}`;
+const TAGS=[
+ {tag:'pet',desc:'Everything about your Pets',ops:[
+  {v:'post',p:'/pet/{petId}/uploadImage',s:'uploads an image',lock:1},
+  {v:'post',p:'/pet',s:'Add a new pet to the store',lock:1,z:'op-post',
+   params:[['body','body',1,'Pet object that needs to be added to the store',PET]],
+   res:[['200','successful operation'],['405','Invalid input']],
+   exe:{curl:`curl -X POST "https://petstore.swagger.io/v2/pet" -H "Content-Type: application/json" -d '{"id":1001,"name":"Firulais","status":"available"}'`,url:'https://petstore.swagger.io/v2/pet',code:200,body:PET}},
+  {v:'put',p:'/pet',s:'Update an existing pet',lock:1,params:[['body','body',1,'Pet object that needs to be added to the store',PET]],res:[['400','Invalid ID supplied'],['404','Pet not found'],['405','Validation exception']]},
+  {v:'get',p:'/pet/findByStatus',s:'Finds Pets by status',lock:1,z:'op-find',
+   params:[['status','query',1,'Status values that need to be considered for filter · Available values: available, pending, sold','available']],
+   res:[['200','successful operation'],['400','Invalid status value']],
+   exe:{curl:'curl -X GET "https://petstore.swagger.io/v2/pet/findByStatus?status=available" -H "accept: application/json"',url:'https://petstore.swagger.io/v2/pet/findByStatus?status=available',code:200,
+     body:`[
+  { "id": 1001, "category": { "id": 1, "name": "Perros" }, "name": "Firulais", "status": "available" },
+  { "id": 1002, "name": "Michi", "status": "available" },
+  …
+]`}},
+  {v:'get',p:'/pet/findByTags',s:'Finds Pets by tags',lock:1,dep:1},
+  {v:'get',p:'/pet/{petId}',s:'Find pet by ID',lock:1,z:'op-get',
+   params:[['petId','path',1,'ID of pet to return · integer($int64)','1001']],
+   res:[['200','successful operation'],['400','Invalid ID supplied'],['404','Pet not found']],
+   exe:{curl:'curl -X GET "https://petstore.swagger.io/v2/pet/1001" -H "accept: application/json"',url:'https://petstore.swagger.io/v2/pet/1001',code:200,body:PET}},
+  {v:'post',p:'/pet/{petId}',s:'Updates a pet in the store with form data',lock:1},
+  {v:'delete',p:'/pet/{petId}',s:'Deletes a pet',lock:1,z:'op-del',
+   params:[['api_key','header',0,'',''],['petId','path',1,'Pet id to delete · integer($int64)','1001']],
+   res:[['400','Invalid ID supplied'],['404','Pet not found']]},
+ ]},
+ {tag:'store',desc:'Access to Petstore orders',ops:[
+  {v:'get',p:'/store/inventory',s:'Returns pet inventories by status',lock:1},
+  {v:'post',p:'/store/order',s:'Place an order for a pet'},
+  {v:'get',p:'/store/order/{orderId}',s:'Find purchase order by ID'},
+  {v:'delete',p:'/store/order/{orderId}',s:'Delete purchase order by ID'},
+ ]},
+ {tag:'user',desc:'Operations about user',ops:[
+  {v:'post',p:'/user/createWithList',s:'Creates list of users with given input array'},
+  {v:'get',p:'/user/{username}',s:'Get user by user name'},
+  {v:'put',p:'/user/{username}',s:'Updated user'},
+  {v:'delete',p:'/user/{username}',s:'Delete user'},
+  {v:'get',p:'/user/login',s:'Logs user into the system'},
+  {v:'get',p:'/user/logout',s:'Logs out current logged in user session'},
+  {v:'post',p:'/user',s:'Create user'},
+ ]},
+];
+const MODELS={
+ Pet:`Pet {
+  id         integer($int64)
+  category   Category{…}
+  name*      string        example: doggie
+  photoUrls* [string]
+  tags       [Tag{…}]
+  status     string        pet status in the store
+                           Enum: [ available, pending, sold ]
+}`,
+ Category:`Category {\n  id    integer($int64)\n  name  string\n}`,
+ Order:`Order {\n  id        integer($int64)\n  petId     integer($int64)\n  quantity  integer($int32)\n  shipDate  string($date-time)\n  status    string  Enum: [ placed, approved, delivered ]\n  complete  boolean\n}`,
+ User:`User {\n  id         integer($int64)\n  username   string\n  firstName  string\n  email      string\n  password   string\n  userStatus integer($int32)\n}`,
+ ApiResponse:`ApiResponse {\n  code     integer($int32)\n  type     string\n  message  string\n}`,
+};
+
+/* ---------- dibujar ---------- */
+let opIdx=0; const OPS=[];
+$('ops').innerHTML=TAGS.map(t=>`<div class="sw-tag" data-z="tag-${t.tag}"><b>${t.tag}</b><span>${t.desc}</span><span>⌄</span></div>`+t.ops.map(o=>{
+  const i=opIdx++; OPS.push(o);
+  return `<div class="sw-op ${o.v} ${o.dep?'dep':''}" data-i="${i}" ${o.z?`data-z="${o.z}"`:''}>
+    <div class="oh"><span class="vb">${o.v.toUpperCase()}</span><span class="pa">${o.p}</span><span class="su">${o.s}</span>${o.lock?'<span class="lk">🔒</span>':''}</div>
+    <div class="ob"></div></div>`}).join('')).join('');
+$('models').innerHTML=Object.entries(MODELS).map(([n,s])=>`<div class="sw-model" data-z="model-${n}"><b>${n}</b> <span style="color:#999">{…}</span><pre>${esc(s)}</pre></div>`).join('');
+
+function opBody(o,i,tryOn){
+  if(!o.params) return `<div style="padding:6px 0;color:#888;font-size:12px">Ejemplo resumido: abre <b>POST /pet</b>, <b>GET /pet/findByStatus</b>, <b>GET /pet/{petId}</b> o <b>DELETE /pet/{petId}</b> para ver el detalle completo.</div>`;
+  return `<h5 data-z="params-${i}">Parameters ${o.exe?`<span class="try ${tryOn?'on':''}" data-try="${i}">${tryOn?'Cancel':'Try it out'}</span>`:''}</h5>
+    <table>${o.params.map(([n,inn,req,d,val])=>`<tr><td class="pn"><b>${n}</b>${req?'<span class="rq">* required</span>':''}<small>(${inn})</small></td>
+      <td>${d?`<div style="margin-bottom:4px">${esc(d)}</div>`:''}${inn==='body'?`<div style="font-size:11px;color:#888">Example Value | Model</div><pre>${esc(val)}</pre>`:`<span class="inp">${tryOn?esc(val):esc(n)}</span>`}</td></tr>`).join('')}</table>
+    ${tryOn?`<span class="exe" data-exe="${i}">Execute</span><div id="out${i}"></div>`:''}
+    <h5 data-z="resp-${i}">Responses</h5>
+    <table><tr><td class="rc" style="color:#888">Code</td><td style="color:#888">Description</td></tr>${o.res.map(([c,d])=>`<tr><td class="rc">${c}</td><td>${d}${c==='200'&&o.exe?`<pre>${esc(o.exe.body)}</pre>`:''}</td></tr>`).join('')}</table>`;
+}
+function openOp(i,open=true,tryOn=false){
+  const el=document.querySelector(`.sw-op[data-i="${i}"]`); if(!el) return;
+  el.classList.toggle('open',open);
+  if(open) el.querySelector('.ob').innerHTML=opBody(OPS[i],i,tryOn);
+}
+function execute(i){
+  const o=OPS[i], out=$('out'+i);
+  out.innerHTML='<div style="color:#888;font-size:12px;padding:6px 0">Loading…</div>';
+  setTimeout(()=>{out.innerHTML=`<h5>Curl</h5><pre>${esc(o.exe.curl)}</pre><h5>Request URL</h5><pre>${esc(o.exe.url)}</pre>
+    <h5>Server response</h5><table><tr><td class="rc ok">${o.exe.code}</td><td><div style="font-size:11px;color:#888">Response body</div><pre>${esc(o.exe.body)}</pre></td></tr></table>`},700);
+}
+$('ops').addEventListener('click',e=>{
+  const tr=e.target.closest('[data-try]'); if(tr){const i=+tr.dataset.try;openOp(i,true,!tr.classList.contains('on'));return}
+  const ex=e.target.closest('[data-exe]'); if(ex){execute(+ex.dataset.exe);return}
+  const h=e.target.closest('.oh'); if(h){const op=h.parentElement;const i=+op.dataset.i;openOp(i,!op.classList.contains('open'))}
+});
+$('models').addEventListener('click',e=>{const m=e.target.closest('.sw-model');if(m)m.classList.toggle('open')});
+
+/* ---------- recorrido guiado ---------- */
+const idx=p=>OPS.findIndex(o=>o.p===p&&(o.z));
+const T=[
+ {t:'Nombre y versión',z:'info',d:'Arriba están el <b>nombre</b> de la API, su <b>versión</b> (1.0.7) y una descripción. La versión importa: si la API cambia, la documentación debe cambiar también.'},
+ {t:'URL base',z:'base',d:'La <b>URL base</b> es la parte fija que va antes de cada endpoint: <code>https://petstore.swagger.io/v2</code>. En Postman se guarda en una variable, por ejemplo <code>{{baseUrl}}</code>.'},
+ {t:'Autenticación',z:'auth',d:'El botón <b>Authorize</b> y los candados 🔒 indican qué endpoints piden credenciales y de qué tipo (API Key, OAuth…). En Petstore, la API key de prueba es <code>special-key</code>.'},
+ {t:'Endpoints agrupados',z:'tag-pet',d:'Los endpoints se agrupan por <b>recurso</b> (tags): <i>pet</i>, <i>store</i> y <i>user</i>. Cada color es un método: <b style="color:#61affe">GET</b>, <b style="color:#49cc90">POST</b>, <b style="color:#fca130">PUT</b>, <b style="color:#f93e3e">DELETE</b>.'},
+ {t:'Un endpoint: método + ruta',z:'op-get',open:'op-get',d:'Cada fila es un endpoint: <b>método + ruta + resumen</b>. <code>GET /pet/{petId}</code> significa “consultar una mascota por su id”. Las llaves <code>{petId}</code> marcan un <b>path param</b>.'},
+ {t:'Parámetros',z:'params-op-get',open:'op-get',d:'La sección <b>Parameters</b> dice qué datos hay que enviar, <b>dónde</b> van (path, query, header, body), su <b>tipo</b> y si son obligatorios (<span style="color:red">* required</span>).'},
+ {t:'Respuestas posibles',z:'resp-op-get',open:'op-get',d:'<b>Responses</b> lista cada código posible y qué significa: <b>200</b> encontrado, <b>400</b> id inválido, <b>404</b> no existe. Cada uno es un caso de prueba.'},
+ {t:'El body de un POST',z:'params-op-post',open:'op-post',d:'Para crear (<code>POST /pet</code>) hay que enviar un <b>body</b> en JSON. La documentación muestra un <b>ejemplo</b> listo para copiar y adaptar.'},
+ {t:'Query params',z:'params-op-find',open:'op-find',d:'<code>GET /pet/findByStatus</code> recibe un <b>query param</b> <code>status</code> con valores permitidos: <i>available</i>, <i>pending</i>, <i>sold</i>. Probar un valor no permitido debería dar <b>400</b>.'},
+ {t:'Try it out',z:'params-op-find',open:'op-find',tryit:true,d:'<b>Try it out</b> → <b>Execute</b> envía el request desde la misma página y muestra el <code>curl</code>, la URL y la respuesta. Pruébalo aquí: presiona <b>Execute</b>.'},
+ {t:'Modelos (schemas)',z:'models',d:'<b>Models</b> describe la forma de cada objeto: qué campos tiene una <b>Pet</b>, su tipo y cuáles son obligatorios (<code>*</code>). Haz clic en <b>Pet</b> para verlo.'},
+];
+let tc=0;
+$('tlist').innerHTML=T.map((s,i)=>`<li data-i="${i+1}"><span class="n">${i+1}</span><span>${s.t}</span></li>`).join('');
+function opIndexByZ(z){return OPS.findIndex(o=>o.z===z)}
+function tour(i){
+  tc=Math.max(0,Math.min(T.length,i));
+  document.querySelectorAll('#sw .hl').forEach(e=>e.classList.remove('hl'));
+  document.querySelectorAll('.sw-op.open').forEach(e=>e.classList.remove('open'));
+  document.querySelectorAll('#tlist li').forEach(li=>{const k=+li.dataset.i;li.classList.toggle('done',k<tc);li.classList.toggle('cur',k===tc)});
+  $('tcnt').textContent=`${tc} / ${T.length}`;
+  $('tprev').disabled=tc===0; $('tnext').disabled=tc===T.length; $('tnext').textContent=tc?'Siguiente ▶':'Empezar ▶';
+  const s=T[tc-1];
+  if(!s){$('texp').innerHTML='Presiona <b>Empezar</b> para recorrer las partes de la documentación.';return}
+  $('texp').innerHTML=`<b>${tc}. ${s.t}.</b> ${s.d}`;
+  if(s.open){const k=opIndexByZ(s.open);openOp(k,true,!!s.tryit)}
+  if(s.z==='models') document.querySelector('[data-z="model-Pet"]').classList.add('open');
+  let z=s.z;
+  if(z.startsWith('params-')||z.startsWith('resp-')){const [kind,...rest]=z.split('-');z=`${kind}-${opIndexByZ(rest.join('-'))}`}
+  const el=document.querySelector(`#sw [data-z="${z}"]`);
+  if(el){el.classList.add('hl');const sc=$('swScroll');sc.scrollTo({top:Math.max(0,el.offsetTop-sc.offsetTop-30),behavior:'smooth'})}
+}
+$('tnext').onclick=()=>tour(tc+1); $('tprev').onclick=()=>tour(tc-1);
+$('tlist').onclick=e=>{const li=e.target.closest('li');if(li)tour(+li.dataset.i)};
+tour(0);
+})();
+</script>
+</body></html>

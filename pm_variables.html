@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Variables y environments</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+/* ---------- antes / después ---------- */
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ba .reqs{display:grid;gap:6px;margin-top:10px}
+.ba .rq{font-family:Consolas,monospace;font-size:12px;background:#141820;border-radius:7px;padding:7px 9px;display:flex;gap:8px;white-space:nowrap;overflow:hidden;transition:background .3s}
+.ba .rq .m{font-weight:800;width:52px;flex:0 0 auto}
+.ba .rq .h{color:var(--red)}
+.ba .rq .v{color:var(--orange);font-weight:700}
+.ba .rq.flash{background:rgba(87,199,133,.22)}
+.ba .rq.bad{background:rgba(239,101,112,.18)}
+.envsw{display:flex;gap:6px;margin-top:10px}
+.envsw button.on{background:var(--green);color:#111;border-color:var(--green)}
+.resolved{margin-top:8px;font-size:12px;color:var(--muted)}
+.resolved b{color:var(--green);font-family:Consolas,monospace}
+/* ---------- alcances ---------- */
+.scopes{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+.ladder{display:flex;flex-direction:column;gap:6px}
+.lv{display:grid;grid-template-columns:30px 150px 1fr 120px;gap:10px;align-items:center;background:var(--panel2);border:2px solid transparent;border-radius:10px;padding:9px 11px;cursor:pointer;transition:border-color .2s,opacity .2s}
+.lv .ck{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);display:grid;place-items:center;font-weight:900;font-size:12px;color:#111}
+.lv.on .ck{background:var(--c);border-color:var(--c)}
+.lv b{color:var(--c);font-size:14px}
+.lv small{color:var(--muted);font-size:12px;line-height:1.35}
+.lv code{font-size:12px;text-align:right}
+.lv:not(.on){opacity:.5}
+.lv.win{border-color:var(--c);opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent)}
+.winbox{background:#141820;border-radius:12px;padding:16px;text-align:center}
+.winbox .u{font-family:Consolas,monospace;font-size:15px;margin:10px 0;word-break:break-all}
+.winbox .u .vv{color:var(--green);font-weight:800}
+.winbox .from{font-size:13px;color:var(--muted)}
+.winbox .from b{color:var(--text)}
+/* ---------- valores ---------- */
+.iv{width:100%;border-collapse:collapse;font-size:13px}
+.iv th,.iv td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.iv th{background:var(--panel2);color:var(--muted);font-size:12px}
+.iv td:first-child{font-weight:700;width:160px}
+/* ---------- dinámicas ---------- */
+.dyn{width:100%;border-collapse:collapse;font-size:13px}
+.dyn th,.dyn td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+.dyn th{background:var(--panel2);color:var(--muted);font-size:12px}
+.dyn td:first-child{font-family:Consolas,monospace;color:var(--orange);white-space:nowrap}
+.dyn td.ex{font-family:Consolas,monospace;color:var(--green);transition:background .3s}
+.dyn td.ex.flash{background:rgba(87,199,133,.2)}
+.code{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap}
+.code .k{color:#dcdcaa}.code .s{color:#ce9178}.code .c{color:#6a9955}.code .v{color:var(--orange)}
+@media(max-width:1000px){.ba,.scopes{grid-template-columns:1fr}.lv{grid-template-columns:30px 1fr}.lv small,.lv code{grid-column:2}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Variables y environments</h1>
+<div class="sub">Una <b>variable</b> guarda un valor con un nombre y se usa escribiéndolo entre llaves dobles: <code>{{baseUrl}}</code>. Un <b>environment</b> es un conjunto de variables para un ambiente (DEV, QA…).
+Con ellas, la misma colección funciona en cualquier ambiente <b>sin editar ningún request</b>: así trabaja un equipo de QA profesional.</div>
+
+<h2>¿Por qué usar variables?</h2>
+<div class="ba">
+  <div class="card"><b style="color:var(--red)">✗ Sin variables</b>
+    <div class="small">La URL está escrita en cada request. Cambia el servidor y hay que editar todos, uno por uno.</div>
+    <div class="reqs" id="hard"></div>
+    <div class="envsw"><button class="btn" id="hardBtn">El servidor cambió → editar a mano</button></div>
+    <div class="resolved" id="hardMsg"></div></div>
+  <div class="card"><b style="color:var(--green)">✓ Con variables</b>
+    <div class="small">La URL base vive en el environment. Para cambiar de ambiente se elige otro environment y listo.</div>
+    <div class="reqs" id="soft"></div>
+    <div class="envsw" id="envsw"><button class="btn on" data-e="QA">Petstore - QA</button><button class="btn" data-e="DEV">Petstore - DEV</button></div>
+    <div class="resolved" id="softMsg"></div></div>
+</div>
+
+<h2>Dónde puede vivir una variable (y cuál gana)</h2>
+<div class="scopes">
+  <div class="card">
+    <div class="small" style="margin-bottom:10px;font-size:13px">Si la <b>misma variable</b> está definida en varios lugares, Postman usa la del alcance <b>más cercano al request</b>. Activa y desactiva niveles para ver cuál gana con <code>{{baseUrl}}</code>:</div>
+    <div class="ladder" id="ladder"></div>
+  </div>
+  <div class="winbox"><div class="small">El request</div><div class="u">GET <span class="vv">{{baseUrl}}</span>/pet/1001</div><div class="small">se envía a</div><div class="u" id="winUrl"></div><div class="from" id="winFrom"></div></div>
+</div>
+
+<h2>Initial value vs. Current value</h2>
+<div class="card"><table class="iv">
+  <tr><th></th><th>Initial value</th><th>Current value</th></tr>
+  <tr><td>¿Qué es?</td><td>El valor “oficial” que se guarda en la colección o environment.</td><td>El valor que se usa al enviar. Puedes cambiarlo sin afectar a nadie.</td></tr>
+  <tr><td>¿Se comparte?</td><td><b style="color:var(--orange)">Sí</b>: se sincroniza con tu equipo y se exporta.</td><td><b style="color:var(--green)">No</b>: queda solo en tu máquina.</td></tr>
+  <tr><td>¿Qué poner?</td><td>Valores comunes y no sensibles: URLs, ids de prueba.</td><td>Tus <b>tokens y claves</b>, y los valores que generan los scripts.</td></tr>
+</table>
+<div class="note warn">🔐 Marca como tipo <b>secret</b> las variables con claves o tokens (se ocultan en pantalla) y deja vacío su <b>Initial value</b>. Así nunca se suben a la nube ni se exportan por accidente.</div></div>
+
+<h2>Laboratorio: crea tu environment y úsalo</h2>
+<div id="lab"></div>
+
+<h2>Variables dinámicas: datos nuevos en cada envío</h2>
+<div class="cols2">
+  <div class="card">
+    <div class="small" style="font-size:13px">Postman trae variables que empiezan con <code>$</code> y generan un valor <b>distinto cada vez</b> que se envía el request. Sirven para no repetir datos de prueba.</div>
+    <table class="dyn" style="margin-top:8px"><tr><th>Variable</th><th>Genera</th><th>Ejemplo</th></tr><tbody id="dyn"></tbody></table>
+    <button class="btn" id="regen" style="margin-top:10px">🎲 Generar otros valores</button>
+  </div>
+  <div class="card"><b>Usadas en un body</b>
+<pre class="code">{
+  "id": <span class="v">{{$randomInt}}</span>,
+  "name": "<span class="v">{{$randomFirstName}}</span>",
+  "status": "available",
+  "tags": [{ "name": "<span class="v">{{$guid}}</span>" }]
+}</pre>
+    <div class="small" style="margin-top:8px">Cada vez que presionas <b>Send</b>, viaja un nombre y un id nuevos:</div>
+<pre class="code" id="dynBody"></pre></div>
+</div>
+
+<h2>Crear y leer variables desde un script</h2>
+<div class="card">
+<pre class="code"><span class="c">// Guardar (por ejemplo, el id que devolvió la API)</span>
+<span class="k">pm.environment.set</span>(<span class="s">"petId"</span>, json.id);        <span class="c">// en el environment activo</span>
+<span class="k">pm.collectionVariables.set</span>(<span class="s">"petId"</span>, json.id);  <span class="c">// en la colección</span>
+<span class="k">pm.globals.set</span>(<span class="s">"autor"</span>, <span class="s">"QA"</span>);              <span class="c">// global (todo el workspace)</span>
+
+<span class="c">// Leer: pm.variables.get busca en todos los alcances y respeta cuál gana</span>
+<span class="k">const</span> id = <span class="k">pm.variables.get</span>(<span class="s">"petId"</span>);
+
+<span class="c">// Obtener un valor dinámico dentro de un script</span>
+<span class="k">const</span> nombre = <span class="k">pm.variables.replaceIn</span>(<span class="s">"{{$randomFirstName}}"</span>);</pre>
+  <div class="small" style="margin-top:8px">Esto es lo que permite que un request use datos creados <b>en tiempo de ejecución</b> por otro request. Lo aplicaremos en el CRUD completo, en el siguiente tema.</div>
+</div>
+
+<h2>Buenas prácticas</h2>
+<div class="cols3">
+  <div class="tile"><b class="h">🏷 Nombres claros</b>Usa <code>camelCase</code> y nombres que digan qué son: <code>baseUrl</code>, <code>petId</code>, <code>accessToken</code>.</div>
+  <div class="tile"><b class="h">🌍 Un environment por ambiente</b>Las mismas variables, con distinto valor: <i>Petstore - DEV</i>, <i>Petstore - QA</i>. Nunca mezclar ambientes en uno.</div>
+  <div class="tile"><b class="h">🧭 Cada cosa en su alcance</b>URLs y claves → environment. Datos de la colección → collection. Globals solo para lo realmente general.</div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> un request profesional casi no tiene valores escritos a mano: <code>{{baseUrl}}</code> para el servidor, variables secretas para las credenciales, <code>{{$random…}}</code> para los datos y variables guardadas por scripts para encadenar requests.
+  Si alguien te pasa la colección, solo tiene que elegir su environment y presionar <strong>Send</strong>.
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+/* ---------- antes / después ---------- */
+const R=[['GET','/pet/findByStatus?status=available'],['POST','/pet'],['PUT','/pet'],['DELETE','/pet/1001']];
+const ENV={QA:'https://petstore.swagger.io/v2',DEV:'https://petstore-dev.demo.local/v2'};
+const mcol={GET:'#6bdd9a',POST:'#ffe47e',PUT:'#74aef6',DELETE:'#f79a8e'};
+let hardHost='https://petstore.swagger.io/v2';
+function drawHard(){ $('hard').innerHTML=R.map(([m,p],i)=>`<div class="rq" id="h${i}"><span class="m" style="color:${mcol[m]}">${m}</span><span class="h">${hardHost}</span>${p}</div>`).join('') }
+function drawSoft(e){ $('soft').innerHTML=R.map(([m,p])=>`<div class="rq flash"><span class="m" style="color:${mcol[m]}">${m}</span><span class="v">{{baseUrl}}</span>${p}</div>`).join('');
+  $('softMsg').innerHTML=`<b>{{baseUrl}}</b> = <b>${ENV[e]}</b> · 0 requests editados`;
+  setTimeout(()=>document.querySelectorAll('#soft .rq').forEach(x=>x.classList.remove('flash')),600) }
+drawHard(); drawSoft('QA');
+$('hardBtn').onclick=async()=>{
+  $('hardBtn').disabled=true; const target=hardHost.includes('dev')?ENV.QA:ENV.DEV;
+  for(let i=0;i<R.length;i++){ const el=$('h'+i); el.classList.add('bad'); $('hardMsg').textContent=`Editando request ${i+1} de ${R.length}…`;
+    await new Promise(r=>setTimeout(r,700)); el.querySelector('.h').textContent=target; el.classList.remove('bad'); }
+  hardHost=target; $('hardMsg').innerHTML=`4 requests editados a mano. Con 80 requests… y si olvidas uno, apunta al servidor equivocado.`; $('hardBtn').disabled=false;
+};
+$('envsw').onclick=e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#envsw button').forEach(x=>x.classList.toggle('on',x===b));drawSoft(b.dataset.e)};
+
+/* ---------- alcances ---------- */
+const LV=[
+ {k:'local',n:'Local',c:'#ef6570',d:'Creada por un script solo para esta ejecución.',v:'https://local.demo/v2',on:false},
+ {k:'data',n:'Data',c:'#e8d36a',d:'Viene de un archivo CSV/JSON en el Collection Runner.',v:'https://data.demo/v2',on:false},
+ {k:'env',n:'Environment',c:'#57c785',d:'Del environment elegido (QA, DEV…).',v:'https://petstore.swagger.io/v2',on:true},
+ {k:'col',n:'Collection',c:'#59a9e6',d:'Definida en la colección; la comparten todos sus requests.',v:'https://col.demo/v2',on:true},
+ {k:'glob',n:'Global',c:'#a982e2',d:'Disponible en todo el workspace.',v:'https://global.demo/v2',on:true},
+];
+function ladder(){
+  const win=LV.find(l=>l.on);
+  $('ladder').innerHTML=LV.map((l,i)=>`<div class="lv ${l.on?'on':''} ${l===win?'win':''}" data-i="${i}" style="--c:${l.c}"><span class="ck">${l.on?'✓':''}</span><b>${i+1}. ${l.n}</b><small>${l.d}</small><code>${l.v.replace('https://','')}</code></div>`).join('');
+  $('winUrl').innerHTML=win?`<span class="vv">${win.v}</span>/pet/1001`:'<span style="color:var(--red)">{{baseUrl}}/pet/1001  ✗ variable no definida</span>';
+  $('winFrom').innerHTML=win?`Gana <b style="color:${win.c}">${win.n}</b>: es el alcance más cercano que la tiene definida.`:'Ningún alcance define <b>baseUrl</b>: Postman la deja sin resolver y el request falla.';
+}
+$('ladder').onclick=e=>{const r=e.target.closest('.lv');if(!r)return;LV[+r.dataset.i].on=!LV[+r.dataset.i].on;ladder()};
+ladder();
+
+/* ---------- dinámicas ---------- */
+const NAMES=['Ana','Luis','Carla','Diego','María','Jorge','Sofía','Pedro','Lucía','Mateo'], LAST=['Rojas','Mamani','Vargas','Quispe','Flores'];
+const rnd=n=>Math.floor(Math.random()*n);
+const guid=()=>'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=rnd(16);return (c==='x'?r:(r&3|8)).toString(16)});
+const DYN=[
+ ['{{$randomInt}}','Entero entre 0 y 1000',()=>rnd(1001)],
+ ['{{$guid}}','Identificador único (UUID)',guid],
+ ['{{$timestamp}}','Fecha y hora actual en segundos',()=>Math.floor(Date.now()/1000)],
+ ['{{$isoTimestamp}}','Fecha y hora en formato ISO',()=>new Date().toISOString()],
+ ['{{$randomFirstName}}','Nombre de pila',()=>NAMES[rnd(NAMES.length)]],
+ ['{{$randomLastName}}','Apellido',()=>LAST[rnd(LAST.length)]],
+ ['{{$randomEmail}}','Correo de prueba',()=>`${NAMES[rnd(10)].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}${rnd(99)}@example.com`],
+ ['{{$randomBoolean}}','true o false',()=>Math.random()<.5],
+];
+function regen(){
+  $('dyn').innerHTML=DYN.map(([v,d,f])=>`<tr><td>${v}</td><td>${d}</td><td class="ex flash">${f()}</td></tr>`).join('');
+  $('dynBody').innerHTML=`{\n  "id": <span class="v">${rnd(1001)}</span>,\n  "name": "<span class="v">${NAMES[rnd(10)]}</span>",\n  "status": "available",\n  "tags": [{ "name": "<span class="v">${guid()}</span>" }]\n}`;
+  setTimeout(()=>document.querySelectorAll('.dyn td.ex').forEach(x=>x.classList.remove('flash')),500);
+}
+$('regen').onclick=regen; regen();
+})();
+
+/* ---------- laboratorio ---------- */
+const LIST=`[
+  {
+    "id": 1001,
+    "name": "Firulais",
+    "status": "available"
+  },
+  …
+]`;
+const COL=[{name:'Taller Petstore',items:[{name:'Buscar mascotas por estado',m:'GET',sel:true}]}];
+const URL_V='{{baseUrl}}/pet/findByStatus?status={{status}}';
+PMLab.mount(document.getElementById('lab'),{
+  title:'Environment Petstore - QA',
+  intro:'Tienes el request del tema anterior con la URL escrita a mano. Vamos a pasarla a variables. Presiona <b>Empezar</b>.',
+  state:{ws:'Taller APIs - Ana Rojas',cols:COL,tabs:[{name:'Buscar mascotas por estado',m:'GET'}],
+    req:{name:'Buscar mascotas por estado',col:'Taller Petstore',url:'https://petstore.swagger.io/v2/pet/findByStatus?status=available'}},
+  steps:[
+   {t:'Ve a Environments',hl:'rail-env',d:'En la barra izquierda, haz clic en <b>Environments</b>.',set:{side:'environments'}},
+   {t:'Crea un environment',hl:'side-add',d:'Presiona <b>＋</b> para crear un environment nuevo.'},
+   {t:'Ponle nombre',hl:'view',d:'Nómbralo <code>Petstore - QA</code>: <b>API + ambiente</b>. Así, si mañana existe <i>Petstore - DEV</i>, nadie se confunde.',
+    set:{view:'env',envEdit:'Petstore - QA',envs:[{name:'Petstore - QA',vars:[]}]}},
+   {t:'Variable baseUrl',hl:'var:baseUrl',d:'Agrega <code>baseUrl</code> = <code>https://petstore.swagger.io/v2</code>. Es la parte fija de todas las URLs. <b>Sin</b> barra al final.',
+    set:{envs:[{name:'Petstore - QA',vars:[['baseUrl','https://petstore.swagger.io/v2','https://petstore.swagger.io/v2']]}]}},
+   {t:'Variable status',hl:'var:status',d:'Agrega <code>status</code> = <code>available</code>, el valor del filtro.',
+    fn:s=>s.envs[0].vars.push(['status','available','available'])},
+   {t:'Variable apiKey (secret)',hl:'var:apiKey',d:'Agrega <code>apiKey</code> con tipo <b>secret</b>: deja el <b>Initial value vacío</b> y escribe <code>special-key</code> solo en <b>Current value</b>. Se mostrará oculta.',
+    fn:s=>s.envs[0].vars.push(['apiKey','','special-key',true])},
+   {t:'Variable petId',hl:'var:petId',d:'Agrega <code>petId</code> <b>vacía</b>. La llenará un script automáticamente cuando creemos una mascota (siguiente tema).',
+    fn:s=>s.envs[0].vars.push(['petId','',''])},
+   {t:'Guarda',hl:'save',d:'Presiona <b>Save</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>). Sin guardar, las variables no existen.',
+    fn:s=>{s.envs[0].note='💡 <b>Initial value</b> se comparte con el equipo; <b>Current value</b> es solo tuyo. Por eso <code>apiKey</code> solo tiene current value.'}},
+   {t:'Activa el environment',hl:'env',d:'Arriba a la derecha, en el selector de environments, elige <b>Petstore - QA</b>. Si no lo activas, Postman no reconoce sus variables.',
+    set:{env:'Petstore - QA',side:'collections',view:'request'}},
+   {t:'Reemplaza la URL',hl:'url',type:'req.url',d:'Vuelve al request y cambia la URL por:<br><code>'+URL_V+'</code><br>Las variables reconocidas se pintan de <b style="color:#6bdd9a">verde</b>; si una saliera en <b style="color:#ff6c37">naranja/rojo</b>, no está definida o el environment no está activo.',
+    set:{req:{url:URL_V}}},
+   {t:'Comprueba el valor',hl:'tip',d:'Al pasar el mouse sobre <code>{{baseUrl}}</code>, Postman muestra su valor y de dónde viene. Así verificas a qué servidor vas a llamar <b>antes</b> de enviar.',
+    set:{tip:'<b>baseUrl</b> = https://petstore.swagger.io/v2<small>Environment: Petstore - QA · Current value</small>'}},
+   {t:'Send',hl:'status',d:'Presiona <b>Send</b>: misma respuesta que antes, <b>200 OK</b>, pero ahora el request no tiene nada escrito a mano.',
+    set:{tip:null,res:{status:'200 OK',code:200,time:'698 ms',size:'40.58 KB',body:LIST}}},
+   {t:'Guarda el request',hl:'save',d:'Guarda el request (<kbd>Ctrl</kbd>+<kbd>S</kbd>). Desde ahora todos los requests de la colección empezarán con <code>{{baseUrl}}</code>.'},
+   {t:'Variables de colección',hl:'view',d:'Las colecciones también tienen variables (clic en la colección → pestaña <b>Variables</b>). Úsalas para datos propios de la colección que no cambian por ambiente.',
+    set:{view:'html',viewHtml:`<h3>🗂 Taller Petstore</h3><div class="muted">Overview · Authorization · Scripts · <b style="color:#e6e6e6;box-shadow:inset 0 -2px 0 #ff6c37">Variables</b> · Runs</div>
+      <div class="pm-card"><table class="pm-kv"><tr><th>Variable</th><th>Initial value</th><th>Current value</th></tr><tr><td>categoria</td><td>Perros</td><td>Perros</td></tr><tr><td>petName</td><td></td><td>(la llena un script)</td></tr></table></div>
+      <div class="muted" style="margin-top:10px;font-size:12px">Se leen igual: <code style="color:#ff6c37">{{categoria}}</code></div>`}},
+   {t:'Globals',hl:'item:Globals',d:'En <b>Environments → Globals</b> están las variables globales: valen en todo el workspace, sin importar el environment activo. Úsalas con moderación.',
+    set:{side:'environments',view:'env',envEdit:'Globals',envs:[{name:'Globals',vars:[['autor','QA Taller','QA Taller']]},{name:'Petstore - QA',vars:[['baseUrl','https://petstore.swagger.io/v2','https://petstore.swagger.io/v2'],['status','available','available'],['apiKey','','special-key',true],['petId','','']]}]}},
+  ]
+});
+</script>
+</body></html>

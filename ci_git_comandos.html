@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comandos de Git</title>
+<link rel="stylesheet" href="pm/pm.css">
+<link rel="stylesheet" href="ci/ci.css">
+<style>
+.lab2{display:grid;grid-template-columns:250px 1fr;gap:14px;align-items:start}
+.cmds{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px;display:grid;gap:5px;position:sticky;top:10px}
+.cmds small{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin:6px 4px 0}
+.cmds .btn{text-align:left;font-family:Consolas,monospace;font-size:12.5px;padding:7px 10px}
+.cmds .btn.team{font-family:Segoe UI,Arial,sans-serif;border-style:dashed}
+.cmds .btn.rst{font-family:Segoe UI,Arial,sans-serif;font-weight:400;color:var(--muted)}
+.graphs{display:grid;gap:10px}
+.gp{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px 12px}
+.gp h4{margin:0 0 4px;font-size:14px;display:flex;gap:8px;align-items:center}
+.gp h4 small{color:var(--muted);font-weight:400;font-size:12px}
+.gp svg{width:100%;height:auto;display:block}
+.gp.flash{animation:fl .8s}
+@keyframes fl{30%{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 30%,transparent)}}
+.out{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.term2{background:#0c0c0c;border:1px solid #333;border-radius:10px;padding:10px 12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.5;color:#ccc;white-space:pre-wrap;min-height:110px}
+.term2 .p{color:#6bdd9a}.term2 .w{color:#fff;font-weight:700}.term2 .r{color:#f79a8e}.term2 .g{color:#6bdd9a}.term2 .y{color:#e8d36a}
+.expl{background:var(--panel2);border-radius:10px;padding:10px 13px;font-size:14px;line-height:1.6;color:var(--muted);min-height:110px}
+.expl b{color:var(--text)}
+svg .cm{transition:all .4s}
+svg text{font-family:Consolas,monospace}
+.cmdref{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cmdref .card h3{margin:0 0 8px;font-size:15px;color:var(--acc)}
+.cmdref table{width:100%;border-collapse:collapse;font-size:12.5px}
+.cmdref td{padding:5px 4px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.45;color:var(--muted)}
+.cmdref td:first-child{font-family:Consolas,monospace;color:var(--text);white-space:nowrap;padding-right:10px}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:1000px){.lab2,.out,.vs{grid-template-columns:1fr}.cmdref{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Git: los comandos que necesitas</h1>
+<div class="sub">Git guarda el historial como una <b>cadena de commits</b>: cada uno apunta al anterior. Una <b>rama</b> es solo una <b>etiqueta</b> que apunta a un commit, y <b>HEAD</b> indica en qué rama estás parado. Prueba los comandos y mira qué le pasa al historial en tu PC y en GitHub.</div>
+
+<div class="lab2">
+  <div class="cmds" id="cmds">
+    <small>Guardar</small>
+    <button class="btn" data-c="commit">git commit</button>
+    <small>Ramas</small>
+    <button class="btn" data-c="branch">git switch -c feature/login</button>
+    <button class="btn" data-c="swMain">git switch main</button>
+    <button class="btn" data-c="swFeat">git switch feature/login</button>
+    <button class="btn" data-c="merge">git merge feature/login</button>
+    <small>Sincronizar con GitHub</small>
+    <button class="btn" data-c="push">git push</button>
+    <button class="btn team" data-c="team">👥 Un compañero sube un commit</button>
+    <button class="btn" data-c="fetch">git fetch</button>
+    <button class="btn" data-c="pull">git pull</button>
+    <small>Deshacer</small>
+    <button class="btn" data-c="revert">git revert HEAD</button>
+    <button class="btn" data-c="reset">git reset --hard HEAD~1</button>
+    <button class="btn rst" data-c="init">↺ Empezar de nuevo (git clone)</button>
+  </div>
+  <div>
+    <div class="graphs">
+      <div class="gp" id="gL"><h4>💻 Tu PC <small>repositorio local</small></h4><svg id="svL"></svg></div>
+      <div class="gp" id="gR"><h4>☁️ GitHub <small>origin</small></h4><svg id="svR"></svg></div>
+    </div>
+    <div class="out" style="margin-top:10px">
+      <div class="term2" id="term"></div>
+      <div class="expl" id="expl"></div>
+    </div>
+  </div>
+</div>
+
+<h2>Dos formas de deshacer</h2>
+<div class="vs">
+  <div class="tile"><b class="h">↩️ git revert &lt;commit&gt;</b>Crea un <b>commit nuevo</b> que hace lo contrario. El historial queda intacto y se puede subir sin problemas.<br><b>Úsalo</b> para deshacer algo que <b>ya está en GitHub</b>.</div>
+  <div class="tile"><b class="h">⏪ git reset</b>Mueve la rama hacia atrás, como si esos commits no hubieran existido.<br>• <code>--soft</code>: conserva los cambios listos para un nuevo commit.<br>• <code>--hard</code>: <b>borra</b> también los cambios de tus archivos.<br><b>Úsalo solo</b> con commits que <b>todavía no subiste</b>.</div>
+</div>
+<div class="vs" style="margin-top:12px">
+  <div class="tile"><b class="h">⚔️ Conflictos</b>Si tú y otra persona cambian <b>las mismas líneas</b>, <code>git merge</code> o <code>git pull</code> se detienen y marcan el archivo con <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code> y <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>. Eliges qué queda, borras las marcas, y haces <code>git add</code> + <code>git commit</code>. Con colecciones de Postman (JSON grandes) conviene <b>no editar la misma colección a la vez</b> y hacer pull antes de empezar.</div>
+  <div class="tile"><b class="h">🌿 ¿Por qué usar ramas?</b>Trabajas en <code>feature/login</code> sin romper <code>main</code>, que es la que ejecuta Jenkins. Cuando todo funciona, lo unes con un <b>merge</b> (en equipos, mediante un <b>Pull Request</b> en GitHub, donde otra persona lo revisa antes de unirlo).</div>
+</div>
+
+<h2>Chuleta de comandos</h2>
+<div class="cmdref">
+  <div class="card"><h3>Empezar</h3><table>
+    <tr><td>git config --global user.name "…"</td><td>Tu nombre en los commits (una vez)</td></tr>
+    <tr><td>git init</td><td>Convertir una carpeta en repositorio</td></tr>
+    <tr><td>git clone &lt;url&gt;</td><td>Descargar un repositorio existente</td></tr>
+    <tr><td>git remote add origin &lt;url&gt;</td><td>Conectar con GitHub</td></tr>
+  </table></div>
+  <div class="card"><h3>Guardar cambios</h3><table>
+    <tr><td>git status</td><td>Qué cambió y qué falta guardar</td></tr>
+    <tr><td>git diff</td><td>Ver las líneas cambiadas</td></tr>
+    <tr><td>git add &lt;archivo&gt; / .</td><td>Pasar cambios a staging</td></tr>
+    <tr><td>git commit -m "…"</td><td>Guardar una foto en el historial</td></tr>
+    <tr><td>git stash / stash pop</td><td>Guardar cambios a un lado y recuperarlos</td></tr>
+  </table></div>
+  <div class="card"><h3>Ramas</h3><table>
+    <tr><td>git branch</td><td>Listar ramas (* = la actual)</td></tr>
+    <tr><td>git switch -c &lt;rama&gt;</td><td>Crear una rama y pasarse a ella</td></tr>
+    <tr><td>git switch &lt;rama&gt;</td><td>Cambiar de rama</td></tr>
+    <tr><td>git merge &lt;rama&gt;</td><td>Unir esa rama a la actual</td></tr>
+    <tr><td>git branch -d &lt;rama&gt;</td><td>Borrar una rama ya unida</td></tr>
+  </table></div>
+  <div class="card"><h3>Sincronizar</h3><table>
+    <tr><td>git push</td><td>Subir tus commits</td></tr>
+    <tr><td>git push -u origin &lt;rama&gt;</td><td>Subir una rama nueva por primera vez</td></tr>
+    <tr><td>git fetch</td><td>Traer novedades sin mezclarlas</td></tr>
+    <tr><td>git pull</td><td>fetch + merge: traer y unir</td></tr>
+  </table></div>
+  <div class="card"><h3>Ver el historial</h3><table>
+    <tr><td>git log --oneline --graph</td><td>Historial compacto con ramas</td></tr>
+    <tr><td>git show &lt;commit&gt;</td><td>Qué cambió en un commit</td></tr>
+    <tr><td>git blame &lt;archivo&gt;</td><td>Quién cambió cada línea</td></tr>
+  </table></div>
+  <div class="card"><h3>Deshacer</h3><table>
+    <tr><td>git restore &lt;archivo&gt;</td><td>Descartar cambios sin guardar</td></tr>
+    <tr><td>git restore --staged &lt;archivo&gt;</td><td>Sacar de staging</td></tr>
+    <tr><td>git revert &lt;commit&gt;</td><td>Deshacer con un commit nuevo</td></tr>
+    <tr><td>git reset --soft HEAD~1</td><td>Deshacer el último commit (no subido), conservando cambios</td></tr>
+  </table></div>
+</div>
+
+<div class="key"><strong>Rutina segura:</strong> <strong>pull</strong> antes de empezar → trabajar → <strong>status</strong> → <strong>add</strong> → <strong>commit</strong> → <strong>pull</strong> → <strong>push</strong>. Y para deshacer algo que ya está en GitHub: <strong>revert</strong>, nunca reset.</div>
+</div>
+
+<script src="ci/ci.js"></script>
+<script>
+(()=>{
+const {$,esc}=CI;
+let seq,L,R,last=null;
+const hex=()=>Math.random().toString(16).slice(2,9);
+const MSGS=['Agrega test de status','Agrega carpeta de datos','Mejora asserts de CRUD','Agrega test de tiempo','Ajusta variables','Agrega caso negativo','Corrige nombre de request'];
+let mi=0;const nextMsg=()=>MSGS[mi++%MSGS.length];
+function mk(msg,parents,lane){return {id:hex(),msg,parents,lane,x:seq++}}
+function init(){
+  seq=0;mi=0;const c=mk('Primera versión',[],0);
+  R={commits:{[c.id]:c},br:{main:c.id}};
+  L={commits:{[c.id]:{...c}},br:{main:c.id},head:'main',trk:{main:c.id}};
+}
+const lane=b=>b==='main'?0:1;
+function anc(cs,a,b){const st=[b],seen=new Set();while(st.length){const x=st.pop();if(x===a)return true;if(!x||seen.has(x))continue;seen.add(x);(cs[x]?.parents||[]).forEach(p=>st.push(p))}return false}
+function reach(cs,tips){const s=new Set(),st=[...tips];while(st.length){const x=st.pop();if(!x||s.has(x))continue;s.add(x);(cs[x]?.parents||[]).forEach(p=>st.push(p))}return s}
+function copyAll(from,to,tip){reach(from,[tip]).forEach(id=>{if(!to[id])to[id]={...from[id]}})}
+
+/* ---------- dibujo ---------- */
+function draw(svgId,repo,local){
+  const cs=Object.values(repo.commits),W=900,maxX=Math.max(6,...cs.map(c=>c.x));
+  const sp=Math.min(70,(W-140)/maxX),X=c=>50+c.x*sp,Y=c=>50+c.lane*58,H=160;
+  const tips=local?[...Object.values(repo.br),...Object.values(repo.trk)]:Object.values(repo.br);
+  const ok=reach(repo.commits,tips);
+  let s='';
+  cs.forEach(c=>c.parents.forEach(p=>{const q=repo.commits[p];if(!q)return;
+    const dead=!ok.has(c.id);
+    s+=q.lane===c.lane?`<line x1="${X(q)}" y1="${Y(q)}" x2="${X(c)}" y2="${Y(c)}" stroke="${dead?'#555':'#7a8599'}" stroke-width="3" ${dead?'stroke-dasharray="4 4"':''}/>`
+      :`<path d="M${X(q)} ${Y(q)} C ${X(q)+sp*.6} ${Y(q)}, ${X(c)-sp*.6} ${Y(c)}, ${X(c)} ${Y(c)}" fill="none" stroke="${dead?'#555':'#7a8599'}" stroke-width="3" ${dead?'stroke-dasharray="4 4"':''}/>`}));
+  cs.forEach(c=>{const dead=!ok.has(c.id),col=c.lane?'#a982e2':'#4fc1c9',isNew=c.id===last;
+    s+=`<g class="cm" opacity="${dead?.35:1}"><circle cx="${X(c)}" cy="${Y(c)}" r="${isNew?13:11}" fill="${dead?'#333':col}" stroke="${isNew?'#fff':'#10131a'}" stroke-width="3">${isNew?'<animate attributeName="r" from="2" to="13" dur=".35s"/>':''}</circle>
+      <text x="${X(c)}" y="${Y(c)+28}" text-anchor="middle" font-size="10" fill="#8a94a6">${c.id.slice(0,7)}</text><title>${esc(c.msg)}</title></g>`});
+  // etiquetas de ramas
+  const tags={};const add=(id,txt,col)=>{(tags[id]=tags[id]||[]).push([txt,col])};
+  Object.entries(repo.br).forEach(([b,id])=>add(id,(local&&repo.head===b?'HEAD → ':'')+b,local&&repo.head===b?'#57c785':'#4b5568'));
+  if(local)Object.entries(repo.trk).forEach(([b,id])=>add(id,'origin/'+b,'#b5582a'));
+  Object.entries(tags).forEach(([id,arr])=>{const c=repo.commits[id];if(!c)return;
+    arr.forEach(([t,col],k)=>{const w=t.length*6.6+14,y=Y(c)-24-k*20-(c.lane?0:0);
+      s+=`<g><rect x="${X(c)-w/2}" y="${y-13}" width="${w}" height="17" rx="8" fill="${col}"/><text x="${X(c)}" y="${y}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${t}</text></g>`})});
+  if(local){s+=`<text x="8" y="${50+5}" font-size="10" fill="#4fc1c9">main</text><text x="8" y="${108+5}" font-size="10" fill="#a982e2">rama</text>`}
+  $(svgId).setAttribute('viewBox',`0 -18 ${W} ${H}`);$(svgId).innerHTML=s;
+}
+function render(){draw('svL',L,true);draw('svR',R,false);
+  const has=!!L.br['feature/login'];
+  document.querySelectorAll('#cmds .btn').forEach(b=>{const c=b.dataset.c;
+    b.disabled=(c==='swMain'&&L.head==='main')||(c==='swFeat'&&(!has||L.head!=='main'))||(c==='merge'&&(!has||L.head!=='main'))||(c==='branch'&&has)})}
+function say(cmd,out,exp,flash){
+  $('term').innerHTML=`<span class="p">C:\\proyectos\\taller-api-pruebas&gt; </span><span class="w">${esc(cmd)}</span>\n${out}`;
+  $('expl').innerHTML=exp;
+  (flash||[]).forEach(id=>{const g=$(id);g.classList.remove('flash');void g.offsetWidth;g.classList.add('flash')});
+}
+const tip=()=>L.br[L.head];
+
+const OPS={
+ init(){init();last=null;say('git clone https://github.com/ana-quispe/taller-api-pruebas.git',"Cloning into 'taller-api-pruebas'...\n<span class='g'>done.</span>",'<b>git clone</b> descarga el repositorio completo. Tu <b>main</b> y <b>origin/main</b> (la marca de dónde estaba GitHub la última vez que lo consultaste) apuntan al mismo commit.',['gL'])},
+ commit(){const m=nextMsg(),c=mk(m,[tip()],lane(L.head));L.commits[c.id]=c;L.br[L.head]=c.id;last=c.id;
+  say(`git commit -m "${m}"`,`[${L.head} ${c.id.slice(0,7)}] ${esc(m)}\n 1 file changed, 6 insertions(+)`,`Se crea un commit <b>nuevo</b> que apunta al anterior, y la rama <b>${L.head}</b> avanza hasta él. Solo existe en <b>tu PC</b>: GitHub no se enteró.`,['gL'])},
+ branch(){L.br['feature/login']=tip();L.head='feature/login';last=null;
+  say('git switch -c feature/login',"Switched to a new branch 'feature/login'",'Se crea la etiqueta <b>feature/login</b> en el mismo commit y <b>HEAD</b> se mueve a ella. No se copió nada: crear una rama es instantáneo. Haz un par de <b>commits</b> para verla crecer.',['gL'])},
+ swMain(){L.head='main';last=null;say('git switch main',"Switched to branch 'main'",'<b>HEAD</b> vuelve a <b>main</b>: los archivos de tu carpeta cambian para mostrar esa versión. Los commits de la otra rama siguen guardados.',['gL'])},
+ swFeat(){L.head='feature/login';last=null;say('git switch feature/login',"Switched to branch 'feature/login'",'<b>HEAD</b> pasa a <b>feature/login</b>.',['gL'])},
+ merge(){const f=L.br['feature/login'],m=tip();
+  if(anc(L.commits,f,m)){last=null;return say('git merge feature/login','Already up to date.','No hay nada nuevo en <b>feature/login</b> que main no tenga.')}
+  if(anc(L.commits,m,f)){L.br.main=f;last=null;return say('git merge feature/login',`Updating ${m.slice(0,7)}..${f.slice(0,7)}\n<span class="g">Fast-forward</span>`,'<b>Fast-forward</b>: main no tenía commits propios, así que Git solo <b>adelanta la etiqueta</b> main hasta el último commit de la rama. Puedes borrar la rama con <code>git branch -d feature/login</code>.',['gL'])}
+  const c=mk("Merge branch 'feature/login'",[m,f],0);L.commits[c.id]=c;L.br.main=c.id;last=c.id;
+  say('git merge feature/login',"Merge made by the 'ort' strategy.",'Las dos ramas avanzaron por separado, así que Git crea un <b>commit de merge</b> con <b>dos padres</b>, que une ambos historiales. Si las dos hubieran cambiado las mismas líneas, aquí aparecería un <b>conflicto</b>.',['gL'])},
+ push(){const b=L.head,t=tip(),rt=R.br[b];
+  if(rt&&!L.commits[rt]||rt&&!anc(L.commits,rt,t)){last=null;return say('git push',`<span class="r"> ! [rejected]        ${b} -> ${b} (fetch first)</span>\n<span class="y">hint: Updates were rejected because the remote contains work that you do\nhint: not have locally. Integrate the remote changes (e.g. 'git pull ...')</span>`,'<b>Rechazado</b>: GitHub tiene commits que tú no tienes. Git no deja que los pises. Haz <b>git pull</b> primero y vuelve a intentar.',['gR'])}
+  if(rt===t){last=null;return say('git push','Everything up-to-date','No hay commits nuevos para subir.')}
+  copyAll(L.commits,R.commits,t);R.br[b]=t;L.trk[b]=t;last=null;
+  say(b==='main'?'git push':'git push -u origin '+b,`To https://github.com/ana-quispe/taller-api-pruebas.git\n   ${(rt||'0000000').slice(0,7)}..${t.slice(0,7)}  ${b} -> ${b}`,`Tus commits viajan a <b>GitHub</b> y la rama <b>${b}</b> de allá apunta al mismo commit. <b>origin/${b}</b> se actualiza. ${b==='main'?'Jenkins verá el cambio en su próximo build.':'Desde GitHub podrías abrir un <b>Pull Request</b> para unirla a main.'}`,['gL','gR'])},
+ team(){const c=mk('Compañero: agrega test de login',[R.br.main],0);R.commits[c.id]=c;R.br.main=c.id;last=c.id;
+  say('(en otra PC) git push',`   ..${c.id.slice(0,7)}  main -> main`,'Otra persona subió un commit a <b>main</b> en GitHub. Tu PC <b>todavía no lo sabe</b>: tu origin/main sigue apuntando al commit anterior. Prueba <b>git fetch</b>, <b>git pull</b> o un <b>git push</b> para ver qué pasa.',['gR'])},
+ fetch(){const rt=R.br.main;copyAll(R.commits,L.commits,rt);const old=L.trk.main;L.trk.main=rt;last=null;
+  say('git fetch',old===rt?'':`From https://github.com/ana-quispe/taller-api-pruebas\n   ${old.slice(0,7)}..${rt.slice(0,7)}  main -> origin/main`,old===rt?'No hay novedades en GitHub.':'<b>git fetch</b> descarga los commits nuevos y mueve <b>origin/main</b>, pero <b>no toca tu main</b> ni tus archivos. Sirve para mirar antes de mezclar.',['gL'])},
+ pull(){const b=L.head,rt=R.br[b];
+  if(!rt){last=null;return say('git pull','<span class="r">There is no tracking information for the current branch.</span>',`La rama <b>${b}</b> no existe en GitHub. Súbela con <code>git push -u origin ${b}</code>.`)}
+  copyAll(R.commits,L.commits,rt);L.trk[b]=rt;const t=tip();
+  if(anc(L.commits,rt,t)){last=null;return say('git pull','Already up to date.','Tu rama ya tiene todo lo que hay en GitHub.',['gL'])}
+  if(anc(L.commits,t,rt)){L.br[b]=rt;last=null;return say('git pull',`Updating ${t.slice(0,7)}..${rt.slice(0,7)}\n<span class="g">Fast-forward</span>`,'<b>git pull = fetch + merge</b>. Como tú no tenías commits nuevos, tu rama solo <b>avanza</b> hasta el commit de GitHub.',['gL'])}
+  const c=mk("Merge branch 'main' of github.com",[t,rt],0);L.commits[c.id]=c;L.br[b]=c.id;last=c.id;
+  say('git pull',"Merge made by the 'ort' strategy.",'Tú y tu compañero tenían commits distintos: <b>git pull</b> trae los suyos y crea un <b>commit de merge</b> en tu PC. Ahora sí puedes hacer <b>git push</b>.',['gL'])},
+ revert(){const t=tip(),m=L.commits[t].msg,c=mk(`Revert "${m}"`,[t],lane(L.head));L.commits[c.id]=c;L.br[L.head]=c.id;last=c.id;
+  say(L.commits[t].parents.length>1?'git revert -m 1 HEAD':'git revert HEAD',`[${L.head} ${c.id.slice(0,7)}] Revert "${esc(m)}"`,'<b>revert</b> crea un commit <b>nuevo</b> que deshace los cambios del anterior. El historial no se reescribe: es la forma segura de deshacer algo que <b>ya subiste</b>.',['gL'])},
+ reset(){const t=tip(),p=L.commits[t].parents[0];
+  if(!p){last=null;return say('git reset --hard HEAD~1','<span class="r">fatal: ambiguous argument \'HEAD~1\'</span>','No hay un commit anterior al cual volver.')}
+  const pushed=Object.values(R.br).some(r=>anc(L.commits,t,r)||r===t);
+  L.br[L.head]=p;last=null;
+  say('git reset --hard HEAD~1',`HEAD is now at ${p.slice(0,7)} ${esc(L.commits[p].msg)}`,`La rama <b>retrocede</b> un commit: el último queda <b>huérfano</b> (punteado) y Git lo terminará borrando. Con <code>--hard</code> también se pierden los cambios de tus archivos.${pushed?' <b style="color:var(--red)">⚠ Ese commit ya estaba en GitHub</b>: ahora tu rama quedó atrás y el próximo push será rechazado. Para lo ya subido, usa <b>revert</b>.':''}`,['gL'])},
+};
+$('cmds').onclick=e=>{const b=e.target.closest('.btn');if(!b||b.disabled)return;OPS[b.dataset.c]();render()};
+OPS.init();render();
+})();
+</script>
+</body></html>

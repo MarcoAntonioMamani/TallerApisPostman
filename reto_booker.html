@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reto: QA del Hostal Andino</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.hero{display:grid;grid-template-columns:1.3fr .7fr;gap:16px;align-items:stretch}
+.story{background:linear-gradient(135deg,#1d2a3a,#191e28);border:1px solid var(--border);border-radius:16px;padding:20px 22px;font-size:15px;line-height:1.7;color:var(--muted)}
+.story b{color:var(--text)}
+.story .tag{display:inline-block;background:var(--green);color:#111;font-weight:800;font-size:12px;padding:3px 10px;border-radius:999px;margin-bottom:8px}
+.facts{display:grid;gap:8px}
+.fact{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:11px 14px;display:flex;gap:12px;align-items:center}
+.fact i{font-style:normal;font-size:22px}
+.fact b{display:block;font-size:14px}
+.fact span{font-size:12.5px;color:var(--muted)}
+/* índice de pasos */
+.toc{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:16px}
+.toc a{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;text-decoration:none;color:var(--text);font-size:13px;line-height:1.35}
+.toc a:hover{border-color:var(--green)}
+.toc a b{display:block;color:var(--green);font-size:12px}
+/* pasos */
+.step{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px 20px;margin-top:16px;scroll-margin-top:12px}
+.sth{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+.sth .n{width:38px;height:38px;border-radius:50%;background:var(--green);color:#111;font-weight:900;font-size:18px;display:grid;place-items:center;flex:0 0 auto}
+.sth h2{margin:0;font-size:20px}
+.sth small{display:block;color:var(--muted);font-size:13px;font-weight:400}
+.step p,.step li{color:var(--muted);font-size:14px;line-height:1.65}
+.step p b,.step li b{color:var(--text)}
+.step ol{margin:6px 0;padding-left:20px}
+.vars,.api{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.vars th,.vars td,.api th,.api td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.vars th,.api th{background:var(--panel2);color:var(--muted);font-size:12px}
+.vars td:first-child{font-family:Consolas,monospace;color:var(--orange);font-weight:700}
+.api td:nth-child(2){font-family:Consolas,monospace;white-space:nowrap}
+.m{font-family:Consolas,monospace;font-weight:900;font-size:12px}
+.mGET{color:#6bdd9a}.mPOST{color:#ffe47e}.mPUT{color:#74aef6}.mDELETE{color:#f79a8e}
+pre.code{margin:6px 0 0;background:#141820;border-radius:10px;padding:11px 12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.k{color:#9cdcfe}.s{color:#ce9178}.nn{color:#b5cea8}.bb{color:#569cd6}.v{color:var(--orange)}
+.tree{font-family:Consolas,monospace;font-size:13px;line-height:1.75;background:#141820;border-radius:10px;padding:12px 14px;color:var(--text)}
+.tree .d{color:var(--muted)}
+/* tarjetas de request */
+.rq{border:1px solid var(--border);border-radius:12px;margin-top:10px;overflow:hidden}
+.rqh{display:flex;gap:10px;align-items:center;padding:10px 14px;background:var(--panel2);cursor:pointer}
+.rqh .m{width:56px}
+.rqh b{flex:1;font-size:14px}
+.rqh .exp{font-family:Consolas,monospace;font-size:12px;color:var(--muted)}
+.rqh .chev{color:var(--muted);transition:transform .2s}
+.rq.open .rqh .chev{transform:rotate(90deg)}
+.rqb{display:none;padding:12px 14px;font-size:13.5px;line-height:1.6;color:var(--muted)}
+.rq.open .rqb{display:block}
+.rqb .row{display:grid;grid-template-columns:120px 1fr;gap:8px;margin:5px 0}
+.rqb .row>span:first-child{color:var(--text);font-weight:700;font-size:12.5px}
+.rqb code{font-size:12.5px}
+.rqb ul{margin:2px 0;padding-left:18px}
+.rqb li{font-size:13.5px}
+.tn{color:var(--green);font-family:Consolas,monospace;font-size:12.5px}
+details{background:#141820;border:1px dashed var(--border);border-radius:9px;padding:8px 12px;font-size:13px;line-height:1.55;color:var(--muted);margin-top:8px}
+details summary{cursor:pointer;color:var(--orange);font-weight:700}
+details[open]{border-style:solid}
+.bug{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.bug th,.bug td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+.bug th{background:var(--panel2);color:var(--muted);font-size:12px}
+.bug td{color:var(--muted)}
+.rub{width:100%;border-collapse:collapse;font-size:13.5px}
+.rub th,.rub td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.rub th{background:var(--panel2);color:var(--muted);font-size:12px}
+.rub td:last-child{font-weight:800;text-align:right;white-space:nowrap}
+.check{display:grid;gap:6px}
+.check label{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border-radius:9px;padding:9px 11px;font-size:13.5px;line-height:1.5;cursor:pointer;color:var(--muted)}
+.check input{margin-top:3px;accent-color:var(--green);width:16px;height:16px;flex:0 0 auto}
+.check label.ok{background:color-mix(in srgb,var(--green) 14%,var(--panel2));color:var(--text)}
+.pbar{height:10px;background:var(--panel2);border-radius:9px;overflow:hidden;margin:8px 0 12px}
+.pbar div{height:100%;background:var(--green);width:0;transition:width .3s}
+@media(max-width:1000px){.hero{grid-template-columns:1fr}.toc{grid-template-columns:1fr 1fr}.rqb .row{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>🏨 Reto: QA del Hostal Andino</h1>
+<div class="sub">Tarea práctica para aplicar <b>todo</b> lo visto en el taller sobre una API que no usamos en clase. Sigue los pasos en orden: cada uno indica exactamente qué construir y qué resultado debes obtener.</div>
+
+<div class="hero">
+  <div class="story"><span class="tag">TU MISIÓN</span><br>
+    El <b>Hostal Andino</b> está por lanzar su app de reservas y te contrató como <b>QA de APIs</b>. Antes de salir a producción necesita saber si su API
+    <b>crea, consulta, busca, modifica y elimina</b> reservas correctamente, si está <b>protegida</b> contra cambios sin autorización y si funciona con <b>distintos huéspedes</b>.
+    <br><br>Vas a construir en Postman una <b>colección de pruebas automatizadas</b> que lo demuestre, ejecutarla completa con el <b>Collection Runner</b> y <b>reportar los defectos</b> que encuentres.</div>
+  <div class="facts">
+    <div class="fact"><i>👤</i><div><b>Individual</b><span>Tarea para realizar fuera de clase</span></div></div>
+    <div class="fact"><i>⏱️</i><div><b>Tiempo estimado: 3 a 4 horas</b><span>Puedes hacerlo en varias sesiones</span></div></div>
+    <div class="fact"><i>📅</i><div><b id="plazo"></b><span>Plazo de entrega</span></div></div>
+    <div class="fact"><i>📤</i><div><b id="medio"></b><span>Medio de entrega</span></div></div>
+  </div>
+</div>
+
+<div class="toc">
+  <a href="#p0"><b>ANTES</b>La API y los requisitos</a>
+  <a href="#p1"><b>PASO 1</b>Environment</a>
+  <a href="#p2"><b>PASO 2</b>Colección</a>
+  <a href="#p3"><b>PASO 3</b>Los 8 requests</a>
+  <a href="#p4"><b>PASO 4</b>Ejecutar con datos</a>
+  <a href="#p5"><b>PASO 5 y 6</b>Defectos y entrega</a>
+</div>
+
+<!-- ================= ANTES DE EMPEZAR ================= -->
+<div class="step" id="p0">
+  <div class="sth"><span class="n">0</span><div><h2>Antes de empezar</h2><small>Lo que necesitas y la API que vas a probar</small></div></div>
+  <ol>
+    <li><b>Postman</b> instalado y un workspace personal (puedes usar el del taller).</li>
+    <li>Descarga el archivo de datos: <a class="btn" href="postman/reto/huespedes.csv" download style="text-decoration:none">⬇ huespedes.csv</a> (5 huéspedes, una fila cada uno).</li>
+    <li>Lee la documentación oficial de la API: <a href="https://restful-booker.herokuapp.com/apidoc/index.html" target="_blank">restful-booker.herokuapp.com/apidoc</a></li>
+  </ol>
+  <div class="cols2" style="margin-top:8px">
+    <div>
+      <table class="api">
+        <tr><th>Método</th><th>Ruta</th><th>Para qué</th><th>Token</th></tr>
+        <tr><td class="m mPOST">POST</td><td>/auth</td><td>Obtener un token</td><td>No</td></tr>
+        <tr><td class="m mPOST">POST</td><td>/booking</td><td>Crear una reserva</td><td>No</td></tr>
+        <tr><td class="m mGET">GET</td><td>/booking/{id}</td><td>Consultar una reserva</td><td>No</td></tr>
+        <tr><td class="m mGET">GET</td><td>/booking?firstname=&amp;lastname=</td><td>Buscar ids de reservas</td><td>No</td></tr>
+        <tr><td class="m mPUT">PUT</td><td>/booking/{id}</td><td>Reemplazar la reserva</td><td><b>Sí</b></td></tr>
+        <tr><td class="m mDELETE">DELETE</td><td>/booking/{id}</td><td>Eliminar la reserva</td><td><b>Sí</b></td></tr>
+      </table>
+      <p style="margin-top:8px">🔑 El token se envía en el header <code>Cookie</code> con el valor <code>token=&lt;tu token&gt;</code>. Credenciales públicas de práctica: <code>admin</code> / <code>password123</code>.</p>
+    </div>
+    <div><b style="font-size:13px;color:var(--text)">Así es una reserva (body JSON)</b>
+<pre class="code">{
+  <span class="k">"firstname"</span>: <span class="s">"Lucia"</span>,
+  <span class="k">"lastname"</span>: <span class="s">"Andino"</span>,
+  <span class="k">"totalprice"</span>: <span class="nn">420</span>,
+  <span class="k">"depositpaid"</span>: <span class="bb">true</span>,
+  <span class="k">"bookingdates"</span>: {
+    <span class="k">"checkin"</span>: <span class="s">"2026-12-10"</span>,
+    <span class="k">"checkout"</span>: <span class="s">"2026-12-12"</span>
+  },
+  <span class="k">"additionalneeds"</span>: <span class="s">"Desayuno"</span>
+}</pre>
+      <div class="note warn" style="margin-top:8px">⚠ Es una API <b>pública y compartida</b> y sus datos se <b>reinician solos</b> cada cierto tiempo. Por eso <b>nunca</b> anotes ids a mano: todo se encadena con variables. Si la primera llamada tarda, espera unos segundos.</div></div>
+  </div>
+</div>
+
+<!-- ================= PASO 1 ================= -->
+<div class="step" id="p1">
+  <div class="sth"><span class="n">1</span><div><h2>Crea el environment</h2><small>Todas las URLs y credenciales salen de aquí</small></div></div>
+  <p>En <b>Environments → ＋</b> crea el environment <b>Restful Booker - QA</b> con estas variables, guárdalo y <b>actívalo</b> (selector arriba a la derecha):</p>
+  <table class="vars">
+    <tr><th>Variable</th><th>Valor inicial</th><th>Tipo</th><th>Para qué sirve</th></tr>
+    <tr><td>baseUrl</td><td><code>https://restful-booker.herokuapp.com</code></td><td>default</td><td>La parte fija de todas las URLs (sin <code>/</code> al final)</td></tr>
+    <tr><td>usuario</td><td><code>admin</code></td><td>default</td><td>Usuario del login</td></tr>
+    <tr><td>clave</td><td><code>password123</code></td><td><b>secret</b></td><td>Clave del login</td></tr>
+    <tr><td>token</td><td><i>(vacío)</i></td><td><b>secret</b></td><td>Lo guarda el script del request 01</td></tr>
+    <tr><td>bookingId</td><td><i>(vacío)</i></td><td>default</td><td>Lo guarda el script del request 02</td></tr>
+    <tr><td>checkin · checkout</td><td><i>(vacío)</i></td><td>default</td><td>Fechas que calcula el pre-request del request 02</td></tr>
+    <tr><td>nuevoPrecio · nuevaSalida</td><td><i>(vacío)</i></td><td>default</td><td>Valores que calcula el pre-request del request 06</td></tr>
+  </table>
+  <p style="margin-top:8px">✅ <b>Resultado esperado:</b> el environment aparece activo y, al escribir <code>{{baseUrl}}</code> en una URL, Postman lo pinta en <b style="color:#6bdd9a">verde</b>.</p>
+</div>
+
+<!-- ================= PASO 2 ================= -->
+<div class="step" id="p2">
+  <div class="sth"><span class="n">2</span><div><h2>Crea la colección y sus carpetas</h2><small>La estructura que entregarás</small></div></div>
+  <p>Crea la colección <b>Reto Hostal Andino</b> con dos carpetas. Los nombres de los requests llevan número para que el orden quede claro:</p>
+<div class="tree">🗂 Reto Hostal Andino
+ ├─ 📁 Reserva completa        <span class="d">← se ejecuta con huespedes.csv (paso 4)</span>
+ │   ├─ 01 Login
+ │   ├─ 02 Crear reserva
+ │   ├─ 03 Consultar reserva
+ │   ├─ 04 Buscar reserva por nombre
+ │   ├─ 05 Actualizar sin token (negativo)
+ │   ├─ 06 Actualizar reserva
+ │   ├─ 07 Eliminar reserva
+ │   └─ 08 Verificar eliminación
+ └─ 📁 Defectos encontrados     <span class="d">← tus hallazgos (paso 5)</span></div>
+  <p style="margin-top:8px">💡 <b>Test común para toda la colección:</b> en la colección → pestaña <b>Scripts → Post-response</b>, agrega un test <span class="tn">"Responde en menos de 3 s"</span> que valide el tiempo de respuesta. Se aplicará a todos los requests.</p>
+</div>
+
+<!-- ================= PASO 3 ================= -->
+<div class="step" id="p3">
+  <div class="sth"><span class="n">3</span><div><h2>Construye los 8 requests</h2><small>Haz clic en cada uno para ver qué debe tener</small></div></div>
+  <p>Todos usan <code>{{baseUrl}}</code>. Los datos del huésped (<code>{{firstname}}</code>, <code>{{lastname}}</code>, <code>{{totalprice}}</code>, <code>{{depositpaid}}</code>, <code>{{additionalneeds}}</code>) vienen de las <b>columnas del CSV</b>.
+  Mientras construyes, puedes probarlos con <b>Send</b> creando esas variables temporalmente en tu environment; al final, en el paso 4, las tomarán del archivo.</p>
+  <div id="reqs"></div>
+</div>
+
+<!-- ================= PASO 4 ================= -->
+<div class="step" id="p4">
+  <div class="sth"><span class="n">4</span><div><h2>Ejecuta la carpeta con el archivo de datos</h2><small>La prueba de que todo está automatizado</small></div></div>
+  <ol>
+    <li>Si creaste variables temporales de huésped en el environment, <b>elimínalas</b>: deben venir del CSV.</li>
+    <li>Sobre la carpeta <b>Reserva completa</b> → <b>⋯ → Run folder</b>.</li>
+    <li>En <b>Test data file → Select File</b> elige <code>huespedes.csv</code> y revisa el <b>Preview</b>: 6 columnas y 5 filas.</li>
+    <li>Verifica que <b>Iterations</b> sea <b>5</b> y presiona <b>Run</b>.</li>
+  </ol>
+  <p>✅ <b>Resultado esperado:</b> <b>5 iteraciones × 8 requests = 40 requests</b>, con <b>todos los tests en verde</b>. El 403 del request 05 y el 404 del request 08 aparecen en rojo como status, pero sus tests <b>pasan</b>: eran los resultados esperados.</p>
+  <details><summary>💡 Si algo falla en el Runner</summary>
+    <ul style="margin:6px 0;padding-left:18px">
+      <li>¿Una variable sale sin reemplazar (<code>{{firstname}}</code> literal)? El nombre de la columna del CSV no coincide exactamente con el de la variable.</li>
+      <li>¿El 03 dice que el precio no coincide? Los valores del CSV llegan como <b>texto</b>: compara con <code>Number(...)</code>.</li>
+      <li>¿Falla el 06 o el 07 con 403? El token no se está guardando o no se envía en el header <code>Cookie</code>.</li>
+      <li>Abre la <b>Postman Console</b> (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd>) para ver exactamente qué se envió.</li>
+    </ul></details>
+</div>
+
+<!-- ================= PASO 5 ================= -->
+<div class="step" id="p5">
+  <div class="sth"><span class="n">5</span><div><h2>Caza de defectos</h2><small>Lo que distingue a un QA: encontrar lo que no funciona como debería</small></div></div>
+  <p>Esta API tiene <b>defectos reales</b>: respuestas que no siguen las buenas prácticas de REST que vimos en el taller. Encuentra <b>al menos 3</b>. Para cada uno:</p>
+  <ol>
+    <li>Crea un request en la carpeta <b>Defectos encontrados</b> con un nombre que diga qué <b>debería</b> pasar. Ejemplo de formato: <code>D1 &lt;acción&gt; debería responder &lt;status correcto&gt;</code>.</li>
+    <li>Escribe un test que valide el comportamiento <b>correcto</b>. Ese test <b>debe fallar</b>: el fallo es la evidencia del defecto.</li>
+    <li>Regístralo en una tabla como esta, en un documento corto (Word, PDF o el formato que prefieras):</li>
+  </ol>
+  <table class="bug"><tr><th>#</th><th>Request</th><th>Resultado esperado y por qué</th><th>Resultado obtenido</th><th>Test que lo demuestra</th></tr>
+    <tr><td>D1</td><td><i>Método, URL y body enviados</i></td><td><i>Status y body correctos, citando la buena práctica</i></td><td><i>Status y body reales</i></td><td><i>Nombre del test que falla</i></td></tr>
+    <tr><td>D2</td><td></td><td></td><td></td><td></td></tr><tr><td>D3</td><td></td><td></td><td></td><td></td></tr></table>
+  <details><summary>💡 Pista 1: dónde buscar</summary>Revisa el <b>status code</b> de cada operación, incluso de las que “funcionan”. ¿Coincide con la diapositiva de status codes? ¿Qué debería responder una creación? ¿Y un borrado?</details>
+  <details><summary>💡 Pista 2: casos negativos</summary>Prueba lo que un usuario no debería poder hacer bien: credenciales incorrectas, un body incompleto, valores sin sentido. Un error del cliente debería ser un <b>4xx</b>, nunca un <b>5xx</b>.</details>
+  <details><summary>💡 Pista 3: más allá del status</summary>Existe un endpoint de “salud” del servicio en la documentación. ¿Qué status responde? ¿Tiene sentido?</details>
+</div>
+
+<!-- ================= PASO 6 ================= -->
+<div class="step" id="p6">
+  <div class="sth"><span class="n">6</span><div><h2>Entrega</h2><small>Comprime todo en un solo archivo: <code>Reto_TuNombre.zip</code></small></div></div>
+  <div class="cols2">
+    <div><ol>
+      <li><b>La colección</b>: ⋯ → Export → <b>Collection v2.1</b>.</li>
+      <li><b>El environment</b>: ⋯ → Export. Antes, borra el <i>current value</i> del <code>token</code>.</li>
+      <li><b>La evidencia del Runner</b>: captura de pantalla del resultado de las 5 iteraciones, o el reporte HTML de Newman si lo tienes instalado.</li>
+      <li><b>El documento de defectos</b> con la tabla del paso 5.</li>
+    </ol></div>
+    <div class="note warn" style="margin:0">🔐 <b>Seguridad:</b> no incluyas tokens ni contraseñas reales en ningún archivo. Las credenciales de esta API son públicas de práctica, pero acostúmbrate a revisar qué exportas antes de compartirlo.</div>
+  </div>
+</div>
+
+<h2>📊 Cómo se califica</h2>
+<div class="card"><table class="rub">
+  <tr><th>Criterio</th><th>Qué se revisa</th><th>Puntos</th></tr>
+  <tr><td>Environment y organización</td><td>Variables del paso 1 (credenciales como secret), colección y carpetas con los nombres indicados, requests numerados.</td><td>10</td></tr>
+  <tr><td>Requests y encadenamiento</td><td>Los 8 requests con método, URL, headers y body correctos; token e id guardados y usados por variables, sin valores escritos a mano.</td><td>25</td></tr>
+  <tr><td>Tests</td><td>Los tests indicados en cada request, con nombres que explican qué validan.</td><td>20</td></tr>
+  <tr><td>Datos y fechas dinámicas</td><td>Uso de las columnas del CSV, <code>pm.iterationData</code> en los tests y fechas calculadas por script.</td><td>15</td></tr>
+  <tr><td>Prueba negativa y limpieza</td><td>El 403 sin token, la eliminación y la verificación del 404.</td><td>10</td></tr>
+  <tr><td>Ejecución completa</td><td>Evidencia de las 5 iteraciones en el Runner con todos los tests en verde.</td><td>5</td></tr>
+  <tr><td>Defectos</td><td>Al menos 3 defectos, cada uno con su request, test que falla y registro en la tabla (5 puntos cada uno).</td><td>15</td></tr>
+  <tr><td colspan="2" style="text-align:right;font-weight:800">Total</td><td>100</td></tr>
+</table></div>
+
+<h2>✅ Antes de entregar, revisa</h2>
+<div class="card"><div id="progTxt" class="small" style="font-size:13.5px"></div><div class="pbar"><div id="progBar"></div></div><div class="check" id="check"></div></div>
+
+<div class="key">
+  <strong>La prueba final:</strong> si puedes ejecutar la carpeta <strong>Reserva completa</strong> con el CSV, de principio a fin, <strong>sin tocar nada entre requests</strong>, y todo queda en verde, tu colección está realmente automatizada. Eso es exactamente lo que hace un QA de APIs en un proyecto real.
+</div>
+</div>
+
+<script>
+(()=>{
+/* ====== CONFIGURACIÓN DEL INSTRUCTOR: edita estos dos textos ====== */
+const PLAZO = 'Lo indicará el instructor';
+const MEDIO = 'Lo indicará el instructor';
+/* ================================================================== */
+const $=id=>document.getElementById(id);
+$('plazo').textContent=PLAZO; $('medio').textContent=MEDIO;
+const BODY_CREATE=`{
+  "firstname": "{{firstname}}",
+  "lastname": "{{lastname}}",
+  "totalprice": {{totalprice}},
+  "depositpaid": {{depositpaid}},
+  "bookingdates": { "checkin": "{{checkin}}", "checkout": "{{checkout}}" },
+  "additionalneeds": "{{additionalneeds}}"
+}`;
+const R=[
+ {n:'01 Login',m:'POST',u:'{{baseUrl}}/auth',exp:'200',auth:'No Auth',
+  body:`{\n  "username": "{{usuario}}",\n  "password": "{{clave}}"\n}`,
+  post:'Guarda el <code>token</code> de la respuesta en el environment.',
+  tests:['"Status 200"','"Devuelve un token": el token es un texto no vacío'],
+  hint:'Guardar: <code>pm.environment.set("token", pm.response.json().token);</code> · Prueba con una clave incorrecta: ¿qué status responde? Por eso el test valida el <b>token</b> y no solo el status.'},
+ {n:'02 Crear reserva',m:'POST',u:'{{baseUrl}}/booking',exp:'200',auth:'No Auth · header <code>Content-Type: application/json</code>',
+  body:BODY_CREATE,
+  pre:'Calcula y guarda <code>checkin</code> (hoy + 30 días) y <code>checkout</code> (checkin + la columna <code>noches</code>), en formato <code>AAAA-MM-DD</code>.',
+  post:'Guarda el <code>bookingid</code> de la respuesta en <code>bookingId</code>.',
+  tests:['"Status 200"','"Devuelve el id de la reserva": bookingid es un número','"Guardó la reserva de {nombre}": nombre, precio y fecha de llegada coinciden con lo enviado'],
+  hint:'Fechas: <code>const d = new Date(); d.setDate(d.getDate() + 30); d.toISOString().slice(0, 10)</code>. Las noches: <code>Number(pm.iterationData.get("noches"))</code>. Ojo: <code>{{totalprice}}</code> y <code>{{depositpaid}}</code> van <b>sin comillas</b> en el body (número y booleano).'},
+ {n:'03 Consultar reserva',m:'GET',u:'{{baseUrl}}/booking/{{bookingId}}',exp:'200',auth:'No Auth',
+  tests:['"Status 200"','"Los datos coinciden con el archivo": firstname, lastname, totalprice, depositpaid y additionalneeds iguales a la fila del CSV','"Las fechas son las calculadas": checkin y checkout iguales a las variables del environment'],
+  hint:'Compara con <code>pm.iterationData.get("columna")</code>. Recuerda que el CSV entrega texto: <code>Number(...)</code> para el precio y <code>=== "true"</code> para depositpaid.'},
+ {n:'04 Buscar reserva por nombre',m:'GET',u:'{{baseUrl}}/booking?firstname={{firstname}}&lastname={{lastname}}',exp:'200',auth:'No Auth',
+  tests:['"Status 200"','"La búsqueda encuentra la reserva creada": la lista de ids incluye bookingId'],
+  hint:'La respuesta es <code>[{"bookingid": 12}, …]</code>. Conviértela con <code>.map(r =&gt; r.bookingid)</code> y valida con <code>to.include(Number(pm.environment.get("bookingId")))</code>.'},
+ {n:'05 Actualizar sin token (negativo)',m:'PUT',u:'{{baseUrl}}/booking/{{bookingId}}',exp:'403',auth:'<b>Sin</b> header Cookie (a propósito)',
+  body:'El mismo body del 02, con cualquier precio.',
+  tests:['"Sin token no se puede modificar: 403"'],
+  hint:'Este request comprueba la <b>seguridad</b>: si respondiera 200, cualquiera podría modificar reservas ajenas.'},
+ {n:'06 Actualizar reserva',m:'PUT',u:'{{baseUrl}}/booking/{{bookingId}}',exp:'200',auth:'Header <code>Cookie: token={{token}}</code>',
+  body:'Todos los campos (PUT reemplaza la reserva completa), con <code>"totalprice": {{nuevoPrecio}}</code>, <code>"depositpaid": true</code> y <code>"checkout": "{{nuevaSalida}}"</code>.',
+  pre:'Calcula <code>nuevoPrecio</code> = precio del CSV + 100 y <code>nuevaSalida</code> = checkout + 1 día.',
+  tests:['"Status 200"','"Se aplicaron los cambios": nuevo precio, depositpaid en true y nueva fecha de salida'],
+  hint:'Para sumar un día a una fecha guardada: <code>const s = new Date(pm.environment.get("checkout")); s.setDate(s.getDate() + 1);</code>'},
+ {n:'07 Eliminar reserva',m:'DELETE',u:'{{baseUrl}}/booking/{{bookingId}}',exp:'¿?',auth:'Header <code>Cookie: token={{token}}</code>',
+  tests:['"Eliminación aceptada": el status es uno de los que indican éxito'],
+  hint:'Usa <code>pm.expect(pm.response.code).to.be.oneOf([…])</code>. Mira qué status responde realmente… y pregúntate si es el correcto para un borrado (paso 5).'},
+ {n:'08 Verificar eliminación',m:'GET',u:'{{baseUrl}}/booking/{{bookingId}}',exp:'404',auth:'No Auth',
+  tests:['"Ya no existe: 404"'],
+  hint:'Un 404 aquí es una <b>buena noticia</b>: confirma que el borrado funcionó.'},
+];
+const esc=s=>s.replace(/&(?!lt;|gt;|amp;)/g,'&amp;');
+$('reqs').innerHTML=R.map((r,i)=>`<div class="rq ${i===0?'open':''}"><div class="rqh"><span class="m m${r.m}">${r.m}</span><b>${r.n}</b><span class="exp">espera ${r.exp}</span><span class="chev">▶</span></div>
+  <div class="rqb">
+    <div class="row"><span>URL</span><code class="v">${esc(r.u)}</code></div>
+    <div class="row"><span>Autenticación</span><span>${r.auth}</span></div>
+    ${r.body?`<div class="row"><span>Body (raw JSON)</span>${r.body.startsWith('{')?`<pre class="code" style="margin:0">${esc(r.body)}</pre>`:`<span>${r.body}</span>`}</div>`:''}
+    ${r.pre?`<div class="row"><span>Pre-request</span><span>${r.pre}</span></div>`:''}
+    ${r.post?`<div class="row"><span>Post-response</span><span>${r.post}</span></div>`:''}
+    <div class="row"><span>Tests</span><ul>${r.tests.map(t=>`<li><span class="tn">${t.split(':')[0]}</span>${t.includes(':')?': '+t.split(':').slice(1).join(':'):''}</li>`).join('')}</ul></div>
+    <details><summary>💡 Pista</summary>${r.hint}</details>
+  </div></div>`).join('');
+$('reqs').onclick=e=>{const h=e.target.closest('.rqh');if(h)h.parentElement.classList.toggle('open')};
+
+const C=['El environment <b>Restful Booker - QA</b> tiene todas las variables del paso 1, con la clave y el token como <b>secret</b>.',
+ 'La colección y las carpetas tienen los nombres del paso 2, y los requests están numerados.',
+ 'La colección tiene el test común <b>"Responde en menos de 3 s"</b>.',
+ 'Ninguna URL tiene el servidor escrito a mano: todas usan <code>{{baseUrl}}</code>.',
+ 'El token y el bookingId se guardan por script; nunca los copié a mano.',
+ 'Las fechas se calculan en el pre-request del 02 y los nuevos valores en el del 06.',
+ 'Cada request tiene los tests indicados, con esos mismos nombres.',
+ 'El 05 espera 403 y el 08 espera 404, y los dos pasan.',
+ 'Ejecuté <b>Reserva completa</b> con <code>huespedes.csv</code>: 5 iteraciones, todos los tests en verde.',
+ 'Encontré al menos <b>3 defectos</b>, cada uno con su request en <b>Defectos encontrados</b> y un test que falla.',
+ 'Registré los defectos en la tabla del paso 5.',
+ 'Exporté colección y environment (con el token vacío), y tengo la captura del Runner.'];
+const KEY='retoBooker.v2'; let st={}; try{st=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){}
+$('check').innerHTML=C.map((c,i)=>`<label class="${st[i]?'ok':''}"><input type="checkbox" data-i="${i}" ${st[i]?'checked':''}><span>${c}</span></label>`).join('');
+function upd(){const d=C.filter((_,i)=>st[i]).length;$('progTxt').innerHTML=`<b>${d} de ${C.length}</b> puntos revisados${d===C.length?' · ¡listo para entregar! 🎉':''}`;$('progBar').style.width=(d/C.length*100)+'%';
+  document.querySelectorAll('#check label').forEach(l=>l.classList.toggle('ok',l.querySelector('input').checked))}
+$('check').onchange=e=>{const i=e.target.dataset.i;if(i===undefined)return;st[i]=e.target.checked;try{localStorage.setItem(KEY,JSON.stringify(st))}catch(_){}upd()};
+upd();
+})();
+</script>
+</body></html>

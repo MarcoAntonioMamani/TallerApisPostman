@@ -1,0 +1,13 @@
+{
+  "name": "taller-petstore",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pruebas de API del taller con Newman (requiere: npm install -g newman newman-reporter-htmlextra)",
+  "scripts": {
+    "test:crud": "newman run \"Taller Petstore.postman_collection.json\" -e \"Petstore - QA.postman_environment.json\" --folder \"CRUD Mascota\"",
+    "test:datos": "newman run \"Taller Petstore.postman_collection.json\" -e \"Petstore - QA.postman_environment.json\" --folder \"Datos desde archivo\" -d datos/mascotas.csv",
+    "test:reporte": "newman run \"Taller Petstore.postman_collection.json\" -e \"Petstore - QA.postman_environment.json\" --folder \"CRUD Mascota\" -r cli,htmlextra,junit --reporter-htmlextra-export reports/reporte.html --reporter-junit-export reports/junit.xml",
+    "test:allure": "newman run \"Taller Petstore.postman_collection.json\" -e \"Petstore - QA.postman_environment.json\" --folder \"CRUD Mascota\" --folder \"Datos desde archivo\" -d datos/mascotas.csv -r cli,allure --reporter-allure-export allure-results",
+    "allure:reporte": "allure generate allure-results --clean -o allure-report && allure open allure-report"
+  }
+}

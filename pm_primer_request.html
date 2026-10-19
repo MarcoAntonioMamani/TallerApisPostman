@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi primer request</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.final{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.final pre{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap}
+.find{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.find .tile code{font-size:12px}
+.find .tile .r{display:block;margin-top:6px;font-family:Consolas,monospace;font-size:12px;color:var(--text);background:#141820;border-radius:6px;padding:6px 8px}
+@media(max-width:1000px){.final,.find{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Mi primer request</h1>
+<div class="sub">Vamos a consultar las mascotas <b>disponibles</b> en Swagger Petstore, revisar la respuesta y guardar el request en una colección. Es el mismo endpoint que viste en la documentación: <code>GET /pet/findByStatus</code>.</div>
+
+<div id="lab"></div>
+
+<h2>Cómo debe quedar</h2>
+<div class="final">
+  <div class="card"><b>📝 Datos del request</b>
+<pre>Método:     <b style="color:#6bdd9a">GET</b>
+URL:        https://petstore.swagger.io/v2/pet/findByStatus?status=available
+Params:     status = available   (se llena solo desde la URL)
+Auth:       No Auth
+Body:       none
+Guardar en: colección <b>Taller Petstore</b>
+Nombre:     <b>Buscar mascotas por estado</b></pre></div>
+  <div class="card"><b>✅ Respuesta esperada</b>
+<pre>Status:  <b style="color:#6bdd9a">200 OK</b>
+Time:    menos de 2 s (depende de la red)
+Body:    una lista [ … ] de mascotas
+         cada una con id, name y status = "available"</pre>
+    <div class="small" style="margin-top:8px">Los nombres y la cantidad cambian todo el tiempo: es una API pública y otras personas crean y borran mascotas.</div></div>
+</div>
+
+<h2>🔍 Para investigar: ¿la API cumple su documentación?</h2>
+<div class="find">
+  <div class="tile"><b class="h">Un estado que no existe</b>Cambia el param a <code>status=xyz</code>. La documentación dice que un estado inválido responde <b>400</b>. ¿Qué responde realmente?
+    <span class="r">200 OK · []</span><span style="display:block;margin-top:6px">Responde <b>200 con una lista vacía</b>: no cumple lo documentado. Es un <b>hallazgo</b>.</span></div>
+  <div class="tile"><b class="h">Un id con letras</b>Prueba <code>GET https://petstore.swagger.io/v2/pet/abc</code>. La documentación dice <b>400 Invalid ID</b>.
+    <span class="r">404 · "java.lang.NumberFormatException: For input string: \"abc\""</span><span style="display:block;margin-top:6px">Responde <b>404</b> y además <b>expone un error interno</b> de Java: dos hallazgos en un solo request.</span></div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> el ciclo siempre es el mismo: <strong>armar el request → Send → leer status, tiempo y body → comparar con lo esperado</strong>.
+  Y guardar lo que funciona en una colección, para no volver a escribirlo.
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+const LIST=`[
+  {
+    "id": 1001,
+    "category": { "id": 1, "name": "Perros" },
+    "name": "Firulais",
+    "photoUrls": [],
+    "tags": [],
+    "status": "available"
+  },
+  {
+    "id": 1002,
+    "name": "Michi",
+    "photoUrls": [],
+    "tags": [],
+    "status": "available"
+  },
+  …
+]`;
+const SOLD=`[
+  {
+    "id": 2001,
+    "name": "Rocky",
+    "photoUrls": [],
+    "tags": [],
+    "status": "sold"
+  },
+  …
+]`;
+const URL1='https://petstore.swagger.io/v2/pet/findByStatus?status=available';
+PMLab.mount(document.getElementById('lab'),{
+  title:'Primer request',
+  intro:'Estás en tu workspace del taller, todavía vacío. Presiona <b>Empezar</b>.',
+  state:{ws:'Taller APIs - Ana Rojas',tabs:[],req:{name:'',url:''},res:null},
+  steps:[
+   {t:'Abre una pestaña nueva',hl:'plus',d:'Haz clic en <b>＋</b> (o <kbd>Ctrl</kbd>+<kbd>T</kbd>). Se abre un <b>Untitled Request</b> en blanco.',
+    set:{tabs:[{name:'Untitled Request',m:'GET'}],req:{name:'Untitled Request'}}},
+   {t:'Deja el método en GET',hl:'method',d:'El método por defecto es <b>GET</b>, justo el que necesitamos para <b>consultar</b>.'},
+   {t:'Escribe la URL',hl:'url',type:'req.url',d:'Escribe o pega la URL del endpoint:<br><code>'+URL1+'</code>',set:{req:{url:URL1}}},
+   {t:'Mira la pestaña Params',hl:'ed',d:'Postman separó solo el query param: <b>status = available</b>. Puedes editarlo aquí o en la URL; los dos se mantienen sincronizados.'},
+   {t:'Presiona Send',hl:'send',d:'Haz clic en <b>Send</b> (o <kbd>Ctrl</kbd>+<kbd>Enter</kbd>).',set:{res:{loading:true}}},
+   {t:'Revisa el status',hl:'status',d:'<b>200 OK</b>: la API entendió y respondió bien. Al lado están el <b>tiempo</b> y el <b>tamaño</b> de la respuesta.',
+    set:{res:{loading:false,status:'200 OK',code:200,time:'712 ms',size:'40.58 KB',body:LIST},history:[['GET',URL1]]}},
+   {t:'Lee el body',hl:'rbody',d:'El body es una <b>lista</b> (<code>[ ]</code>) de mascotas en <b>JSON</b>. Cada una tiene <code>id</code>, <code>name</code> y <code>status</code>. Verifica que todas digan <code>"available"</code>.'},
+   {t:'Cambia el filtro a sold',hl:'url',type:'req.url',d:'Cambia el valor del param a <code>sold</code> y vuelve a presionar <b>Send</b>. Ahora la lista trae mascotas <b>vendidas</b>.',
+    set:{req:{url:'https://petstore.swagger.io/v2/pet/findByStatus?status=sold'},res:{status:'200 OK',code:200,time:'688 ms',size:'38.41 KB',body:SOLD},history:[['GET',URL1],['GET','…/findByStatus?status=sold']]}},
+   {t:'Vuelve a available',hl:'url',d:'Deja otra vez <code>status=available</code>: así se guardará el request.',
+    set:{req:{url:URL1},res:{status:'200 OK',code:200,time:'705 ms',size:'40.58 KB',body:LIST}}},
+   {t:'Guarda el request',hl:'save',d:'Presiona <b>Save</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>). Se abre la ventana para guardarlo.'},
+   {t:'Ponle un nombre',hl:'mf:0',type:'modal.fields.0.value',d:'Nombre claro, que diga qué hace: <code>Buscar mascotas por estado</code>.',
+    set:{modal:{title:'Save request',sub:'Guarda el request en una colección para reutilizarlo.',fields:[{label:'Request name',value:'Buscar mascotas por estado'}],
+      html:'<label>Save to</label><div class="in" style="color:#9a9a9a">Selecciona una colección…</div>',btns:['Cancel','Save']}}},
+   {t:'Crea la colección',hl:'mf:1',type:'modal.fields.1.value',d:'Todavía no tienes colecciones. Haz clic en <b>New Collection</b> y llámala <code>Taller Petstore</code>.',
+    fn:s=>{s.modal.html='';s.modal.fields.push({label:'Save to → New Collection',value:'Taller Petstore'});s.modal.btns=['Cancel','Save']}},
+   {t:'Guardar',hl:'mb:Save',d:'Presiona <b>Save</b>.'},
+   {t:'¡Guardado!',hl:'item:Buscar mascotas por estado',d:'El request aparece dentro de la colección <b>Taller Petstore</b> en la barra lateral, y la pestaña muestra su nombre. Ya no hace falta volver a escribir la URL.',
+    set:{modal:null,cols:[{name:'Taller Petstore',items:[{name:'Buscar mascotas por estado',m:'GET',sel:true}]}],
+      tabs:[{name:'Buscar mascotas por estado',m:'GET'}],req:{name:'Buscar mascotas por estado',col:'Taller Petstore'}}},
+   {t:'Revisa el historial',hl:'rail-hist',d:'En <b>History</b> queda cada request que enviaste, aunque no lo hayas guardado. Útil para recuperar algo que probaste antes.',
+    set:{side:'history'}},
+  ]
+});
+</script>
+</body></html>

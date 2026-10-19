@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>¿Qué es una API?</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px;max-width:900px}
+h2{font-size:20px;margin:26px 0 12px}
+.def{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 20px;font-size:18px;line-height:1.6;margin-bottom:18px}
+.def b{color:var(--orange)}
+.def small{display:block;color:var(--muted);font-size:13px;margin-top:6px}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+button{padding:10px 14px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-weight:700;cursor:pointer;font-size:13px}
+button:hover{background:var(--panel2)}button.active{background:var(--orange);color:#111;border-color:var(--orange)}
+.switch{margin-left:auto;display:flex;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:3px}
+.switch button{border:0;padding:8px 12px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+svg{width:100%;height:auto;background:#141820;border-radius:10px;display:block}
+.actor rect{fill:var(--panel2);stroke:#4a5263;stroke-width:2;transition:stroke .2s}
+.actor.on rect{stroke:var(--orange)}
+.actor .ico{font-size:40px}
+.actor .lbl{fill:var(--text);font-size:16px;font-weight:700}
+.actor .cap{fill:var(--muted);font-size:12px}
+.status{margin-top:12px;background:var(--panel2);border-radius:10px;padding:12px 14px;line-height:1.55;min-height:48px}
+.status b{color:var(--orange)}
+.map{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:14px}
+.map div{background:var(--panel2);border-radius:10px;padding:10px;text-align:center;font-size:12px;color:var(--muted);line-height:1.4}
+.map b{display:block;color:var(--text);font-size:13px}
+.map i{display:block;font-style:normal;color:var(--orange);font-weight:700;font-size:13px;margin-top:3px}
+.examples{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ex{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.55;font-size:14px}
+.ex .e{font-size:30px}
+.ex b{display:block;font-size:16px;margin:6px 0 4px}
+.ex code{display:block;margin-top:10px;background:#141820;border-radius:8px;padding:8px 10px;font-size:12px;color:var(--orange);font-family:Consolas,monospace}
+.why{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.why div{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;line-height:1.5;color:var(--muted)}
+.why b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+@media(max-width:850px){.examples{grid-template-columns:1fr}.why{grid-template-columns:1fr 1fr}.map{grid-template-columns:repeat(3,1fr)}.switch{margin-left:0}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>¿Qué es una API?</h1>
+<div class="def">
+  Una <b>API</b> (<i>Application Programming Interface</i>) es un <b>intermediario</b> que permite que dos sistemas se comuniquen
+  siguiendo reglas acordadas: qué se puede pedir, cómo se pide y qué se recibe de vuelta.
+  <small>Una aplicación no necesita saber cómo está construido el otro sistema por dentro: solo necesita conocer su API.</small>
+</div>
+
+<div class="controls">
+  <button id="sc-ok" class="active">🍽️ Pedido del menú</button>
+  <button id="sc-bad">❓ Pedido fuera del menú</button>
+  <button id="play">▶ Reproducir</button>
+  <div class="switch"><button id="v-rest" class="active">Restaurante</button><button id="v-tech">Términos técnicos</button></div>
+</div>
+
+<div class="card">
+  <svg viewBox="0 0 1000 300" aria-label="Analogía del restaurante">
+    <g id="scene"></g>
+    <g id="token"></g>
+  </svg>
+  <div class="status" id="status">Presiona <b>Reproducir</b> para ver cómo viaja un pedido.</div>
+  <div class="map" id="map"></div>
+</div>
+
+<h2>APIs que usas todos los días</h2>
+<div class="examples">
+  <div class="ex"><span class="e">🔐</span><b>“Iniciar sesión con Google”</b>Una app no guarda tu contraseña de Google. Le pregunta a la API de Google si eres tú, y Google responde con un permiso.<code>POST /oauth/token → 200 OK</code></div>
+  <div class="ex"><span class="e">🌦️</span><b>El clima en tu celular</b>Tu celular no tiene sensores del clima del mundo. La app consulta la API de un servicio meteorológico.<code>GET /clima?ciudad=La%20Paz → 200 OK</code></div>
+  <div class="ex"><span class="e">📲</span><b>Pagar con QR</b>La app del banco lee el QR y llama a una API para validar el cobro y registrar el pago.<code>POST /pagos/qr → 201 Created</code></div>
+</div>
+
+<h2>¿Por qué se usan APIs?</h2>
+<div class="why">
+  <div><b>🔒 Seguridad</b>Las apps nunca tocan la base de datos directamente. La API decide qué se puede ver y quién puede verlo.</div>
+  <div><b>♻️ Reutilización</b>Una sola API sirve a la web, al móvil y al escritorio. La lógica se escribe una vez.</div>
+  <div><b>🧩 Independencia</b>El backend puede cambiar por dentro sin romper las apps, mientras respete el contrato.</div>
+  <div><b>🔗 Integración</b>Permite conectar sistemas de distintas empresas, tecnologías y lenguajes.</div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> la API es el <strong>mesero</strong>. Recibe un <strong>pedido</strong> (request), lo lleva a la <strong>cocina</strong> (servidor y base de datos) y trae el <strong>plato</strong> (response).
+  Solo atiende lo que está en el <strong>menú</strong> (el contrato o documentación). Probar una API es verificar que el mesero entrega lo correcto, a tiempo, y que responde bien cuando se le pide algo que no existe.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const V={
+ rest:{
+  a:{ico:'🧑',lbl:'Cliente',cap:'el comensal'},
+  b:{ico:'🤵',lbl:'Mesero',cap:'toma y entrega pedidos'},
+  c:{ico:'👨‍🍳',lbl:'Cocina',cap:'prepara la comida'},
+  menu:'📋 Menú',
+  ok:{req:'1 salteña',res:'🥟 salteña'},
+  bad:{req:'1 sushi',res:'“no está en el menú”'},
+ },
+ tech:{
+  a:{ico:'📱',lbl:'Aplicación',cap:'web, móvil, escritorio'},
+  b:{ico:'⚙️',lbl:'API',cap:'recibe y responde'},
+  c:{ico:'🛢️',lbl:'Servidor + BD',cap:'procesa y guarda datos'},
+  menu:'📋 Contrato (documentación)',
+  ok:{req:'GET /productos/7',res:'200 OK + JSON'},
+  bad:{req:'GET /sushi',res:'404 Not Found'},
+ }
+};
+const STEPS={
+ ok:[
+  {from:'a',to:'b',k:'req',rest:'El cliente revisa el <b>menú</b> y le pide una salteña al mesero.',tech:'La app envía un <b>request</b> a la API usando un endpoint que existe en el contrato.'},
+  {from:'b',to:'c',k:'req',rest:'El mesero lleva el pedido a la cocina. El cliente <b>no entra</b> a la cocina.',tech:'La API valida el request y lo pasa al servidor, que consulta la <b>base de datos</b>.'},
+  {from:'c',to:'b',k:'ok',rest:'La cocina prepara el plato y se lo entrega al mesero.',tech:'El servidor devuelve los datos a la API.'},
+  {from:'b',to:'a',k:'ok',rest:'El mesero le lleva el plato al cliente. <b>Pedido completado.</b>',tech:'La API devuelve un <b>response</b>: status <b>200 OK</b> y el body en JSON.'},
+ ],
+ bad:[
+  {from:'a',to:'b',k:'req',rest:'El cliente pide sushi, pero el sushi <b>no está en el menú</b>.',tech:'La app envía un request a un endpoint que <b>no existe</b> en el contrato.'},
+  {from:'b',to:'a',k:'err',rest:'El mesero responde de inmediato: “eso no lo tenemos”. Ni siquiera va a la cocina.',tech:'La API responde <b>404 Not Found</b> sin llegar a la base de datos. Un error claro también es una respuesta correcta.'},
+ ]
+};
+const X={a:120,b:500,c:880}, Y=150;
+const COL={req:'#f3a43b',ok:'#57c785',err:'#ef6570'};
+let view='rest', sc='ok', running=false, raf=null;
+
+function drawScene(){
+  const v=V[view];
+  let h='';
+  for(const k of ['a','b','c']){
+    const n=v[k], x=X[k];
+    h+=`<g class="actor" id="act-${k}"><rect x="${x-95}" y="${Y-70}" width="190" height="140" rx="16"/>
+      <text x="${x}" y="${Y-12}" text-anchor="middle" class="ico">${n.ico}</text>
+      <text x="${x}" y="${Y+28}" text-anchor="middle" class="lbl">${n.lbl}</text>
+      <text x="${x}" y="${Y+48}" text-anchor="middle" class="cap">${n.cap}</text></g>`;
+  }
+  h+=`<line x1="215" y1="${Y}" x2="405" y2="${Y}" stroke="#333b49" stroke-width="3" stroke-dasharray="6 6"/>
+      <line x1="595" y1="${Y}" x2="785" y2="${Y}" stroke="#333b49" stroke-width="3" stroke-dasharray="6 6"/>
+      <rect x="${X.b-80}" y="250" width="160" height="34" rx="8" fill="#191e28" stroke="#a982e2"/>
+      <text x="${X.b}" y="272" text-anchor="middle" fill="#a982e2" font-size="13" font-weight="700">${v.menu}</text>
+      <line x1="${X.b}" y1="${Y+70}" x2="${X.b}" y2="250" stroke="#a982e2" stroke-dasharray="4 4"/>`;
+  $('scene').innerHTML=h;
+  $('map').innerHTML=[
+    ['🧑 Cliente','Aplicación'],['🤵 Mesero','API'],['👨‍🍳 Cocina','Servidor + BD'],
+    ['📋 Menú','Contrato'],['📝 Pedido','Request'],['🍽️ Plato','Response']
+  ].map(([r,t])=>`<div><b>${r}</b>equivale a<i>${t}</i></div>`).join('');
+}
+
+function setActive(keys){document.querySelectorAll('.actor').forEach(a=>a.classList.toggle('on',keys.includes(a.id.slice(4))))}
+
+function run(){
+  cancelAnimationFrame(raf); running=true;
+  const steps=STEPS[sc]; let i=0, t0=performance.now();
+  const dur=1500, pause=900;
+  const tick=now=>{
+    if(!running) return;
+    const st=steps[i], el=now-t0, p=Math.min(1,el/dur), e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+    const x0=X[st.from]+(X[st.to]>X[st.from]?95:-95), x1=X[st.to]+(X[st.to]>X[st.from]?-95:95);
+    const x=x0+(x1-x0)*e, txt=st.k==='req'?V[view][sc].req:V[view][sc].res, c=COL[st.k], w=txt.length*7.5+26;
+    $('token').innerHTML=`<circle cx="${x}" cy="${Y}" r="10" fill="${c}"/>
+      <rect x="${x-w/2}" y="${Y-50}" width="${w}" height="26" rx="7" fill="#10131a" stroke="${c}"/>
+      <text x="${x}" y="${Y-32}" text-anchor="middle" fill="${c}" font-size="13" font-weight="700">${txt}</text>`;
+    setActive([st.from,st.to]);
+    $('status').innerHTML=`<b>Paso ${i+1}/${steps.length}.</b> `+st[view];
+    if(el>=dur+pause){ i++; t0=now; if(i>=steps.length){running=false;return;} }
+    raf=requestAnimationFrame(tick);
+  };
+  raf=requestAnimationFrame(tick);
+}
+function reset(){running=false;cancelAnimationFrame(raf);$('token').innerHTML='';setActive([]);
+  $('status').innerHTML='Presiona <b>Reproducir</b> para ver cómo viaja un pedido.'}
+
+$('play').onclick=run;
+$('sc-ok').onclick=()=>{sc='ok';$('sc-ok').classList.add('active');$('sc-bad').classList.remove('active');reset()};
+$('sc-bad').onclick=()=>{sc='bad';$('sc-bad').classList.add('active');$('sc-ok').classList.remove('active');reset()};
+$('v-rest').onclick=()=>{view='rest';$('v-rest').classList.add('active');$('v-tech').classList.remove('active');drawScene();reset()};
+$('v-tech').onclick=()=>{view='tech';$('v-tech').classList.add('active');$('v-rest').classList.remove('active');drawScene();reset()};
+drawScene();
+})();
+</script>
+</body></html>

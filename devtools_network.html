@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Descubre las APIs de una web</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px;max-width:950px}
+h2{font-size:20px;margin:28px 0 12px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
+.step{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13px;line-height:1.45;color:var(--muted)}
+.step b{display:block;color:var(--text);font-size:14px;margin:4px 0 2px}
+.step .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--orange);color:#111;font-weight:800;font-size:12px}
+kbd{background:var(--panel2);border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-family:Consolas,monospace;font-size:12px;color:var(--text)}
+
+/* ---------- Navegador simulado ---------- */
+.browser{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#202124}
+.chrome{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#2b2c2f}
+.dots{display:flex;gap:6px}.dots i{width:11px;height:11px;border-radius:50%;background:#5f6368;display:block}
+.addr{flex:1;background:#202124;border-radius:999px;padding:6px 14px;font-size:13px;color:#bdc1c6}
+.addr b{color:#e8eaed;font-weight:400}
+.site{background:linear-gradient(120deg,#4b2a7b,#2a3f8f);padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.site .logo{font-weight:800;font-size:18px;color:#fff}
+.site .acts{display:flex;gap:8px;flex-wrap:wrap}
+.site button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;font-size:12.5px}
+.site button:hover{background:rgba(255,255,255,.26)}
+.shop{background:#f4f5f8;color:#222;padding:14px 18px;min-height:96px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:13px}
+.prod{background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,.12);min-width:150px}
+.prod b{display:block}
+.toast{margin-left:auto;background:#1e7e4a;color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+
+/* ---------- DevTools ---------- */
+.dev{background:#242424;border-top:1px solid #3c3c3c;font-size:12px;color:#e3e3e3}
+.dtabs{display:flex;gap:2px;background:#292a2d;padding:0 8px;border-bottom:1px solid #3c3c3c}
+.dtabs span{padding:7px 10px;color:#9aa0a6}
+.dtabs span.on{color:#e8eaed;border-bottom:2px solid #8ab4f8}
+.filters{display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid #3c3c3c;align-items:center;flex-wrap:wrap}
+.filters button{background:none;border:1px solid transparent;color:#9aa0a6;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:12px}
+.filters button.on{background:#3c4043;color:#e8eaed}
+.filters .rec{width:10px;height:10px;border-radius:50%;background:#f28b82;margin-right:6px}
+.filters .clear{margin-left:auto}
+.net{display:grid;grid-template-columns:1fr 1fr}
+.net.closed{grid-template-columns:1fr}
+.tbl{max-height:260px;overflow:auto;border-right:1px solid #3c3c3c}
+table{width:100%;border-collapse:collapse}
+th{position:sticky;top:0;background:#292a2d;color:#9aa0a6;font-weight:400;text-align:left;padding:5px 8px;border-bottom:1px solid #3c3c3c}
+td{padding:5px 8px;border-bottom:1px solid #2f2f2f;white-space:nowrap;cursor:pointer}
+tr:hover td{background:#2f3a4a}
+tr.sel td{background:#1a3d6b}
+tr.new td{animation:nrow 1s}
+@keyframes nrow{0%{background:#5a4a1a}100%{background:transparent}}
+.st-ok{color:#e3e3e3}.st-err{color:#f28b82}.st-pend{color:#9aa0a6;font-style:italic}
+.empty{padding:22px;text-align:center;color:#9aa0a6}
+.detail{display:flex;flex-direction:column;min-height:260px;max-height:300px}
+.detail .dt{display:flex;gap:2px;border-bottom:1px solid #3c3c3c;padding:0 6px;align-items:center}
+.detail .dt span{padding:6px 9px;cursor:pointer;color:#9aa0a6}
+.detail .dt span.on{color:#e8eaed;border-bottom:2px solid #8ab4f8}
+.detail .dt .x{margin-left:auto;cursor:pointer;color:#9aa0a6;padding:6px}
+.detail .body{padding:10px 12px;overflow:auto;font-family:Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-word;flex:1}
+.detail .body .g{color:#9aa0a6;font-family:Segoe UI,Arial,sans-serif;font-weight:700;display:block;margin:6px 0 2px}
+.detail .body .hk{color:#c58af9}
+.detail .copy{margin:8px 12px 10px;background:#8ab4f8;color:#111;border:0;border-radius:6px;padding:7px 12px;font-weight:700;cursor:pointer;font-family:Segoe UI,Arial,sans-serif;align-self:flex-start}
+.status-bar{padding:4px 8px;color:#9aa0a6;border-top:1px solid #3c3c3c}
+.hint{margin-top:12px;background:var(--panel2);border-radius:10px;padding:12px 14px;line-height:1.55;font-size:14px}
+.hint b{color:var(--orange)}
+
+/* ---------- cURL a Postman ---------- */
+.bridge{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+pre.curl{margin:10px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-all;min-height:150px;color:var(--text)}
+pre.curl .o{color:var(--orange)}pre.curl .q{color:var(--green)}
+ol.howto{margin:10px 0 0;padding-left:20px;line-height:1.8;font-size:14px}
+.warn{margin-top:12px;border:1px solid var(--red);background:rgba(239,101,112,.1);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.5}
+.warn b{color:var(--red)}
+.look{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.look div{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13px;line-height:1.45;color:var(--muted)}
+.look b{display:block;color:var(--text);margin-bottom:3px}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+@media(max-width:900px){.steps{grid-template-columns:1fr 1fr}.net{grid-template-columns:1fr}.bridge{grid-template-columns:1fr}.look{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Descubre las APIs de una página web</h1>
+<div class="sub">Cada vez que usas una página web, por detrás se están llamando APIs. El navegador permite verlas con sus <b>herramientas de desarrollador</b> (DevTools).
+Practica abajo con la tienda simulada: haz clic en sus botones y observa qué peticiones aparecen.</div>
+
+<div class="steps">
+  <div class="step"><span class="n">1</span><b>Abre el sitio</b>En Chrome o Edge, entra a la página que quieres analizar.</div>
+  <div class="step"><span class="n">2</span><b>Abre DevTools</b><kbd>F12</kbd> o <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd>.</div>
+  <div class="step"><span class="n">3</span><b>Pestaña Network</b>Muestra todo lo que el navegador pide al servidor.</div>
+  <div class="step"><span class="n">4</span><b>Filtro Fetch/XHR</b>Oculta imágenes y estilos: deja solo las llamadas a APIs.</div>
+  <div class="step"><span class="n">5</span><b>Haz una acción</b>Busca, inicia sesión, agrega al carrito… y mira qué aparece.</div>
+  <div class="step"><span class="n">6</span><b>Abre una petición</b>Clic en la fila: Headers, Payload, Response y Timing.</div>
+</div>
+
+<div class="browser">
+  <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="addr">🔒 <b>tienda.demo.local</b>/inicio</div></div>
+  <div class="site">
+    <span class="logo">🛍️ Tienda Demo</span>
+    <div class="acts">
+      <button data-a="load">↻ Recargar página</button>
+      <button data-a="list">Ver productos</button>
+      <button data-a="detail">Ver detalle</button>
+      <button data-a="cart">Agregar al carrito</button>
+      <button data-a="login">Iniciar sesión</button>
+      <button data-a="bad">Producto inexistente</button>
+    </div>
+  </div>
+  <div class="shop" id="shop"><span style="color:#666">Haz clic en <b>Recargar página</b> para empezar.</span><span class="toast" id="toast"></span></div>
+  <div class="dev">
+    <div class="dtabs"><span>Elements</span><span>Console</span><span>Sources</span><span class="on">Network</span><span>Application</span></div>
+    <div class="filters" id="filters">
+      <span class="rec"></span>
+      <button data-f="all" class="on">All</button>
+      <button data-f="xhr">Fetch/XHR</button>
+      <button data-f="doc">Doc</button>
+      <button data-f="css">CSS</button>
+      <button data-f="js">JS</button>
+      <button data-f="img">Img</button>
+      <button class="clear" id="clear">🚫 Limpiar</button>
+    </div>
+    <div class="net closed" id="net">
+      <div class="tbl"><table><thead><tr><th>Name</th><th>Method</th><th>Status</th><th>Type</th><th>Size</th><th>Time</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty">Realiza una acción en la página para ver la actividad de red.</div></div>
+      <div class="detail" id="detail" style="display:none"></div>
+    </div>
+    <div class="status-bar" id="sbar">0 requests</div>
+  </div>
+</div>
+<div class="hint" id="hint">💡 Primero haz clic en <b>Recargar página</b>: verás que una página carga muchos archivos (HTML, CSS, JS, imágenes). Luego activa el filtro <b>Fetch/XHR</b>.</div>
+
+<h2>De DevTools a Postman</h2>
+<div class="bridge">
+  <div class="card">
+    <b>Copy as cURL</b>
+    <div class="small">Abre una petición en el panel de arriba y presiona <b>“Copy as cURL”</b>. El comando aparecerá aquí.</div>
+    <pre class="curl" id="curl"><span style="color:var(--muted)">(todavía no copiaste ninguna petición)</span></pre>
+  </div>
+  <div class="card">
+    <b>Importarlo en Postman</b>
+    <ol class="howto">
+      <li>En DevTools, clic derecho sobre la petición → <b>Copy</b> → <b>Copy as cURL (bash)</b>.</li>
+      <li>En Postman, botón <b>Import</b> (o <kbd>Ctrl</kbd>+<kbd>O</kbd>).</li>
+      <li>Pega el comando en el cuadro de texto.</li>
+      <li>Postman crea el request con su método, URL, headers y body.</li>
+      <li>Presiona <b>Send</b>: es la misma petición que hizo la página.</li>
+    </ol>
+    <div class="warn"><b>⚠ Cuidado:</b> un cURL copiado incluye las <b>cookies y tokens de tu sesión</b>. Úsalo solo en ambientes de prueba y nunca lo pegues en chats, tickets ni documentos compartidos.</div>
+  </div>
+</div>
+
+<h2>Qué observar en cada petición</h2>
+<div class="look">
+  <div><b>Method + URL</b>¿Qué endpoint llamó la página y con qué método?</div>
+  <div><b>Status</b>¿Salió bien (2xx) o hubo un error (4xx/5xx)?</div>
+  <div><b>Payload</b>¿Qué datos envió la página en el body o en los query params?</div>
+  <div><b>Response</b>¿Qué devolvió el servidor? ¿En qué formato?</div>
+  <div><b>Time</b>¿Cuánto tardó? Una API lenta hace lenta toda la página.</div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> la página web es solo la “cara”. Lo que muestra lo obtiene llamando a APIs, y esas llamadas se pueden <strong>ver, copiar y repetir</strong>.
+  Esta es una de las formas más rápidas de descubrir qué endpoints probar cuando no hay documentación: se observan en DevTools y se llevan a Postman.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const HOST='https://tienda.demo.local';
+const PRODUCTS=[{id:1,nombre:'Celular X1',precio:1850},{id:2,nombre:'Laptop Pro 14',precio:7200},{id:3,nombre:'Audífonos BT',precio:320}];
+const ACTIONS={
+ load:[
+  {n:'inicio',t:'doc',m:'GET',s:200,sz:'4.1 kB',ms:120,url:'/inicio',ct:'text/html',res:'<!DOCTYPE html>\n<html> … página completa … </html>'},
+  {n:'estilos.css',t:'css',m:'GET',s:200,sz:'12.3 kB',ms:45,url:'/static/estilos.css',ct:'text/css',res:'body { font-family: Arial; … }'},
+  {n:'app.js',t:'js',m:'GET',s:200,sz:'88.0 kB',ms:96,url:'/static/app.js',ct:'application/javascript',res:'// código de la página …'},
+  {n:'logo.png',t:'img',m:'GET',s:200,sz:'6.2 kB',ms:38,url:'/img/logo.png',ct:'image/png',res:'(imagen)'},
+  {n:'productos?destacados=true',t:'xhr',m:'GET',s:200,sz:'0.9 kB',ms:210,url:'/api/v1/productos?destacados=true',ct:'application/json',res:PRODUCTS},
+  {n:'banner.jpg',t:'img',m:'GET',s:304,sz:'0.1 kB',ms:22,url:'/img/banner.jpg',ct:'image/jpeg',res:'(imagen desde cache)'},
+ ],
+ list:[{n:'productos?pagina=1',t:'xhr',m:'GET',s:200,sz:'1.4 kB',ms:180,url:'/api/v1/productos?pagina=1',ct:'application/json',res:{pagina:1,total:3,items:PRODUCTS}}],
+ detail:[{n:'2',t:'xhr',m:'GET',s:200,sz:'0.4 kB',ms:95,url:'/api/v1/productos/2',ct:'application/json',res:{...PRODUCTS[1],stock:14,descripcion:'Laptop de 14 pulgadas'}},
+         {n:'laptop-pro-14.jpg',t:'img',m:'GET',s:200,sz:'38.5 kB',ms:140,url:'/img/laptop-pro-14.jpg',ct:'image/jpeg',res:'(imagen)'}],
+ cart:[{n:'items',t:'xhr',m:'POST',s:201,sz:'0.3 kB',ms:260,url:'/api/v1/carrito/items',ct:'application/json',body:{productoId:2,cantidad:1},res:{carritoId:'CAR-551',items:1,total:7200}}],
+ login:[{n:'login',t:'xhr',m:'POST',s:200,sz:'0.6 kB',ms:340,url:'/api/v1/auth/login',ct:'application/json',body:{usuario:'demo',clave:'••••••••'},res:{token:'eyJhbGciOiJIUzI1NiJ9.demo…',expiraEn:3600},setCookie:true},
+        {n:'perfil',t:'xhr',m:'GET',s:200,sz:'0.3 kB',ms:110,url:'/api/v1/usuarios/perfil',ct:'application/json',auth:true,res:{usuario:'demo',nombre:'Usuario Demo'}}],
+ bad:[{n:'999',t:'xhr',m:'GET',s:404,sz:'0.2 kB',ms:70,url:'/api/v1/productos/999',ct:'application/json',res:{codigo:'PRODUCTO_NO_ENCONTRADO',mensaje:'No existe el producto 999'}}],
+};
+const HINTS={
+ load:'Una sola recarga generó <b>6 peticiones</b>: el HTML, CSS, JS, imágenes… y <b>una API</b> (<code>productos?destacados=true</code>). Activa el filtro <b>Fetch/XHR</b> para quedarte solo con las APIs.',
+ list:'Al ver productos, la página llamó a <code>GET /api/v1/productos?pagina=1</code>. Haz clic en la fila y revisa la pestaña <b>Response</b>.',
+ detail:'Un <b>path param</b> en acción: <code>/productos/2</code>. Además se descargó la imagen del producto (tipo <b>jpeg</b>, no es una API).',
+ cart:'Agregar al carrito es un <b>POST</b> que responde <b>201</b>. Revisa la pestaña <b>Payload</b>: ahí está el body que envió la página.',
+ login:'El login envía usuario y clave en un <b>POST</b> y recibe un <b>token</b>. Luego la página usa ese token en el header <code>Authorization</code> de la siguiente petición (<code>perfil</code>). Así se encadenan las APIs.',
+ bad:'La página pidió un producto que no existe y la API respondió <b>404</b>. En DevTools, los errores se ven en rojo.',
+};
+let reqs=[], filter='all', sel=null, tab='headers', seq=0;
+
+const typeLabel={xhr:'fetch',doc:'document',css:'stylesheet',js:'script',img:'png'};
+function visible(){return reqs.filter(r=>filter==='all'||r.t===filter)}
+function renderRows(){
+  const v=visible();
+  $('rows').innerHTML=v.map(r=>`<tr data-i="${r.i}" class="${sel===r.i?'sel':''} ${r.fresh?'new':''}">
+    <td>${r.n}</td><td>${r.m}</td><td class="${r.pending?'st-pend':r.s>=400?'st-err':'st-ok'}">${r.pending?'(pending)':r.s}</td>
+    <td>${r.t==='img'?(r.ct.split('/')[1]):typeLabel[r.t]}</td><td>${r.pending?'':r.sz}</td><td>${r.pending?'':r.ms+' ms'}</td></tr>`).join('');
+  reqs.forEach(r=>r.fresh=false);
+  $('empty').style.display=v.length?'none':'block';
+  $('sbar').textContent=`${v.length} / ${reqs.length} requests`+(filter!=='all'?` · filtro: ${filter==='xhr'?'Fetch/XHR':filter.toUpperCase()}`:'');
+}
+const J=o=>typeof o==='string'?o:JSON.stringify(o,null,2);
+function renderDetail(){
+  const r=reqs.find(x=>x.i===sel);
+  if(!r){$('detail').style.display='none';$('net').classList.add('closed');return}
+  $('detail').style.display='flex';$('net').classList.remove('closed');
+  const tabs=['headers','payload','response','timing'];
+  let body='';
+  if(tab==='headers'){
+    body=`<span class="g">General</span><span class="hk">Request URL:</span> ${HOST}${r.url}
+<span class="hk">Request Method:</span> ${r.m}
+<span class="hk">Status Code:</span> ${r.s} ${{200:'OK',201:'Created',304:'Not Modified',404:'Not Found'}[r.s]}
+<span class="g">Response Headers</span><span class="hk">content-type:</span> ${r.ct}
+<span class="hk">content-length:</span> ${r.sz}${r.setCookie?'\n<span class="hk">set-cookie:</span> SESION=••••; HttpOnly; Secure':''}
+<span class="g">Request Headers</span><span class="hk">accept:</span> ${r.t==='xhr'?'application/json':'*/*'}${r.auth?'\n<span class="hk">authorization:</span> Bearer eyJhbGciOiJIUzI1NiJ9.demo…':''}${r.body?'\n<span class="hk">content-type:</span> application/json':''}
+<span class="hk">user-agent:</span> Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/…`;
+  } else if(tab==='payload'){
+    const q=r.url.includes('?')?r.url.split('?')[1].split('&').map(p=>p.replace('=',': ')).join('\n'):'';
+    body=r.body?`<span class="g">Request Payload</span>${J(r.body)}`:q?`<span class="g">Query String Parameters</span>${q}`:'<span class="g">Sin payload</span>Esta petición no envía body ni query params.';
+  } else if(tab==='response'){
+    body=J(r.res).replace(/</g,'&lt;');
+  } else {
+    const w=Math.round(r.ms*.15), dl=Math.max(2,Math.round(r.ms*.1));
+    body=`<span class="g">Timing</span>Conexión / TLS ......... ${w} ms
+Esperando al servidor .. ${r.ms-w-dl} ms   ← tiempo de procesamiento de la API
+Descarga de contenido .. ${dl} ms
+<span class="g">Total</span>${r.ms} ms`;
+  }
+  $('detail').innerHTML=`<div class="dt">${tabs.map(t=>`<span data-t="${t}" class="${t===tab?'on':''}">${t[0].toUpperCase()+t.slice(1)}</span>`).join('')}<span class="x" id="closeD">✕</span></div>
+    <div class="body">${body}</div>
+    ${r.t==='xhr'?'<button class="copy" id="copyC">⧉ Copy as cURL</button>':''}`;
+}
+function curlFor(r){
+  let c=`<span class="o">curl</span> <span class="q">'${HOST}${r.url}'</span>`;
+  if(r.m!=='GET') c+=` \\\n  <span class="o">-X</span> ${r.m}`;
+  c+=` \\\n  <span class="o">-H</span> <span class="q">'accept: application/json'</span>`;
+  if(r.auth) c+=` \\\n  <span class="o">-H</span> <span class="q">'authorization: Bearer eyJhbGciOiJIUzI1NiJ9.demo…'</span>`;
+  c+=` \\\n  <span class="o">-H</span> <span class="q">'cookie: SESION=••••'</span>`;
+  if(r.body) c+=` \\\n  <span class="o">-H</span> <span class="q">'content-type: application/json'</span> \\\n  <span class="o">--data-raw</span> <span class="q">'${JSON.stringify(r.body)}'</span>`;
+  return c;
+}
+
+function act(a){
+  const list=ACTIONS[a];
+  if(a==='load'){reqs=[];sel=null;renderDetail();}
+  list.forEach((tpl,k)=>{
+    const r={...tpl,i:++seq,pending:true,fresh:true};
+    setTimeout(()=>{reqs.push(r);renderRows();
+      setTimeout(()=>{r.pending=false;r.fresh=true;renderRows();if(sel===r.i)renderDetail()},Math.min(900,r.ms*2));
+    },k*160);
+  });
+  // efecto visible en la "página"
+  const shop=$('shop'), toast=$('toast');
+  const show=(html,msg)=>{shop.innerHTML=html+'<span class="toast" id="toast"></span>'; if(msg){const t=$('toast');t.textContent=msg;requestAnimationFrame(()=>t.classList.add('show'));}};
+  const cards=PRODUCTS.map(p=>`<div class="prod"><b>${p.nombre}</b>Bs ${p.precio.toLocaleString('es-BO')}</div>`).join('');
+  if(a==='load'||a==='list') show(cards);
+  if(a==='detail') show(`<div class="prod"><b>${PRODUCTS[1].nombre}</b>Bs 7.200 · stock 14</div>`);
+  if(a==='cart') show(cards,'✓ Agregado al carrito');
+  if(a==='login') show(cards,'👋 Hola, Usuario Demo');
+  if(a==='bad') show('<span style="color:#b3261e;font-weight:700">Producto no encontrado</span>');
+  $('hint').innerHTML='💡 '+HINTS[a];
+}
+
+document.querySelector('.site').onclick=e=>{const b=e.target.closest('button');if(b)act(b.dataset.a)};
+$('filters').onclick=e=>{const b=e.target.closest('button[data-f]');if(!b)return;filter=b.dataset.f;
+  document.querySelectorAll('#filters button[data-f]').forEach(x=>x.classList.toggle('on',x===b));renderRows();
+  if(filter==='xhr'&&reqs.length) $('hint').innerHTML='💡 Con <b>Fetch/XHR</b> solo quedan las llamadas a APIs. Haz clic en una fila para ver su detalle.';};
+$('clear').onclick=()=>{reqs=[];sel=null;renderRows();renderDetail()};
+$('rows').onclick=e=>{const tr=e.target.closest('tr');if(!tr)return;sel=+tr.dataset.i;renderRows();renderDetail()};
+$('detail').onclick=e=>{
+  if(e.target.dataset.t){tab=e.target.dataset.t;renderDetail()}
+  if(e.target.id==='closeD'){sel=null;renderRows();renderDetail()}
+  if(e.target.id==='copyC'){const r=reqs.find(x=>x.i===sel);$('curl').innerHTML=curlFor(r);e.target.textContent='✓ Copiado';
+    $('curl').scrollIntoView({behavior:'smooth',block:'center'})}
+};
+renderRows();
+})();
+</script>
+</body></html>

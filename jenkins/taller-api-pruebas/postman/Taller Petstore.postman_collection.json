@@ -1,0 +1,347 @@
+{
+  "info": {
+    "_postman_id": "129ee428-d105-506f-a52b-1f6161738512",
+    "name": "Taller Petstore",
+    "description": "Colección del taller de APIs y Postman. API pública de práctica: https://petstore.swagger.io. Usar con el environment 'Petstore - QA'. Solo datos ficticios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Buscar mascotas por estado",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/pet/findByStatus?status={{status}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "pet",
+            "findByStatus"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "{{status}}"
+            }
+          ]
+        },
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Devuelve una lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CRUD Mascota",
+      "description": "Crea, consulta, actualiza y elimina una mascota. Los datos se generan en el pre-request de 01; ejecutar la carpeta completa en orden.",
+      "item": [
+        {
+          "name": "01 Crear mascota",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pet"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{petId}},\n  \"category\": { \"id\": 1, \"name\": \"Perros\" },\n  \"name\": \"{{petName}}\",\n  \"photoUrls\": [],\n  \"tags\": [],\n  \"status\": \"available\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Datos nuevos en cada ejecución",
+                  "pm.environment.set(\"petId\", Date.now());",
+                  "pm.environment.set(\"petName\", pm.variables.replaceIn(\"{{$randomFirstName}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Se creó con el nombre enviado\", () =>",
+                  "  pm.expect(json.name).to.eql(pm.environment.get(\"petName\")));",
+                  "// Guardar el id que confirmó la API",
+                  "pm.environment.set(\"petId\", json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Consultar mascota",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pet/{{petId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pet",
+                "{{petId}}"
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Es la mascota creada\", () => {",
+                  "  pm.expect(String(json.id)).to.eql(String(pm.environment.get(\"petId\")));",
+                  "  pm.expect(json.name).to.eql(pm.environment.get(\"petName\"));",
+                  "});",
+                  "console.log(\"Estado actual:\", json.status);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Actualizar mascota",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pet"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{petId}},\n  \"category\": { \"id\": 1, \"name\": \"Perros\" },\n  \"name\": \"{{petName}}\",\n  \"photoUrls\": [],\n  \"tags\": [],\n  \"status\": \"sold\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Quedó vendida\", () =>",
+                  "  pm.expect(pm.response.json().status).to.eql(\"sold\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Eliminar mascota",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "api_key",
+                "value": "{{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pet/{{petId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pet",
+                "{{petId}}"
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Verificar eliminación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pet/{{petId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pet",
+                "{{petId}}"
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Ya no existe: 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Datos desde archivo",
+      "description": "Ejecutar SOLO esta carpeta en el Collection Runner con datos/mascotas.csv o datos/mascotas.json. Cada fila del archivo es una iteración.",
+      "item": [
+        {
+          "name": "Crear mascota desde datos",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pet"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{petId}},\n  \"category\": { \"id\": 1, \"name\": \"{{categoria}}\" },\n  \"name\": \"{{nombre}}\",\n  \"photoUrls\": [],\n  \"tags\": [],\n  \"status\": \"{{status}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// El id sigue siendo único; nombre, categoría y status vienen del archivo de datos",
+                  "pm.environment.set(\"petId\", Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const nombre = pm.iterationData.get(\"nombre\");",
+                  "const status = pm.iterationData.get(\"status\");",
+                  "",
+                  "pm.test(`Creó a ${nombre}`, () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Guardó el estado del archivo\", () => pm.expect(json.status).to.eql(status));",
+                  "pm.test(\"El estado es un valor permitido\", () =>",
+                  "  pm.expect(json.status).to.be.oneOf([\"available\", \"pending\", \"sold\"]));",
+                  "pm.environment.set(\"petId\", json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Limpiar: eliminar mascota",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "api_key",
+                "value": "{{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pet/{{petId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pet",
+                "{{petId}}"
+              ]
+            },
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Mascota de prueba eliminada\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

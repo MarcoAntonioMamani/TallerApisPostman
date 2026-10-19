@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Instalar y preparar Jenkins</title>
+<link rel="stylesheet" href="pm/pm.css">
+<link rel="stylesheet" href="ci/ci.css">
+<style>
+.scr{position:sticky;top:10px}
+.jk-main .box{border:1px solid #e3e3e3;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.jk-main .box h5{margin:0 0 8px;font-size:14px}
+.jk .mono{font-family:Consolas,monospace;font-size:12px;background:#f3f3f3;border-radius:5px;padding:2px 6px;color:#b4232a}
+.jk .hl{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
+.jk .tag{display:inline-block;background:#eef3ff;color:#1c64f2;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;margin-left:6px}
+.jk .ok2{color:#1ea64b;font-weight:700}
+.jk .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.jk .grid3 div{border:1px solid #e5e5e5;border-radius:8px;padding:10px;font-size:12px;color:#555}
+.jk .grid3 b{display:block;color:#1c1c1c;font-size:13px}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Instalar y preparar Jenkins</h1>
+<div class="sub">Para el taller instalamos Jenkins en tu propia PC: así controller y agente son la misma máquina. Son <b>cinco pasos</b>, y casi todo se hace <b>una sola vez</b>. Haz clic en cada paso para ver la pantalla correspondiente.</div>
+
+<div class="tabs" id="tabs">
+  <button class="btn on" data-t="ins">1 · Instalar</button>
+  <button class="btn" data-t="ini">2 · Primer inicio</button>
+  <button class="btn" data-t="plu">3 · Plugins</button>
+  <button class="btn" data-t="too">4 · Herramientas</button>
+  <button class="btn" data-t="cre">5 · Credenciales</button>
+</div>
+
+<!-- ======================= 1. INSTALAR ======================= -->
+<section class="pane on" id="p-ins">
+  <div class="two">
+    <div class="steps2" data-term="tIns">
+      <div class="st" data-s="0"><b class="h"><span class="n">1</span>Instalar Java 21</b>Jenkins está hecho en Java y necesita <b>Java 21 o 25</b>. Descarga el instalador <b>.msi</b> de <a href="https://adoptium.net" target="_blank">Eclipse Temurin 21 (LTS)</a> y marca <b>Set JAVA_HOME</b>.</div>
+      <div class="st" data-s="1"><b class="h"><span class="n">2</span>Descargar Jenkins LTS</b>En <a href="https://www.jenkins.io/download/" target="_blank">jenkins.io/download</a> elige <b>LTS → Windows</b>. LTS es la versión estable: se actualiza cada 12 semanas.</div>
+      <div class="st" data-s="2"><b class="h"><span class="n">3</span>Ejecutar el instalador</b>Se instala como <b>servicio de Windows</b>: arranca solo al prender la PC. En <i>Service Logon</i> elige <b>Run service as LocalSystem</b> (suficiente para practicar). Puerto: <b>8080</b> → <i>Test Port</i>.</div>
+      <div class="st" data-s="3"><b class="h"><span class="n">4</span>Comprobar el servicio</b>Si el servicio está <b>RUNNING</b>, abre <code>http://localhost:8080</code> en el navegador.</div>
+      <div class="st" data-s="4"><b class="h"><span class="n">5</span>Alternativa: Docker</b>Si tienes Docker, un solo comando levanta Jenkins sin instalar Java. El contenedor es <b>Linux</b>: el Jenkinsfile del taller funciona igual porque usa <code>sh</code> o <code>bat</code> según el sistema.</div>
+    </div>
+    <div class="term" id="tIns"><div class="tb"><i></i><i></i><i></i> Símbolo del sistema (administrador) <span class="k">clic en un paso ▸</span></div><pre></pre></div>
+  </div>
+  <div class="note warn">⚠ En un equipo corporativo, instalar Java y un servicio de Windows suele requerir <b>permisos de administrador</b>: solicítalo a soporte con anticipación. En la empresa, Jenkins no se instala en la PC de cada persona: hay un <b>servidor compartido</b> administrado por el equipo de plataforma, y tú solo creas tu job.</div>
+</section>
+
+<!-- ======================= 2..5: pantallas de Jenkins ======================= -->
+<section class="pane" id="p-ini"><div class="two"><div class="steps2" data-scr="ini">
+  <div class="st" data-s="0"><b class="h"><span class="n">1</span>Desbloquear Jenkins</b>La primera vez pide una clave de un solo uso que Jenkins escribió en un archivo de su carpeta. Ábrelo, copia la clave y pégala.</div>
+  <div class="st" data-s="1"><b class="h"><span class="n">2</span>Install suggested plugins</b>Instala el paquete recomendado: Pipeline, Git, Credentials, JUnit, Timestamper y otros. Tarda unos minutos.</div>
+  <div class="st" data-s="2"><b class="h"><span class="n">3</span>Crear el usuario administrador</b>Tu usuario para entrar a Jenkins. Usa una contraseña propia y segura: no la de tu correo ni la de otro sistema.</div>
+  <div class="st" data-s="3"><b class="h"><span class="n">4</span>Jenkins está listo</b>Deja la URL <code>http://localhost:8080/</code> y presiona <b>Start using Jenkins</b>. Verás el panel principal, todavía vacío.</div>
+</div><div class="scr" id="s-ini"></div></div></section>
+
+<section class="pane" id="p-plu"><div class="two"><div class="steps2" data-scr="plu">
+  <div class="st" data-s="0"><b class="h"><span class="n">1</span>Administrar Jenkins → Plugins</b>Desde el panel: <b>Manage Jenkins</b> → <b>Plugins</b>. Ahí se instalan, actualizan y desactivan.</div>
+  <div class="st" data-s="1"><b class="h"><span class="n">2</span>Buscar e instalar</b>En <b>Available plugins</b> busca y marca <b>NodeJS</b>, <b>Allure</b> y <b>Pipeline: Stage View</b>. Presiona <b>Install</b>.</div>
+  <div class="st" data-s="2"><b class="h"><span class="n">3</span>Reiniciar</b>Marca <i>Restart Jenkins when installation is complete</i>. Al volver, revisa en <b>Installed plugins</b> que aparezcan.</div>
+  <div class="st" data-s="3"><b class="h"><span class="n">4</span>Qué hace cada uno</b>La tabla de la derecha resume los plugins que usa nuestro pipeline.</div>
+</div><div class="scr" id="s-plu"></div></div></section>
+
+<section class="pane" id="p-too"><div class="two"><div class="steps2" data-scr="too">
+  <div class="st" data-s="0"><b class="h"><span class="n">1</span>Manage Jenkins → Tools</b>Aquí se declaran las herramientas que los pipelines pueden pedir por <b>nombre</b>. Jenkins las descarga e instala solo en el agente.</div>
+  <div class="st" data-s="1"><b class="h"><span class="n">2</span>NodeJS: node-lts</b><b>Add NodeJS</b> → Name <code>node-lts</code> → ☑ Install automatically → la versión LTS más reciente. Es lo que pide <code>tools { nodejs 'node-lts' }</code>.</div>
+  <div class="st" data-s="2"><b class="h"><span class="n">3</span>Allure Commandline: allure</b><b>Add Allure Commandline</b> → Name <code>allure</code> → ☑ Install automatically → <i>From Maven Central</i>, la versión 2 más reciente. Es lo que usa el paso <code>allure</code> para generar el reporte.</div>
+  <div class="st" data-s="3"><b class="h"><span class="n">4</span>Guardar</b><b>Save</b>. Los nombres deben coincidir <b>exactamente</b> con los del Jenkinsfile: si no, el build falla con <i>Tool type "nodejs" does not have an install of "node-lts" configured</i>.</div>
+</div><div class="scr" id="s-too"></div></div></section>
+
+<section class="pane" id="p-cre"><div class="two"><div class="steps2" data-scr="cre">
+  <div class="st" data-s="0"><b class="h"><span class="n">1</span>Manage Jenkins → Credentials</b>Entra a <b>System → Global credentials → Add Credentials</b>.</div>
+  <div class="st" data-s="1"><b class="h"><span class="n">2</span>Secret text: la apiKey</b>Kind <b>Secret text</b>, Secret <code>special-key</code> (la clave pública de práctica de Petstore), ID <code>petstore-api-key</code>. El ID es el nombre que usa el Jenkinsfile.</div>
+  <div class="st" data-s="2"><b class="h"><span class="n">3</span>Jenkins la protege</b>Se guarda <b>cifrada</b>. En el log del build aparece como <code>****</code>, aunque Newman la imprima.</div>
+  <div class="st" data-s="3"><b class="h"><span class="n">4</span>Repositorio privado (opcional)</b>Si tu repositorio es privado, agrega otra credencial <b>Username with password</b>: tu usuario de GitHub y un <b>Personal Access Token</b> de solo lectura (no tu contraseña).</div>
+</div><div class="scr" id="s-cre"></div></div></section>
+
+<div class="key"><strong>Lista final:</strong> Jenkins abre en <strong>localhost:8080</strong>, tiene los plugins <strong>NodeJS</strong> y <strong>Allure</strong>, las herramientas <strong>node-lts</strong> y <strong>allure</strong>, y la credencial <strong>petstore-api-key</strong>. Con eso, cualquier pipeline del taller puede ejecutarse.</div>
+</div>
+
+<script src="ci/ci.js"></script>
+<script>
+(()=>{
+const {$}=CI; CI.tabs();
+const A='C:\\Windows\\system32> ';
+CI.terms({tIns:[
+  [['d','(navegador) adoptium.net → Temurin 21 LTS → Windows x64 .msi\n(instalador) ☑ Set JAVA_HOME variable → Install\n\n'],['p',A],['w','java -version\n'],['','openjdk version "21.0.8" 2025-07-15 LTS\nOpenJDK Runtime Environment Temurin-21.0.8+9\n']],
+  [['d','(navegador) jenkins.io/download → LTS → Windows\n'],['y','  ⬇ jenkins.msi  (2.580.x LTS)\n']],
+  [['d','(instalador) Destination: C:\\Program Files\\Jenkins\\\n            Service Logon: ◉ Run service as LocalSystem\n            Port: 8080 → [Test Port] ✔\n            Java home: C:\\Program Files\\Eclipse Adoptium\\jdk-21\\\n            → Install → Finish\n']],
+  [['p',A],['w','sc query jenkins\n'],['','SERVICE_NAME: jenkins\n        TYPE               : 10  WIN32_OWN_PROCESS\n'],['g','        STATE              : 4  RUNNING\n'],['d','\n(navegador) http://localhost:8080  → pantalla "Unlock Jenkins"\n']],
+  [['p','C:\\Users\\ana> '],['w','docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home jenkins/jenkins:lts-jdk21\n'],['','Unable to find image \'jenkins/jenkins:lts-jdk21\' locally\nlts-jdk21: Pulling from jenkins/jenkins\n…\n'],['g','3f9c1e2a7d4b…\n'],['p','C:\\Users\\ana> '],['w','docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword\n'],['y','9e4b2c71f0a84d5e8b6c3a1f2d7e9b04\n'],['d','(esa es la clave para desbloquear Jenkins)\n']],
+]});
+
+/* ---------- pantallas simuladas de Jenkins ---------- */
+const shell=(crumb,side,main)=>`<div class="jk"><div class="jk-top"><div class="lg"><span>🤵</span>Jenkins</div><div class="r">👤 ana · log out</div></div>
+  <div class="jk-crumb">${crumb}</div><div class="jk-body"><div class="jk-side">${side}</div><div class="jk-main">${main}</div></div></div>`;
+const SIDE=on=>['＋ New Item','👥 People','📊 Build History','⚙️ Manage Jenkins','🖥️ My Views'].map(t=>`<div class="${t.includes(on)?'on hl':''}">${t}</div>`).join('');
+const MANAGE=hl=>`<h3>Manage Jenkins</h3><div class="grid3">${[['🔧','System','Configuración general'],['🧰','Tools','JDK, Git, NodeJS, Allure…'],['🧩','Plugins','Agregar o quitar funciones'],['🖥️','Nodes','Agentes'],['🔐','Credentials','Secretos y tokens'],['🔒','Security','Usuarios y permisos']].map(([i,t,d])=>`<div class="${t===hl?'hl':''}"><b>${i} ${t}</b>${d}</div>`).join('')}</div>`;
+const SCR={
+ ini:[
+  `<div class="jk"><div class="jk-top"><div class="lg"><span>🤵</span>Getting Started</div></div><div style="padding:22px 26px"><h3 style="margin:0 0 8px">Unlock Jenkins</h3>
+   <p style="color:#555;line-height:1.55;margin:0 0 12px">To ensure Jenkins is securely set up by the administrator, a password has been written to the log and this file on the server:</p>
+   <p><span class="mono">C:\\ProgramData\\Jenkins\\.jenkins\\secrets\\initialAdminPassword</span></p>
+   <div class="fld"><label>Administrator password</label><input type="text" value="9e4b2c71f0a84d5e8b6c3a1f2d7e9b04" class="hl" style="width:330px"></div>
+   <button class="jbtn">Continue</button><p style="color:#777;font-size:12px;margin-top:12px">💡 Abre el archivo con el Bloc de notas como administrador, o en la terminal: <span class="mono">type "C:\\ProgramData\\Jenkins\\.jenkins\\secrets\\initialAdminPassword"</span></p></div></div>`,
+  `<div class="jk"><div class="jk-top"><div class="lg"><span>🤵</span>Getting Started</div></div><div style="padding:22px 26px"><h3 style="margin:0 0 12px">Customize Jenkins</h3>
+   <div class="grid3" style="grid-template-columns:1fr 1fr"><div class="hl"><b>Install suggested plugins</b>Install plugins the Jenkins community finds most useful.</div><div><b>Select plugins to install</b>Select and install plugins most suitable for your needs.</div></div>
+   <div style="margin-top:14px;font-size:12px;color:#555;line-height:1.9">${['Folders','Timestamper','Pipeline','Git','Credentials Binding','JUnit','Workspace Cleanup','Matrix Authorization','GitHub Branch Source'].map((p,i)=>`<span class="${i<6?'ok2':''}">${i<6?'✔':'⟳'} ${p}</span>`).join(' &nbsp; ')}</div></div></div>`,
+  `<div class="jk"><div class="jk-top"><div class="lg"><span>🤵</span>Getting Started</div></div><div style="padding:22px 26px"><h3 style="margin:0 0 12px">Create First Admin User</h3>
+   ${[['Username','ana'],['Password','••••••••••••'],['Confirm password','••••••••••••'],['Full name','Ana Quispe'],['E-mail address','ana.quispe@ejemplo.com']].map(([l,v])=>`<div class="fld"><label>${l}</label><input type="text" value="${v}"></div>`).join('')}
+   <button class="jbtn">Save and Continue</button></div></div>`,
+  shell('<b>Dashboard</b>',SIDE('zzz'),`<h3>Welcome to Jenkins!</h3><p style="color:#555;line-height:1.6">This page is where your Jenkins jobs will be displayed. To get started, you can set up distributed builds or start building a software project.</p>
+   <div class="box hl"><h5>Start building your software project</h5>＋ Create a job</div><div class="box"><h5>Set up a distributed build</h5>Set up an agent · Configure a cloud</div>`),
+ ],
+ plu:[
+  shell('Dashboard › <b>Manage Jenkins</b>',SIDE('Manage'),MANAGE('Plugins')),
+  shell('Dashboard › Manage Jenkins › <b>Plugins</b>',`<div>🔄 Updates</div><div class="on hl">🛒 Available plugins</div><div>📦 Installed plugins</div><div>⚙️ Advanced settings</div>`,
+   `<h3>Plugins <input type="text" value="allure" style="margin-left:auto;min-width:180px"></h3><div class="plist">
+    ${[['NodeJS','Instala Node.js en el agente y lo deja disponible en el PATH',1],['Allure','Genera y publica el reporte de Allure en cada build',1],['Pipeline: Stage View','Muestra las etapas del pipeline como tabla de colores',1],['Blue Ocean','Interfaz alternativa (opcional, ya no se actualiza)',0]].map(([n,d,c])=>`<div><input type="checkbox" ${c?'checked':''}><span><b>${n}</b><br><small>${d}</small></span></div>`).join('')}
+   </div><div style="margin-top:12px"><button class="jbtn">Install</button></div>`),
+  shell('Dashboard › Manage Jenkins › Plugins › <b>Download progress</b>',`<div>🔄 Updates</div><div>🛒 Available plugins</div><div class="on">📦 Installed plugins</div>`,
+   `<h3>Download progress</h3><div style="line-height:2">${['NodeJS','Allure','Pipeline: Stage View'].map(p=>`${p} … <span class="ok2">✔ Success</span>`).join('<br>')}<br>Restarting Jenkins … <span class="ok2">✔</span></div>
+   <label class="hl" style="display:inline-flex;gap:8px;align-items:center;margin-top:10px;padding:4px 6px"><input type="checkbox" checked> Restart Jenkins when installation is complete and no jobs are running</label>`),
+  shell('Dashboard › Manage Jenkins › <b>Plugins</b>',`<div>🔄 Updates</div><div>🛒 Available plugins</div><div class="on">📦 Installed plugins</div>`,
+   `<h3>Plugins que usa nuestro pipeline</h3><table style="width:100%;border-collapse:collapse;font-size:12.5px">${[['Pipeline','pipeline { … } y el Jenkinsfile','sugerido'],['Git','Descargar el repositorio (checkout)','sugerido'],['Credentials Binding','withCredentials: usar secretos sin mostrarlos','sugerido'],['JUnit','junit: resultados de tests y su tendencia','sugerido'],['NodeJS','tools { nodejs … }: Node.js y npm','instalar'],['Allure','allure: reporte Allure con historial','instalar'],['Pipeline: Stage View','Vista de etapas por colores','instalar']].map(([a,b,c])=>`<tr><td style="padding:7px;border-bottom:1px solid #eee;font-weight:700">${a}</td><td style="padding:7px;border-bottom:1px solid #eee;color:#555">${b}</td><td style="padding:7px;border-bottom:1px solid #eee"><span class="tag" style="${c==='instalar'?'background:#fff4e0;color:#b26b00':''}">${c}</span></td></tr>`).join('')}</table>`),
+ ],
+ too:[
+  shell('Dashboard › <b>Manage Jenkins</b>',SIDE('Manage'),MANAGE('Tools')),
+  shell('Dashboard › Manage Jenkins › <b>Tools</b>',SIDE('Manage'),`<h3>Tools</h3><div class="box hl"><h5>NodeJS installations</h5>
+   <div class="fld"><label>Name</label><input type="text" value="node-lts"></div>
+   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" checked> Install automatically</label>
+   <div class="fld" style="margin-top:8px"><label>Install from nodejs.org · Version</label><select><option>NodeJS 24.x LTS</option></select></div></div>
+   <div class="box"><h5>Allure Commandline installations</h5><button class="jbtn sec">Add Allure Commandline</button></div>`),
+  shell('Dashboard › Manage Jenkins › <b>Tools</b>',SIDE('Manage'),`<h3>Tools</h3><div class="box"><h5>NodeJS installations</h5><span class="ok2">✔ node-lts</span> (NodeJS 24.x LTS)</div>
+   <div class="box hl"><h5>Allure Commandline installations</h5>
+   <div class="fld"><label>Name</label><input type="text" value="allure"></div>
+   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" checked> Install automatically</label>
+   <div class="fld" style="margin-top:8px"><label>From Maven Central · Version</label><select><option>2.x (la más reciente)</option></select></div></div>`),
+  shell('Dashboard › Manage Jenkins › <b>Tools</b>',SIDE('Manage'),`<h3>Tools</h3><div class="box"><h5>NodeJS installations</h5><span class="ok2">✔ node-lts</span></div><div class="box"><h5>Allure Commandline installations</h5><span class="ok2">✔ allure</span></div>
+   <button class="jbtn hl">Save</button><pre style="background:#f6f8fa;border-radius:8px;padding:10px;font-size:12px;margin-top:12px">// en el Jenkinsfile
+tools { nodejs <b style="color:#b4232a">'node-lts'</b> }       ← mismo nombre
+allure results: [[path: 'allure-results']]   ← usa la herramienta <b style="color:#b4232a">allure</b></pre>`),
+ ],
+ cre:[
+  shell('Dashboard › Manage Jenkins › <b>Credentials</b>',SIDE('Manage'),`<h3>Credentials</h3><table style="width:100%;border-collapse:collapse;font-size:12.5px"><tr style="background:#f5f5f5"><th style="padding:7px;text-align:left">Store</th><th style="text-align:left">Domain</th></tr><tr><td style="padding:7px">System</td><td><span class="hl" style="padding:2px 4px">(global)</span></td></tr></table>
+   <div style="margin-top:12px"><button class="jbtn hl">＋ Add Credentials</button></div>`),
+  shell('Dashboard › Manage Jenkins › Credentials › System › Global › <b>New credentials</b>',SIDE('Manage'),`<h3>New credentials</h3>
+   <div class="fld"><label>Kind</label><select class="hl"><option>Secret text</option></select></div>
+   <div class="fld"><label>Scope</label><select><option>Global</option></select></div>
+   <div class="fld"><label>Secret</label><input type="text" value="••••••••••••"><small>special-key (clave pública de práctica de Petstore)</small></div>
+   <div class="fld"><label>ID</label><input type="text" value="petstore-api-key" class="hl"><small>El Jenkinsfile la busca por este ID</small></div>
+   <div class="fld"><label>Description</label><input type="text" value="API key de Petstore (práctica)"></div><button class="jbtn">Create</button>`),
+  shell('Dashboard › pruebas-api-petstore › #15 › <b>Console Output</b>',`<div>📋 Status</div><div>✏️ Changes</div><div class="on">🖥️ Console Output</div>`,
+   `<h3>Console Output</h3><div class="jk-console" style="height:auto">[Pipeline] withCredentials
+Masking supported pattern matches of %API_KEY%
+[Pipeline] {
+[Pipeline] catchError
+[Pipeline] bat
+C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\pruebas-api-petstore&gt;npx newman run "postman/Taller Petstore.postman_collection.json" … --env-var "apiKey=<span class="y">****</span>" …
+</div><p style="color:#555;font-size:12.5px;margin-top:8px">🔐 El secreto nunca aparece en el log: Jenkins lo reemplaza por <b>****</b>.</p>`),
+  shell('Dashboard › Manage Jenkins › Credentials › System › Global › <b>New credentials</b>',SIDE('Manage'),`<h3>New credentials</h3>
+   <div class="fld"><label>Kind</label><select class="hl"><option>Username with password</option></select></div>
+   <div class="fld"><label>Username</label><input type="text" value="ana-quispe"></div>
+   <div class="fld"><label>Password</label><input type="text" value="••••••••••••••••"><small>Un <b>Personal Access Token</b> de GitHub (Settings → Developer settings → Fine-grained tokens) con permiso de <b>solo lectura</b> al repositorio y fecha de vencimiento.</small></div>
+   <div class="fld"><label>ID</label><input type="text" value="github-lectura"></div><button class="jbtn">Create</button>`),
+ ],
+};
+document.querySelectorAll('[data-scr]').forEach(box=>{
+  const k=box.dataset.scr,show=i=>{box.querySelectorAll('.st').forEach(s=>s.classList.toggle('on',+s.dataset.s===i));$('s-'+k).innerHTML=SCR[k][i]};
+  box.onclick=e=>{const s=e.target.closest('.st');if(s)show(+s.dataset.s)};show(0);
+});
+})();
+</script>
+</body></html>

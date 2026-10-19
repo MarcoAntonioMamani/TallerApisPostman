@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scripts y tests en Postman</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.c{color:#6a9955}.s{color:#ce9178}.k{color:#dcdcaa}.b{color:#569cd6}.n{color:#b5cea8}.v{color:var(--orange)}
+pre.code{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+/* ---------- ciclo de vida ---------- */
+.life{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:stretch}
+.ph{background:var(--panel2);border:2px solid var(--border);border-radius:11px;padding:10px 8px;text-align:center;font-size:12px;line-height:1.4;position:relative;transition:border-color .25s,transform .25s}
+.ph b{display:block;font-size:13px;margin-bottom:3px}
+.ph small{color:var(--muted)}
+.ph.pre b{color:var(--purple)}.ph.post b{color:var(--green)}.ph.send b{color:var(--orange)}
+.ph.on{border-color:var(--orange);transform:translateY(-3px)}
+.ph.done{border-color:color-mix(in srgb,var(--green) 60%,var(--border))}
+.ph:not(:last-child)::after{content:'→';position:absolute;right:-9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px}
+.lifemsg{margin-top:10px;font-size:13.5px;color:var(--muted);min-height:22px}
+.lifemsg b{color:var(--text)}
+/* ---------- anatomía ---------- */
+.anat{font-family:Consolas,monospace;font-size:16px;line-height:2;background:#141820;border-radius:12px;padding:16px 18px;white-space:pre}
+.anat span[data-p]{border-bottom:2px dashed transparent;cursor:help;border-radius:3px;transition:background .2s}
+.anat span[data-p]:hover,.anat span[data-p].on{background:rgba(243,164,59,.18);border-bottom-color:var(--orange)}
+.anatx{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+.anatx .tile{cursor:pointer;transition:border-color .2s}
+.anatx .tile.on{border-color:var(--orange)}
+/* ---------- constructor ---------- */
+.builder{display:grid;grid-template-columns:330px 1fr;gap:14px}
+.samples{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.samples button.on{background:var(--orange);color:#111;border-color:var(--orange)}
+.chk{display:flex;flex-direction:column;gap:5px}
+.chk label{display:flex;gap:8px;align-items:flex-start;background:var(--panel2);border-radius:8px;padding:7px 9px;font-size:12.5px;cursor:pointer;line-height:1.35}
+.chk input{margin-top:2px}
+.resbox{background:#141820;border-radius:10px;padding:10px 12px;font-family:Consolas,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;max-height:210px;overflow:auto}
+.rmeta{display:flex;gap:12px;font-size:12px;margin:8px 0 4px;color:var(--muted)}
+.rmeta b{color:var(--green)}
+.rmeta b.bad{color:var(--red)}
+.results{margin-top:10px;display:grid;gap:5px}
+.results div{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;background:var(--panel2);border-radius:7px;padding:6px 9px;animation:in .35s}
+@keyframes in{from{opacity:0;transform:translateX(-6px)}}
+.results .P{background:#1f5f3a;color:#9be3b6;font-size:10px;font-weight:800;padding:2px 6px;border-radius:3px;flex:0 0 auto}
+.results .F{background:#6b2525;color:#f7b1a8;font-size:10px;font-weight:800;padding:2px 6px;border-radius:3px;flex:0 0 auto}
+.results small{display:block;color:var(--red);font-family:Consolas,monospace;font-size:11px}
+.sumr{font-weight:800;margin-top:8px;font-size:13px}
+/* ---------- plantillas ---------- */
+.ttabs{display:flex;gap:8px;margin-bottom:10px}
+.ttabs button.on{background:var(--orange);color:#111;border-color:var(--orange)}
+.tpl{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+.cheat{width:100%;border-collapse:collapse;font-size:12.5px}
+.cheat td{padding:7px 9px;border-bottom:1px solid var(--border);vertical-align:top}
+.cheat td:first-child{font-family:Consolas,monospace;color:#dcdcaa;white-space:nowrap}
+.mist{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.mist .tile{display:flex;gap:10px}
+.mist .x{color:var(--red);font-weight:900}
+@media(max-width:1000px){.life{grid-template-columns:1fr 1fr}.ph::after{display:none}.builder,.tpl,.mist{grid-template-columns:1fr}.anatx{grid-template-columns:1fr 1fr}.anat{white-space:pre-wrap;font-size:13px}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Scripts y tests</h1>
+<div class="sub">Un <b>script</b> es código JavaScript que Postman ejecuta automáticamente <b>antes</b> o <b>después</b> de cada request. Con ellos se preparan datos, se guardan variables y, sobre todo, se escriben <b>tests</b>:
+validaciones que convierten “mirar la respuesta” en una <b>prueba automática</b> que dice <span style="color:var(--green)">PASS</span> o <span style="color:var(--red)">FAIL</span>.</div>
+
+<h2>¿Cuándo se ejecuta cada script?</h2>
+<div class="card">
+  <div class="life" id="life">
+    <div class="ph pre"><b>Pre-request</b>Colección<br><small>para todos</small></div>
+    <div class="ph pre"><b>Pre-request</b>Carpeta<br><small>para su grupo</small></div>
+    <div class="ph pre"><b>Pre-request</b>Request<br><small>solo este</small></div>
+    <div class="ph send"><b>🚀 Envío</b>Request → API<br><small>y respuesta</small></div>
+    <div class="ph post"><b>Post-response</b>Colección<br><small>para todos</small></div>
+    <div class="ph post"><b>Post-response</b>Carpeta<br><small>para su grupo</small></div>
+    <div class="ph post"><b>Post-response</b>Request<br><small>solo este</small></div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><button class="btn pri" id="lifeBtn">▶ Ver el orden</button><span class="lifemsg" id="lifeMsg">En Postman están en la pestaña <b>Scripts</b> → <b>Pre-request</b> / <b>Post-response</b>. En versiones antiguas, Post-response se llamaba <b>Tests</b>.</span></div>
+</div>
+<div class="cols2" style="margin-top:12px">
+  <div class="tile"><b class="h" style="color:var(--purple)">Pre-request: preparar</b>Generar datos (ids, nombres, fechas), calcular firmas, obtener o renovar un token, limpiar variables.</div>
+  <div class="tile"><b class="h" style="color:var(--green)">Post-response: verificar y guardar</b>Escribir los <b>tests</b> y guardar valores de la respuesta (ids, tokens) para los siguientes requests.</div>
+</div>
+
+<h2>Anatomía de un test</h2>
+<div class="anat" id="anat"><span data-p="0">pm.test</span>(<span data-p="1" class="s">"Status 200"</span>, <span data-p="2">() => {</span>
+    <span data-p="3"><span class="k">pm.expect</span>(<span class="v">pm.response.code</span>).<span class="b">to.eql</span>(<span class="n">200</span>);</span>
+<span data-p="2">}</span>);</div>
+<div class="anatx" id="anatx">
+  <div class="tile" data-p="0"><b class="h">pm.test</b>Declara un test. Cada uno aparece como una línea en <b>Test Results</b>.</div>
+  <div class="tile" data-p="1"><b class="h">El nombre</b>Lo que verás en el reporte. Debe decir <b>qué se espera</b>: <i>“Status 200”</i>, <i>“Devuelve el id creado”</i>.</div>
+  <div class="tile" data-p="2"><b class="h">La función</b>El bloque de código que se ejecuta. Si algo falla dentro, el test queda en <b>FAIL</b>.</div>
+  <div class="tile" data-p="3"><b class="h">pm.expect</b>La <b>aserción</b>: compara el valor real con el esperado. Sin ella, el test pasa siempre.</div>
+</div>
+
+<h2>Constructor de tests: elige qué validar y ejecútalo</h2>
+<div class="builder">
+  <div class="card">
+    <div class="small" style="margin-bottom:6px">1. Elige una respuesta de ejemplo</div>
+    <div class="samples" id="samples"></div>
+    <div class="small" style="margin:10px 0 6px">2. Marca las validaciones</div>
+    <div class="chk" id="chk"></div>
+  </div>
+  <div class="card">
+    <div class="small">Respuesta recibida</div>
+    <div class="rmeta" id="rmeta"></div>
+    <div class="resbox" id="resbox"></div>
+    <div class="small" style="margin-top:12px">3. Código generado (Scripts → Post-response)</div>
+    <pre class="code" id="gen" style="max-height:260px;overflow:auto"></pre>
+    <button class="btn pri" id="runT" style="margin-top:10px">▶ Ejecutar tests</button>
+    <div class="results" id="results"></div>
+  </div>
+</div>
+
+<h2>Plantillas por método</h2>
+<div class="ttabs" id="ttabs"></div>
+<div class="tpl"><div class="card"><pre class="code" id="tplCode" style="margin:0"></pre></div><div class="card" id="tplWhy"></div></div>
+
+<h2>Laboratorio: un test que falla y cómo leerlo</h2>
+<div id="lab"></div>
+
+<h2>Aserciones más usadas</h2>
+<div class="card"><table class="cheat">
+  <tr><td>pm.response.to.have.status(201)</td><td>El status code es exactamente 201.</td></tr>
+  <tr><td>pm.expect(pm.response.responseTime).to.be.below(1000)</td><td>Respondió en menos de 1 segundo.</td></tr>
+  <tr><td>pm.response.to.have.header("Content-Type")</td><td>La respuesta trae ese header.</td></tr>
+  <tr><td>pm.expect(json.name).to.eql("Firulais")</td><td>Un valor es igual al esperado (también objetos y listas).</td></tr>
+  <tr><td>pm.expect(json).to.have.property("id")</td><td>El objeto tiene ese campo.</td></tr>
+  <tr><td>pm.expect(json.name).to.be.a("string")</td><td>El tipo de dato es el correcto: string, number, boolean, array, object.</td></tr>
+  <tr><td>pm.expect(json.status).to.be.oneOf(["available","pending","sold"])</td><td>El valor es uno de los permitidos.</td></tr>
+  <tr><td>pm.expect(json).to.have.lengthOf.above(0)</td><td>La lista no está vacía.</td></tr>
+  <tr><td>pm.expect(json.email).to.match(/@/)</td><td>El texto cumple un patrón (expresión regular).</td></tr>
+  <tr><td>pm.expect(texto).to.include("error")</td><td>El texto o la lista contiene un valor.</td></tr>
+  <tr><td>pm.response.to.have.jsonSchema(schema)</td><td>Toda la respuesta cumple un esquema JSON (campos, tipos y obligatorios).</td></tr>
+</table>
+<div class="note">💡 No hace falta memorizarlas: en Postman, al lado del editor de scripts está el panel <b>Snippets</b>, con ejemplos listos para insertar con un clic. Y para depurar, <b>View → Show Postman Console</b> (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd>) muestra cada request enviado y lo que imprimas con <code>console.log()</code>.</div></div>
+
+<h2>Errores comunes al escribir tests</h2>
+<div class="mist">
+  <div class="tile"><span class="x">✗</span><div><b style="color:var(--text)">Un test sin pm.expect.</b> Si la función no compara nada, el test <b>siempre pasa</b>, aunque la API esté rota.</div></div>
+  <div class="tile"><span class="x">✗</span><div><b style="color:var(--text)">Leer JSON de una respuesta vacía.</b> <code>pm.response.json()</code> falla si el body está vacío (por ejemplo un 204). Valida primero el status.</div></div>
+  <div class="tile"><span class="x">✗</span><div><b style="color:var(--text)">Validar valores que siempre cambian.</b> Fechas, ids o tokens exactos: valida su <b>tipo</b> o <b>formato</b>, o compáralos con la variable que guardaste.</div></div>
+  <div class="tile"><span class="x">✗</span><div><b style="color:var(--text)">Nombres vagos.</b> <i>“Test 1”</i> o <i>“OK”</i> no dicen nada en un reporte. El nombre debe decir qué falló sin abrir el código.</div></div>
+  <div class="tile"><span class="x">✗</span><div><b style="color:var(--text)">Comparar tipos distintos.</b> <code>pm.environment.get()</code> puede devolver texto: <code>"1001"</code> no es igual a <code>1001</code>. Convierte con <code>String()</code> o <code>Number()</code>.</div></div>
+  <div class="tile"><span class="x">✗</span><div><b style="color:var(--text)">Solo probar el status.</b> Un 200 con datos incorrectos es un defecto. Valida también el <b>body</b> y las reglas de negocio.</div></div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> un buen request de prueba responde tres preguntas con tests: <strong>¿respondió lo que debía?</strong> (status y tiempo), <strong>¿con la forma correcta?</strong> (campos y tipos) y <strong>¿con los datos correctos?</strong> (valores y reglas).
+  Con eso, ejecutar 100 requests y revisar el resultado toma segundos.
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const hl=s=>esc(s).replace(/(\/\/.*)$/gm,'<span class="c">$1</span>').replace(/("[^"]*")/g,'<span class="s">$1</span>').replace(/\b(pm\.test|pm\.expect|pm\.response\.json|pm\.response\.to\.have\.status|pm\.response\.to\.have\.header|pm\.response\.to\.have\.jsonSchema|pm\.environment\.set|pm\.environment\.get|console\.log)\b/g,'<span class="k">$1</span>').replace(/\b(const|let|return)\b/g,'<span class="b">$1</span>');
+
+/* ---------- ciclo de vida ---------- */
+const LMSG=['<b>1.</b> Pre-request de la <b>colección</b>: por ejemplo, renovar el token si venció.','<b>2.</b> Pre-request de la <b>carpeta</b>.','<b>3.</b> Pre-request del <b>request</b>: generar el nombre aleatorio.','<b>4.</b> Postman resuelve las variables y <b>envía</b> el request; llega la respuesta.','<b>5.</b> Post-response de la <b>colección</b>: un test común, como “responde en menos de 2 s”.','<b>6.</b> Post-response de la <b>carpeta</b>.','<b>7.</b> Post-response del <b>request</b>: sus tests y guardar variables.'];
+$('lifeBtn').onclick=async()=>{
+  const ph=[...document.querySelectorAll('.ph')]; ph.forEach(p=>p.classList.remove('on','done')); $('lifeBtn').disabled=true;
+  for(let i=0;i<ph.length;i++){ph[i].classList.add('on');$('lifeMsg').innerHTML=LMSG[i];await new Promise(r=>setTimeout(r,1300));ph[i].classList.remove('on');ph[i].classList.add('done')}
+  $('lifeMsg').innerHTML='💡 Lo que pongas en la <b>colección</b> se ejecuta en <b>todos</b> sus requests: ideal para tests comunes y no repetirlos.'; $('lifeBtn').disabled=false;
+};
+
+/* ---------- anatomía ---------- */
+function anat(p){document.querySelectorAll('#anat [data-p], #anatx [data-p]').forEach(e=>e.classList.toggle('on',e.dataset.p===p))}
+document.querySelectorAll('#anat [data-p], #anatx [data-p]').forEach(e=>{e.onmouseenter=()=>anat(e.dataset.p);e.onclick=()=>anat(e.dataset.p)});
+
+/* ---------- constructor ---------- */
+const S={
+ get:{n:'GET mascota',code:200,status:'200 OK',ms:420,ct:'application/json',body:{id:1791322494976,category:{id:1,name:'Perros'},name:'Lucía',photoUrls:[],tags:[],status:'available'}},
+ post:{n:'POST creada',code:200,status:'200 OK',ms:810,ct:'application/json',body:{id:1791322494976,name:'Lucía',photoUrls:[],tags:[],status:'available'}},
+ slow:{n:'Respuesta lenta',code:200,status:'200 OK',ms:2340,ct:'application/json',body:{id:1791322494976,name:'Lucía',photoUrls:[],tags:[],status:'available'}},
+ bad:{n:'Datos incorrectos',code:200,status:'200 OK',ms:390,ct:'application/json',body:{id:'1791322494976',name:'',photoUrls:[],tags:[],status:'perdida'}},
+ nf:{n:'404 no existe',code:404,status:'404 Not Found',ms:300,ct:'application/json',body:{code:1,type:'error',message:'Pet not found'}},
+};
+const typeOf=v=>Array.isArray(v)?'array':typeof v;
+const A=[
+ {id:'st',on:true,l:'Status 200',code:'pm.test("Status 200", () => pm.response.to.have.status(200));',
+  run:r=>[r.code===200,`expected response to have status code 200 but got ${r.code}`]},
+ {id:'tm',on:true,l:'Responde en menos de 1000 ms',code:'pm.test("Responde en menos de 1 s", () =>\n  pm.expect(pm.response.responseTime).to.be.below(1000));',
+  run:r=>[r.ms<1000,`expected ${r.ms} to be below 1000`]},
+ {id:'ct',on:false,l:'Content-Type es JSON',code:'pm.test("Devuelve JSON", () =>\n  pm.expect(pm.response.headers.get("Content-Type")).to.include("application/json"));',
+  run:r=>[r.ct.includes('application/json'),`expected '${r.ct}' to include 'application/json'`]},
+ {id:'id',on:true,l:'Tiene id numérico',code:'const json = pm.response.json();\npm.test("Tiene id numérico", () => {\n  pm.expect(json).to.have.property("id");\n  pm.expect(json.id).to.be.a("number");\n});',
+  run:r=>[typeof r.body.id==='number',r.body.id===undefined?`expected { Object } to have property 'id'`:`expected '${r.body.id}' to be a number`]},
+ {id:'nm',on:true,l:'name es un texto no vacío',code:'pm.test("Tiene nombre", () => {\n  pm.expect(json.name).to.be.a("string");\n  pm.expect(json.name).to.not.be.empty;\n});',
+  run:r=>[typeof r.body.name==='string'&&r.body.name.length>0,r.body.name===undefined?`expected undefined to be a string`:`expected '' not to be empty`]},
+ {id:'en',on:false,l:'status es un valor permitido',code:'pm.test("Estado válido", () =>\n  pm.expect(json.status).to.be.oneOf(["available", "pending", "sold"]));',
+  run:r=>[['available','pending','sold'].includes(r.body.status),`expected '${r.body.status}' to be one of [ 'available', 'pending', 'sold' ]`]},
+ {id:'eq',on:false,l:'Es la mascota guardada (petName)',code:'pm.test("Es la mascota creada", () =>\n  pm.expect(json.name).to.eql(pm.environment.get("petName")));',
+  run:r=>[r.body.name==='Lucía',`expected '${r.body.name??'undefined'}' to deeply equal 'Lucía'`]},
+ {id:'sv',on:false,l:'Guardar el id en una variable',code:'pm.environment.set("petId", json.id);   // no es un test: prepara el siguiente request',save:true},
+];
+let samp='get';
+$('samples').innerHTML=Object.entries(S).map(([k,s])=>`<button class="btn ${k===samp?'on':''}" data-k="${k}">${s.n}</button>`).join('');
+$('chk').innerHTML=A.map(a=>`<label><input type="checkbox" data-id="${a.id}" ${a.on?'checked':''}><span>${a.l}</span></label>`).join('');
+function gen(){
+  const sel=A.filter(a=>a.on); let out=[], jsonDeclared=false;
+  sel.forEach(a=>{let c=a.code; if(c.startsWith('const json')){ if(jsonDeclared) c=c.replace(/^const json = pm\.response\.json\(\);\n/,''); jsonDeclared=true }
+    else if(/json\./.test(c)&&!jsonDeclared){ out.push('const json = pm.response.json();'); jsonDeclared=true }
+    out.push(c)});
+  $('gen').innerHTML=sel.length?hl(out.join('\n\n')):'<span class="c">// Marca al menos una validación</span>';
+}
+function showRes(){
+  const r=S[samp];
+  $('rmeta').innerHTML=`Status: <b class="${r.code>=400?'bad':''}">${r.status}</b> · Time: <b class="${r.ms>=1000?'bad':''}">${r.ms} ms</b> · Content-Type: <b>${r.ct}</b>`;
+  $('resbox').innerHTML=esc(JSON.stringify(r.body,null,2)); $('results').innerHTML='';
+}
+$('samples').onclick=e=>{const b=e.target.closest('button');if(!b)return;samp=b.dataset.k;document.querySelectorAll('#samples button').forEach(x=>x.classList.toggle('on',x===b));showRes()};
+$('chk').onchange=e=>{const a=A.find(x=>x.id===e.target.dataset.id);a.on=e.target.checked;gen();$('results').innerHTML=''};
+$('runT').onclick=async()=>{
+  const r=S[samp], tests=A.filter(a=>a.on&&!a.save); $('results').innerHTML=''; let p=0;
+  for(const t of tests){ await new Promise(x=>setTimeout(x,260));
+    const [ok,msg]=t.run(r); if(ok)p++;
+    $('results').insertAdjacentHTML('beforeend',`<div><span class="${ok?'P':'F'}">${ok?'PASS':'FAIL'}</span><span>${esc(t.l)}${ok?'':`<small>AssertionError: ${esc(msg)}</small>`}</span></div>`)}
+  if(A.find(a=>a.id==='sv').on) $('results').insertAdjacentHTML('beforeend',`<div style="background:transparent;color:var(--muted)">💾 petId = ${esc(r.body.id??'undefined')} guardado en el environment</div>`);
+  $('results').insertAdjacentHTML('beforeend',`<div class="sumr" style="background:transparent;color:${p===tests.length?'var(--green)':'var(--red)'}">${p} de ${tests.length} tests pasaron</div>`);
+};
+gen(); showRes();
+
+/* ---------- plantillas ---------- */
+const TPL={
+ GET:{code:`pm.test("Status 200", () => pm.response.to.have.status(200));
+pm.test("Responde en menos de 1 s", () =>
+  pm.expect(pm.response.responseTime).to.be.below(1000));
+
+const json = pm.response.json();
+pm.test("Es el recurso pedido", () =>
+  pm.expect(String(json.id)).to.eql(String(pm.environment.get("petId"))));
+pm.test("Tiene los campos obligatorios", () => {
+  pm.expect(json).to.have.property("name");
+  pm.expect(json).to.have.property("status");
+});`,why:'<b>GET</b> solo lee. Valida que trae <b>el recurso correcto</b> (comparando con la variable), su <b>estructura</b> y el <b>tiempo</b>. Para listas: que no esté vacía y que cada elemento cumpla el filtro.'},
+ POST:{code:`pm.test("Status 200 o 201", () =>
+  pm.expect(pm.response.code).to.be.oneOf([200, 201]));
+
+const json = pm.response.json();
+pm.test("Guardó los datos enviados", () =>
+  pm.expect(json.name).to.eql(pm.environment.get("petName")));
+pm.test("Devuelve un id", () =>
+  pm.expect(json.id).to.be.a("number"));
+
+// Preparar los siguientes requests
+pm.environment.set("petId", json.id);`,why:'<b>POST</b> crea. Valida que la API <b>guardó lo que enviaste</b> y que devuelve el <b>id</b>; luego guárdalo para GET, PUT y DELETE. La mayoría de APIs responde <b>201</b>; Petstore responde <b>200</b>.'},
+ PUT:{code:`pm.test("Status 200", () => pm.response.to.have.status(200));
+
+const json = pm.response.json();
+pm.test("Se aplicó el cambio", () =>
+  pm.expect(json.status).to.eql("sold"));
+pm.test("No cambió el id", () =>
+  pm.expect(String(json.id)).to.eql(String(pm.environment.get("petId"))));`,why:'<b>PUT</b> modifica. Valida que el <b>cambio se aplicó</b> y que lo demás <b>no cambió</b> (mismo id). Después, un GET confirma que el cambio quedó guardado.'},
+ DELETE:{code:`pm.test("Status 200", () => pm.response.to.have.status(200));
+
+// Muchas APIs responden 204 sin body: valida el status ANTES de leer JSON
+if (pm.response.code !== 204) {
+  pm.test("Confirma el id eliminado", () =>
+    pm.expect(pm.response.json().message).to.eql(String(pm.environment.get("petId"))));
+}`,why:'<b>DELETE</b> elimina. Valida el status y, si hay body, la confirmación. Luego un <b>GET debe dar 404</b>: esa es la verdadera prueba de que se eliminó.'},
+};
+let tk='GET';
+$('ttabs').innerHTML=Object.keys(TPL).map(k=>`<button class="btn ${k===tk?'on':''}" data-k="${k}">${k}</button>`).join('');
+function tpl(){ $('tplCode').innerHTML=hl(TPL[tk].code); $('tplWhy').innerHTML=`<b style="font-size:15px">¿Qué validar en un ${tk}?</b><div class="small" style="font-size:13.5px;margin-top:6px;line-height:1.6">${TPL[tk].why}</div>`; document.querySelectorAll('#ttabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===tk)) }
+$('ttabs').onclick=e=>{const b=e.target.closest('button');if(b){tk=b.dataset.k;tpl()}}; tpl();
+})();
+
+/* ---------- laboratorio ---------- */
+const BODY_SOLD=`{
+  "id": 1791322494976,
+  "category": { "id": 1, "name": "Perros" },
+  "name": "Lucía",
+  "photoUrls": [],
+  "tags": [],
+  "status": "sold"
+}`;
+const T_BAD=`pm.test("Status 200", () => pm.response.to.have.status(200));
+const json = pm.response.json();
+pm.test("Es la mascota creada", () =>
+  pm.expect(json.name).to.eql(pm.environment.get("petName")));
+pm.test("Está disponible", () =>
+  pm.expect(json.status).to.eql("available"));`;
+const T_OK=`pm.test("Status 200", () => pm.response.to.have.status(200));
+const json = pm.response.json();
+pm.test("Es la mascota creada", () =>
+  pm.expect(json.name).to.eql(pm.environment.get("petName")));
+pm.test("Estado válido", () =>
+  pm.expect(json.status).to.be.oneOf(["available", "pending", "sold"]));`;
+PMLab.mount(document.getElementById('lab'),{
+  title:'Leer un FAIL',
+  intro:'Usaremos <b>02 Consultar mascota</b> después de haberla vendido con el PUT. Presiona <b>Empezar</b>.',
+  state:{ws:'Taller APIs - Ana Rojas',env:'Petstore - QA',envs:[{name:'Petstore - QA',vars:[['baseUrl','https://petstore.swagger.io/v2','https://petstore.swagger.io/v2'],['petId','','1791322494976'],['petName','','Lucía']]}],
+    cols:[{name:'Taller Petstore',items:[{name:'CRUD Mascota',items:[{name:'01 Crear mascota',m:'POST'},{name:'02 Consultar mascota',m:'GET',sel:true},{name:'03 Actualizar mascota',m:'PUT'},{name:'04 Eliminar mascota',m:'DELETE'},{name:'05 Verificar eliminación',m:'GET'}]}]}],
+    tabs:[{name:'02 Consultar mascota',m:'GET'}],req:{name:'02 Consultar mascota',col:'Taller Petstore / CRUD Mascota',url:'{{baseUrl}}/pet/{{petId}}',rtab:'scripts',stab:'post'}},
+  steps:[
+   {t:'Escribe los tests',hl:'scr-code',type:'req.post',d:'En <b>Scripts → Post-response</b>, alguien escribió estos tests. El último exige que la mascota esté <code>"available"</code>.',set:{req:{post:T_BAD}}},
+   {t:'Send',hl:'rt-tests',d:'Send. En <b>Test Results</b> aparece <b>2/3</b>: un test en <b style="color:#f79a8e">FAIL</b>.',
+    set:{res:{status:'200 OK',code:200,time:'612 ms',size:'307 B',body:BODY_SOLD,rtab:'tests',tests:[['Status 200',true],['Es la mascota creada',true],['Está disponible',false,'AssertionError: expected \'sold\' to deeply equal \'available\'']]}}},
+   {t:'Lee el mensaje',hl:'rtests',d:'El mensaje dice <b>qué llegó</b> (<code>sold</code>) y <b>qué se esperaba</b> (<code>available</code>). Antes de reportar un defecto, pregúntate: ¿falla la API o falla el test?'},
+   {t:'Revisa el body',hl:'rbody',d:'El body confirma <code>"status": "sold"</code>: el PUT anterior la vendió. La API está bien; el test era <b>demasiado estricto</b> para un request que se reutiliza.',
+    set:{res:{rtab:'body'}}},
+   {t:'Corrige el test',hl:'scr-code',type:'req.post',d:'Cambia la última validación por una que acepte <b>cualquier estado válido</b> con <code>oneOf</code>.',set:{req:{post:T_OK}}},
+   {t:'Send otra vez',hl:'rt-tests',d:'Send → <b>3/3 PASS</b>. Ahora el request sirve antes y después de actualizar.',
+    set:{res:{rtab:'tests',tests:[['Status 200',true],['Es la mascota creada',true],['Estado válido',true]]}}},
+  ]
+});
+</script>
+</body></html>

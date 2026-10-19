@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ejecutar y ver Allure</title>
+<link rel="stylesheet" href="pm/pm.css">
+<link rel="stylesheet" href="ci/ci.css">
+<style>
+.run{display:grid;grid-template-columns:400px 1fr;gap:14px;align-items:start}
+.form .jk-main{min-height:0}
+.jk .fld input[type=checkbox]{width:16px;height:16px;vertical-align:middle}
+.jk .err{color:#d24939;font-size:12px}
+.preview{margin-top:10px}
+.preview small{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+.jk .links{display:flex;gap:16px;flex-wrap:wrap;margin:4px 0 10px;font-size:12.5px}
+.jk .links a{color:#1c64f2;cursor:pointer;text-decoration:underline;display:flex;gap:5px;align-items:center}
+.jk .links a.dis{color:#aaa;pointer-events:none;text-decoration:none}
+/* allure */
+.al{background:#fff;color:#333;border-radius:12px;overflow:hidden;font-family:Segoe UI,Arial,sans-serif;font-size:13px;display:grid;grid-template-columns:150px 1fr;box-shadow:0 14px 44px rgba(0,0,0,.45);margin-top:14px}
+.al-side{background:#343434;color:#ddd;padding:12px 0}
+.al-side .lg{font-weight:800;color:#fff;padding:0 14px 12px;font-size:15px}
+.al-side div.it{padding:8px 14px;font-size:12.5px}
+.al-side div.it.on{background:#4a4a4a;color:#fff;border-left:3px solid #97cc64}
+.al-main{padding:16px 18px}
+.al-main h4{margin:0 0 2px;font-size:18px}
+.al-main .meta{color:#888;font-size:12px;margin-bottom:12px}
+.al-grid{display:grid;grid-template-columns:240px 1fr;gap:14px}
+.al-card{border:1px solid #e6e6e6;border-radius:8px;padding:12px}
+.al-card h5{margin:0 0 8px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.04em}
+.al .suite{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #f2f2f2;font-size:12.5px}
+.al .suite .bar{margin-left:auto;display:flex;height:8px;width:90px;border-radius:4px;overflow:hidden;background:#eee}
+.al .fail{background:#fff4f2;border-left:4px solid #fd5a3e;padding:8px 10px;border-radius:6px;font-size:12.5px;margin-top:10px;line-height:1.5}
+.al .fail code{color:#b4232a}
+.probs td:first-child{color:var(--red)!important;font-family:Consolas,monospace;font-weight:400!important;white-space:normal!important}
+@media(max-width:1000px){.run,.al-grid{grid-template-columns:1fr}.al{grid-template-columns:1fr}.al-side{display:none}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Ejecutar con parámetros y ver el reporte de Allure</h1>
+<div class="sub">El job <b>pruebas-api-petstore</b> ya lee el Jenkinsfile desde GitHub. Ahora lo usamos como en un proyecto real: <b>elige los parámetros</b>, mira cómo cambian el comando de Newman y el resultado, y abre el reporte de <b>Allure</b> que el plugin publica en cada build.</div>
+
+<div class="tabs" id="tabs">
+  <button class="btn on" data-t="run">1 · Ejecutar y ver el reporte</button>
+  <button class="btn" data-t="prob">2 · Problemas comunes</button>
+</div>
+
+<section class="pane on" id="p-run">
+<div class="run">
+  <div>
+    <div class="jk form"><div class="jk-top"><div class="lg"><span>🤵</span>Jenkins</div><div class="r">👤 ana</div></div>
+      <div class="jk-crumb">Dashboard › pruebas-api-petstore › <b>Build with Parameters</b></div>
+      <div class="jk-main">
+        <div class="fld"><label>CARPETA</label><select id="fC"><option>CRUD Mascota</option><option>Datos desde archivo</option><option>Todas</option></select><small>Qué parte de la colección ejecutar</small></div>
+        <div class="fld"><label>ESTADO</label><select id="fE"><option>available</option><option>pending</option><option>sold</option></select><small>Valor de la variable {{status}} para "Buscar mascotas por estado"</small></div>
+        <div class="fld"><label>DATOS</label><select id="fD"><option>mascotas.csv</option><option>mascotas.json</option></select><small>Archivo de datos para la carpeta "Datos desde archivo"</small></div>
+        <div class="fld"><label>ITERACIONES</label><input type="text" id="fI" value="1"><small>Repeticiones de "CRUD Mascota" (cuando no se usa archivo de datos)</small></div>
+        <div class="fld"><label><input type="checkbox" id="fB"> DETENER_EN_FALLO</label><small>Cortar la ejecución en el primer test que falle (--bail)</small></div>
+        <button class="jbtn" id="build">Build</button>
+      </div></div>
+    <div class="preview"><small>El comando que arma el stage “Pruebas de API” (resaltado: lo que viene de los parámetros)</small><div class="cmd" id="cmd"></div></div>
+  </div>
+  <div>
+    <div class="jk"><div class="jk-top"><div class="lg"><span>🤵</span>Jenkins</div><div class="r">👤 ana</div></div>
+      <div class="jk-crumb">Dashboard › <b>pruebas-api-petstore</b></div>
+      <div class="jk-body"><div class="jk-side"><div class="on">📋 Status</div><div>✏️ Changes</div><div>▶️ Build with Parameters</div><div>⚙️ Configure</div><div>📈 Allure Report</div><div class="hist" id="hist"></div></div>
+      <div class="jk-main">
+        <h3 id="jtitle"></h3>
+        <div class="links"><a id="lAllure">📈 Allure Report</a><a id="lCon">🖥️ Console Output</a><span id="lTests" style="color:#555"></span></div>
+        <div class="sv" id="sv"></div>
+        <div class="jk-console" id="con" style="display:none"></div>
+      </div></div></div>
+    <div id="allure"></div>
+  </div>
+</div>
+<div class="note">💡 Prueba estas combinaciones: <b>CRUD Mascota</b> con 3 iteraciones (verde) · <b>Datos desde archivo</b> (amarillo: la fila “Kira” tiene un estado no permitido que la API acepta, un defecto real) · <b>Todas</b> con <b>DETENER_EN_FALLO</b> · ITERACIONES = <code>tres</code> (rojo).</div>
+</section>
+
+<section class="pane" id="p-prob">
+  <div class="card"><table class="tbl probs">
+    <tr><th>Mensaje o síntoma</th><th>Causa</th><th>Solución</th></tr>
+    <tr><td>Tool type "nodejs" does not have an install of "node-lts" configured</td><td>El nombre en <code>tools { }</code> no coincide con el de Manage Jenkins → Tools.</td><td>Usa exactamente el mismo nombre en los dos lugares.</td></tr>
+    <tr><td>No such DSL method 'allure' / 'nodejs'</td><td>Falta el plugin.</td><td>Instala <b>Allure</b> o <b>NodeJS</b> en Manage Jenkins → Plugins y reinicia.</td></tr>
+    <tr><td>Unable to find Jenkinsfile</td><td>Script Path o rama incorrectos, o el archivo no está subido.</td><td>Revisa <code>*/main</code>, el nombre exacto <code>Jenkinsfile</code> y haz <code>git push</code>.</td></tr>
+    <tr><td>Could not find credentials entry with ID 'petstore-api-key'</td><td>La credencial no existe o tiene otro ID.</td><td>Créala en Manage Jenkins → Credentials con ese ID exacto.</td></tr>
+    <tr><td>'npx' is not recognized as an internal or external command</td><td>Node.js no está en el PATH del build.</td><td>Revisa el bloque <code>tools</code> y la herramienta NodeJS.</td></tr>
+    <tr><td>npm ERR! network / self-signed certificate in certificate chain</td><td>Proxy o inspección SSL de la red corporativa.</td><td>Configura el proxy de npm y el certificado corporativo (<code>npm config set cafile</code>) con soporte. No uses <code>strict-ssl false</code> como solución permanente.</td></tr>
+    <tr><td>El reporte de Allure muestra resultados de builds viejos</td><td>No se limpia <code>allure-results</code> antes de ejecutar.</td><td>El stage Preparar lo borra con <code>deleteDir()</code>. El historial lo conserva el plugin.</td></tr>
+    <tr><td>El build queda rojo (FAILURE) cuando solo fallan tests</td><td>Newman termina con código 1 y corta el pipeline.</td><td>Envuelve Newman en <code>catchError(buildResult: 'UNSTABLE')</code> para que quede amarillo y se publiquen los reportes.</td></tr>
+    <tr><td>No aparece “Build with Parameters”</td><td>Jenkins todavía no leyó el bloque <code>parameters</code>.</td><td>Ejecuta una vez con <b>Build Now</b>.</td></tr>
+    <tr><td>El reporte htmlextra se ve sin estilos dentro de Jenkins</td><td>La política de seguridad (CSP) de Jenkins bloquea sus scripts.</td><td>Descárgalo como artefacto, o usa Allure, que está hecho para mostrarse en Jenkins.</td></tr>
+  </table></div>
+</section>
+
+<div class="key"><strong>Lo que lograste:</strong> un pipeline que cualquiera ejecuta con un clic eligiendo <strong>qué probar</strong>, que corre solo cada mañana, que nunca expone la clave, y que deja la evidencia en <strong>Allure</strong> con el historial de todas las ejecuciones.</div>
+</div>
+
+<script src="ci/ci.js"></script>
+<script>
+(()=>{
+const {$,esc}=CI; CI.tabs();
+const ST=['Declarative: Checkout SCM','Declarative: Tool Install','Preparar','Pruebas de API','Declarative: Post Actions'];
+const builds=[{n:1,res:'ok',p:{C:'CRUD Mascota',E:'available',D:'mascotas.csv',I:'1',B:false},sum:{tests:5,fail:0,asr:8,afail:0,req:5},cells:['ok','ok','ok','ok','ok'],t:['2s','1s','21s','6s','9s'],ago:'ayer'}];
+let running=false,sel=null;
+const P=()=>({C:$('fC').value,E:$('fE').value,D:$('fD').value,I:$('fI').value.trim(),B:$('fB').checked});
+function args(p,mark){const h=s=>mark?`<span class="p">${esc(s)}</span>`:s;
+  let a=`--env-var "status=${h(p.E)}"`;
+  if(p.C==='Datos desde archivo')a+=` --folder "${h('Datos desde archivo')}" -d "datos/${h(p.D)}"`;
+  else if(p.C==='Todas')a+=` -d "datos/${h(p.D)}"`;
+  else a+=` --folder "${h('CRUD Mascota')}" -n ${h(p.I||'?')}`;
+  if(p.B)a+=' '+h('--bail');return a}
+function preview(){const p=P();$('fD').disabled=p.C==='CRUD Mascota';$('fI').disabled=p.C!=='CRUD Mascota';$('fE').style.opacity=p.C==='Todas'?1:.6;
+  $('cmd').innerHTML=`npx newman run "postman/Taller Petstore.postman_collection.json"
+  -e "postman/Petstore - QA.postman_environment.json"
+  --env-var "apiKey=****" ${args(p,1)}
+  -r cli,junit,allure --reporter-junit-export reports/junit.xml
+  --reporter-allure-export allure-results`}
+['fC','fE','fD','fI','fB'].forEach(id=>$(id).addEventListener('input',preview));
+/* resultado de Newman según parámetros (conteos reales de la colección) */
+function outcome(p){
+  if(p.C==='CRUD Mascota'){if(!/^\d+$/.test(p.I))return{error:`ITERACIONES debe ser un número: '${p.I}'`};const n=+p.I||1;return{it:n,req:5*n,asr:8*n,afail:0,tests:5*n,fail:0}}
+  if(p.C==='Datos desde archivo')return p.B?{it:5,req:9,asr:19,afail:1,tests:9,fail:1,bail:1}:{it:5,req:10,asr:20,afail:1,tests:10,fail:1};
+  return p.B?{it:5,req:39,asr:69,afail:1,tests:39,fail:1,bail:1}:{it:5,req:40,asr:70,afail:1,tests:40,fail:1};
+}
+function console_(b){const p=b.p,o=b.o,L=[];
+  L.push(`Started by user Ana Quispe`,`Obtained Jenkinsfile from git https://github.com/ana-quispe/taller-api-pruebas.git`,`[Pipeline] Start of Pipeline`,`[Pipeline] { (Declarative: Checkout SCM)`,`Checking out Revision 7be20d4 (refs/remotes/origin/main)`,`[Pipeline] { (Declarative: Tool Install)`,`[Pipeline] { (Preparar)`,`[Pipeline] bat`,`&gt; node -v`,`v24.11.0`,`&gt; npm install --no-audit --no-fund`,`added 214 packages in 17s`,`[Pipeline] { (Pruebas de API)`);
+  if(o.error){L.push(`[Pipeline] error`,`<span class="r">ERROR: ${esc(o.error)}</span>`,`[Pipeline] { (Declarative: Post Actions)`,`[Pipeline] junit`,`<span class="y">None of the test reports contained any result</span>`,`[Pipeline] allure`,`<span class="y">allure-results does not exists</span>`,`[Pipeline] echo`,`El pipeline no pudo completarse: revisa la consola.`,`<span class="r">Finished: FAILURE</span>`);return L.join('\n')}
+  L.push(`[Pipeline] withCredentials`,`Masking supported pattern matches of %API_KEY%`,`[Pipeline] bat`,`&gt; npx newman run "postman/Taller Petstore.postman_collection.json" -e "postman/Petstore - QA.postman_environment.json" --env-var "apiKey=<span class="y">****</span>" ${esc(args(p,0))} -r cli,junit,allure …`,``,`newman`,``,`Taller Petstore`);
+  if(p.C==='Todas')L.push(`→ Buscar mascotas por estado`,`  GET https://petstore.swagger.io/v2/pet/findByStatus?status=<span class="u">${p.E}</span> [200 OK]`,`  <span class="g">✓</span>  Status 200`,`  <span class="g">✓</span>  Devuelve una lista`);
+  if(p.C!=='Datos desde archivo')L.push(`❏ CRUD Mascota`,`→ 01 Crear mascota … 05 Verificar eliminación`,`  <span class="g">✓</span>  Status 200 … <span class="g">✓</span>  Ya no existe: 404`);
+  if(p.C!=='CRUD Mascota')L.push(`<span class="d">… Iteration 5/5 (datos/${p.D}: Kira, Perros, perdida)</span>`,`❏ Datos desde archivo`,`→ Crear mascota desde datos`,`  POST https://petstore.swagger.io/v2/pet [200 OK]`,`  <span class="g">✓</span>  Creó a Kira`,`  <span class="g">✓</span>  Guardó el estado del archivo`,`  <span class="r">1. El estado es un valor permitido</span>`);
+  if(o.bail)L.push(`<span class="y">newman: run interrupted by --bail at first failure</span>`);
+  L.push(``,`│ iterations │ ${String(o.it).padStart(4)} │    0 │`,`│   requests │ ${String(o.req).padStart(4)} │    0 │`,`│ assertions │ ${String(o.asr).padStart(4)} │ ${o.afail?'<span class="r">'+String(o.afail).padStart(4)+'</span>':'   0'} │`);
+  if(o.fail)L.push(``,`<span class="r">  #  failure         detail</span>`,`<span class="r">  1. AssertionError  El estado es un valor permitido</span>`,`                     expected 'perdida' to be one of [ 'available', 'pending', 'sold' ]`,`<span class="r">script returned exit code 1</span>`,`<span class="y">[Pipeline] catchError: marcando el stage y el build como UNSTABLE</span>`);
+  L.push(`[Pipeline] { (Declarative: Post Actions)`,`[Pipeline] junit`,`Recording test results`,`[Checks API] No suitable checks publisher found.`,`[Pipeline] allure`,`allure-results: ${o.tests} test results found`,`Allure report was successfully generated.`,`[Pipeline] echo`);
+  L.push(o.fail?`Hay pruebas que fallaron: revisa el reporte de Allure.`:`Todas las pruebas pasaron.`,o.fail?`<span class="y">Finished: UNSTABLE</span>`:`<span class="g">Finished: SUCCESS</span>`);
+  return L.join('\n')}
+function render(){
+  const last=builds[0],cur=sel||last;
+  $('jtitle').innerHTML=`<span class="dot ${running?'run':last.res}"></span> pruebas-api-petstore`;
+  $('hist').innerHTML='<small>Builds</small>'+builds.map(b=>`<div style="cursor:pointer;${b===cur?'font-weight:700':''}" data-n="${b.n}"><span class="dot ${b.res}"></span> #${b.n} <span style="color:#888;margin-left:auto">${b.ago}</span></div>`).join('');
+  $('sv').innerHTML=`<table><tr><th></th>${ST.map(s=>`<th>${s}</th>`).join('')}</tr>${builds.slice(0,5).map(b=>`<tr><td><b>#${b.n}</b> ${b.ago}<br><small>${esc(b.p.C)}${b.p.C==='CRUD Mascota'?' ×'+esc(b.p.I):''}${b.p.B?' · bail':''}</small></td>${b.cells.map((c,i)=>`<td class="c-${c}">${c==='run'||c==='skip'?'':b.t[i]}</td>`).join('')}</tr>`).join('')}</table>`;
+  const has=!running&&cur.sum&&cur.sum.tests;
+  $('lAllure').classList.toggle('dis',!has);$('lCon').classList.toggle('dis',running);
+  $('lTests').innerHTML=running?'Ejecutando…':cur.sum?`🧪 Test Result: ${cur.sum.asr-cur.sum.afail} de ${cur.sum.asr} assertions OK`:'Sin resultados de pruebas';
+}
+$('hist').onclick=e=>{const d=e.target.closest('[data-n]');if(!d||running)return;sel=builds.find(b=>b.n===+d.dataset.n);render();$('con').style.display='none';$('allure').innerHTML=''};
+$('lCon').onclick=()=>{const b=sel||builds[0];$('con').style.display='block';$('con').innerHTML=b.log||'(log del build #1)\nFinished: SUCCESS';$('allure').innerHTML=''};
+$('lAllure').onclick=()=>allure(sel||builds[0]);
+$('build').onclick=()=>{
+  if(running)return;running=true;sel=null;$('build').disabled=true;$('allure').innerHTML='';$('con').style.display='none';
+  const p=P(),o=outcome(p),n=builds[0].n+1;
+  const b={n,p,o,res:'run',cells:ST.map(()=> 'skip'),t:['1s','1s','18s',o.error?'0.1s':(Math.max(3,Math.round(o.req*.9))+'s'),'8s'],ago:'ahora'};
+  builds.forEach(x=>{if(x.ago==='ahora')x.ago='hace 1 min'});builds.unshift(b);let k=0;
+  const tick=()=>{
+    b.cells=ST.map((_,i)=>i<k?b.cells[i]:i===k?'run':'skip');
+    if(k>0){const i=k-1;b.cells[i]=(i===3&&o.error)?'ko':(i===3&&o.fail)?'un':'ok'}
+    if(o.error&&k===4){b.cells[4]='ok'}
+    render();
+    if(k<ST.length){k++;setTimeout(tick,k===3?1300:700);return}
+    b.cells=ST.map((_,i)=>i===3?(o.error?'ko':o.fail?'un':'ok'):'ok');
+    b.res=o.error?'ko':o.fail?'un':'ok';b.sum=o.error?null:{tests:o.tests,fail:o.fail,asr:o.asr,afail:o.afail,req:o.req};b.log=console_(b);
+    running=false;$('build').disabled=false;render();$('con').style.display='block';$('con').innerHTML=b.log;$('con').scrollTop=1e6;
+  };tick();
+};
+function allure(b){
+  if(!b.sum)return;
+  const s=b.sum,pass=s.tests-s.fail,pct=Math.round(pass/s.tests*1000)/10;
+  const hist=builds.filter(x=>x.sum).slice(0,8).reverse();const mx=Math.max(...hist.map(x=>x.sum.tests));
+  const R=46,C=2*Math.PI*R,fl=s.fail/s.tests*C;
+  const suites=b.p.C==='CRUD Mascota'?[['CRUD Mascota',s.tests,0]]
+    :b.p.C==='Datos desde archivo'?[['Datos desde archivo',s.tests,1]]
+    :[['Buscar mascotas por estado',5,0],['CRUD Mascota',25,0],['Datos desde archivo',b.o.bail?9:10,1]];
+  $('allure').innerHTML=`<div class="al"><div class="al-side"><div class="lg">Allure</div>${['Overview','Categories','Suites','Graphs','Timeline','Behaviors'].map((t,i)=>`<div class="it ${i===0?'on':''}">${t}</div>`).join('')}</div>
+  <div class="al-main"><h4>Allure Report · pruebas-api-petstore #${b.n}</h4><div class="meta">${s.tests} casos de prueba (uno por request) · parámetros: ${esc(b.p.C)}${b.p.C==='CRUD Mascota'?' × '+esc(b.p.I):' · '+esc(b.p.D)}${b.p.B?' · bail':''}</div>
+  <div class="al-grid"><div class="al-card" style="text-align:center"><h5>Resultado</h5><svg viewBox="0 0 120 120" width="150"><circle cx="60" cy="60" r="${R}" fill="none" stroke="#97cc64" stroke-width="16"/>${s.fail?`<circle cx="60" cy="60" r="${R}" fill="none" stroke="#fd5a3e" stroke-width="16" stroke-dasharray="${fl} ${C}" transform="rotate(-90 60 60)"/>`:''}<text x="60" y="58" text-anchor="middle" font-size="20" font-weight="800" fill="#333">${pct}%</text><text x="60" y="76" text-anchor="middle" font-size="10" fill="#888">${pass} passed</text></svg>
+    <div style="font-size:12px;color:#555">${s.fail?`<span style="color:#fd5a3e;font-weight:700">● ${s.fail} failed</span> · `:''}<span style="color:#5a9a2e;font-weight:700">● ${pass} passed</span></div></div>
+   <div class="al-card"><h5>Trend (historial de builds)</h5><svg viewBox="0 0 ${Math.max(hist.length,4)*46+10} 130" width="100%" height="130">${hist.map((x,i)=>{const h=x.sum.tests/mx*95,hf=x.sum.fail/mx*95;return `<g><rect x="${10+i*46}" y="${105-h}" width="30" height="${h-hf}" fill="#97cc64"/>${hf?`<rect x="${10+i*46}" y="${105-hf}" width="30" height="${Math.max(hf,3)}" fill="#fd5a3e"/>`:''}<text x="${25+i*46}" y="122" text-anchor="middle" font-size="10" fill="#888">#${x.n}</text><text x="${25+i*46}" y="${100-h}" text-anchor="middle" font-size="9" fill="#555">${x.sum.tests}</text></g>`}).join('')}</svg>
+    <div style="font-size:11.5px;color:#888">El plugin copia la carpeta <b>history</b> del build anterior: así se arma la tendencia.</div></div></div>
+  <div class="al-card" style="margin-top:12px"><h5>Suites</h5>${suites.map(([n,t,f])=>`<div class="suite">📁 ${n} <span style="color:#888">${t} casos</span><div class="bar"><div style="width:${(t-f)/t*100}%;background:#97cc64"></div><div style="width:${f/t*100}%;background:#fd5a3e"></div></div></div>`).join('')}
+  ${s.fail?`<div class="fail"><b>✗ Crear mascota desde datos</b> (iteración 5 · Kira)<br>AssertionError: El estado es un valor permitido: <code>expected 'perdida' to be one of [ 'available', 'pending', 'sold' ]</code><br><span style="color:#888">En Allure verías el request enviado, la respuesta y cada assertion como un paso. Es un <b>defecto de la API</b>: acepta un estado que su documentación no permite.</span></div>`:''}</div>
+  </div></div>`;
+}
+preview();render();
+})();
+</script>
+</body></html>

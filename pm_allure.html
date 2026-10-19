@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Allure Report</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.why{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+/* cadena animada */
+.flow{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+.fn{background:var(--panel);border:2px solid var(--border);border-radius:12px;padding:10px 14px;text-align:center;min-width:150px;transition:border-color .3s,transform .3s}
+.fn b{display:block;font-size:14px}
+.fn small{display:block;color:var(--muted);font-size:11.5px;font-family:Consolas,monospace;margin-top:3px}
+.fn.on{border-color:var(--orange);transform:translateY(-3px)}
+.fn.done{border-color:color-mix(in srgb,var(--green) 60%,var(--border))}
+.fa{color:var(--muted);font-size:20px}
+.fmsg{text-align:center;color:var(--muted);font-size:13.5px;margin-top:10px;min-height:20px}
+.fmsg b{color:var(--text)}
+/* terminal */
+.two{display:grid;grid-template-columns:1fr 1.15fr;gap:14px;align-items:start}
+.steps2{display:flex;flex-direction:column;gap:8px}
+.st{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:13.5px;line-height:1.55;color:var(--muted);cursor:pointer}
+.st:hover{border-color:color-mix(in srgb,var(--orange) 50%,var(--border))}
+.st.on{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 6%,var(--panel))}
+.st b.h{display:block;color:var(--text);font-size:14.5px;margin-bottom:2px}
+.st .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--orange);color:#111;font-weight:800;font-size:12px;margin-right:6px}
+.term{background:#0c0c0c;border:1px solid #333;border-radius:10px;overflow:hidden;position:sticky;top:10px}
+.term .tb{background:#1f1f1f;padding:7px 12px;font-size:12px;color:#aaa;display:flex;gap:8px;align-items:center}
+.term .tb i{width:10px;height:10px;border-radius:50%;display:inline-block;background:#555}
+.term pre{margin:0;padding:12px 14px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.5;color:#ccc;white-space:pre-wrap;word-break:break-word;overflow:auto;height:380px}
+.term .p{color:#6bdd9a}.term .w{color:#fff;font-weight:700}.term .d{color:#777}.term .g{color:#6bdd9a}.term .r{color:#f79a8e}.term .y{color:#e8d36a}.term .u{color:#74aef6}
+/* ---------- réplica de Allure ---------- */
+.al{display:grid;grid-template-columns:150px 1fr;height:560px;border-radius:10px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.45);font-family:"Segoe UI",Arial,sans-serif;font-size:13px}
+.al-side{background:#343434;color:#ddd;display:flex;flex-direction:column}
+.al-logo{padding:14px 12px;font-weight:800;font-size:15px;color:#fff;display:flex;gap:8px;align-items:center}
+.al-logo i{width:22px;height:22px;border-radius:50%;background:conic-gradient(#97cc64 0 70%,#fd5a3e 70% 85%,#ffd050 85% 100%);display:inline-block}
+.al-nav div{padding:9px 14px;cursor:pointer;color:#bbb;border-left:3px solid transparent}
+.al-nav div:hover{background:#3f3f3f;color:#fff}
+.al-nav div.on{background:#2a2a2a;color:#fff;border-left-color:#97cc64}
+.al-main{background:#fff;color:#333;overflow:auto;padding:16px 18px}
+.al-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #eee;padding-bottom:8px;margin-bottom:12px}
+.al-h b{font-size:18px}
+.al-h span{color:#888;font-size:12px}
+.al-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.al-w{border:1px solid #e6e6e6;border-radius:6px;padding:12px}
+.al-w h5{margin:0 0 8px;font-size:12px;letter-spacing:.06em;color:#666;text-transform:uppercase}
+.al-big{display:flex;gap:16px;align-items:center}
+.al-big .num{font-size:40px;font-weight:300;line-height:1}
+.al-big .num small{display:block;font-size:12px;color:#888;font-weight:400}
+.al-leg div{display:flex;gap:6px;align-items:center;font-size:12px;margin:3px 0}
+.al-leg i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.al-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:4px;cursor:pointer}
+.al-row:hover{background:#f4f6f8}
+.al-row .bar{display:flex;width:120px;height:10px;border-radius:3px;overflow:hidden;background:#eee}
+.al-kv{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;font-size:12px}
+.al-kv span:nth-child(odd){color:#888}
+.al-tree .g{font-weight:700;padding:6px 4px;color:#555}
+.al-t{display:flex;gap:8px;align-items:center;padding:6px 8px 6px 20px;border-radius:4px;cursor:pointer}
+.al-t:hover,.al-t.sel{background:#eef3fb}
+.al-t .s{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.al-t .d{margin-left:auto;color:#999;font-size:11px}
+.al-split{display:grid;grid-template-columns:1fr 1.1fr;gap:12px}
+.al-det{border:1px solid #e6e6e6;border-radius:6px;padding:12px;min-height:300px}
+.al-det .st2{display:inline-block;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:3px;text-transform:uppercase}
+.al-det h4{margin:8px 0 4px;font-size:15px}
+.al-step{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px dashed #eee;font-size:12.5px}
+.al-step .s{width:9px;height:9px;border-radius:50%;margin-top:4px;flex:0 0 auto}
+.al-msg{background:#fff1ef;border:1px solid #f6c9c0;border-radius:4px;padding:8px;font-family:Consolas,monospace;font-size:11.5px;color:#b0301d;margin-top:8px;white-space:pre-wrap}
+.al-att{background:#f7f7f7;border-radius:4px;padding:8px;font-family:Consolas,monospace;font-size:11.5px;margin-top:6px;white-space:pre-wrap;color:#444}
+.al-tl .r{display:grid;grid-template-columns:200px 1fr;gap:8px;align-items:center;margin:4px 0;font-size:12px}
+.al-tl .b{height:14px;border-radius:3px;position:relative}
+@media(max-width:1000px){.why{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.al{grid-template-columns:1fr;height:auto}.al-grid,.al-split{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Allure Report: reportes que se entienden</h1>
+<div class="sub"><b>Allure</b> es una herramienta <b>open source</b> que convierte los resultados de las pruebas en un <b>reporte web interactivo</b>: gráficos, el detalle paso a paso de cada test, la clasificación de los fallos y, sobre todo, el <b>historial</b> entre ejecuciones.
+Funciona con muchas herramientas (Newman, Karate, Selenium, JUnit, Pytest…), así que un equipo puede tener <b>un mismo tipo de reporte</b> para todas sus pruebas.</div>
+
+<div class="why">
+  <div class="tile"><b class="h">📊 Resumen visual</b>Cuántos tests pasaron, fallaron o se rompieron, de un vistazo.</div>
+  <div class="tile"><b class="h">📈 Tendencia</b>Compara con las ejecuciones anteriores: ¿estamos mejor o peor que ayer?</div>
+  <div class="tile"><b class="h">🔎 Detalle por test</b>Cada assertion como un paso, con el mensaje de error y la duración.</div>
+  <div class="tile"><b class="h">🗂 Categorías</b>Separa fallos de producto (la API respondió mal) de fallos técnicos (el test no pudo ejecutarse).</div>
+</div>
+
+<h2>Cómo se genera</h2>
+<div class="card">
+  <div class="flow" id="flow">
+    <div class="fn"><b>Newman</b><small>-r allure</small></div><span class="fa">→</span>
+    <div class="fn"><b>allure-results</b><small>un .json por test</small></div><span class="fa">→</span>
+    <div class="fn"><b>allure generate</b><small>arma el sitio</small></div><span class="fa">→</span>
+    <div class="fn"><b>allure-report</b><small>index.html</small></div><span class="fa">→</span>
+    <div class="fn"><b>Navegador</b><small>allure open</small></div>
+  </div>
+  <div style="text-align:center;margin-top:10px"><button class="btn pri" id="flowBtn">▶ Ver el recorrido</button></div>
+  <div class="fmsg" id="fmsg">Allure trabaja en <b>dos pasos</b>: primero se juntan los <b>resultados</b> crudos y después se <b>genera</b> el reporte a partir de ellos.</div>
+</div>
+
+<h2>Instalar y generar el reporte (Windows)</h2>
+<div class="two">
+  <div class="steps2" data-term="tAl">
+    <div class="st" data-s="0"><b class="h"><span class="n">1</span>Java</b>Allure 2 necesita <b>Java</b> (8 o superior). Verifica con <code>java -version</code>; si no está, instala un JDK (por ejemplo Eclipse Temurin) o pide a soporte que lo instale.</div>
+    <div class="st" data-s="1"><b class="h"><span class="n">2</span>Instalar Allure</b>Como ya tienes Node.js, la forma más simple es <code>npm install -g allure-commandline</code>. Alternativa: descargar el <code>.zip</code> desde el GitHub de Allure y agregar su carpeta <code>bin</code> al PATH.</div>
+    <div class="st" data-s="2"><b class="h"><span class="n">3</span>Reporter de Newman</b><code>npm install -g newman-reporter-allure</code> permite que Newman escriba resultados en formato Allure.</div>
+    <div class="st" data-s="3"><b class="h"><span class="n">4</span>Ejecutar con Newman</b><code>-r cli,allure --reporter-allure-export allure-results</code>. Cada request queda como un test y cada <code>pm.test</code> como un paso.</div>
+    <div class="st" data-s="4"><b class="h"><span class="n">5</span>Generar y abrir</b><code>allure generate allure-results --clean -o allure-report</code> y luego <code>allure open allure-report</code>. Atajo para ver rápido: <code>allure serve allure-results</code>.</div>
+    <div class="st" data-s="5"><b class="h"><span class="n">6</span>Conservar el historial</b>La tendencia necesita las ejecuciones anteriores: antes de generar, copia <code>allure-report\history</code> dentro de <code>allure-results</code>.</div>
+  </div>
+  <div class="term" id="tAl"><div class="tb"><i></i><i></i><i></i> Símbolo del sistema — C:\taller-postman</div><pre></pre></div>
+</div>
+<div class="note">💡 Existe una versión más nueva, <b>Allure 3</b>, que funciona sobre Node.js y no requiere Java. Revisa su estado y compatibilidad con el reporter de Newman antes de adoptarla; en el taller usamos Allure 2.</div>
+
+<h2>Así se ve el reporte (explóralo)</h2>
+<div class="al">
+  <div class="al-side"><div class="al-logo"><i></i>Allure</div>
+    <div class="al-nav" id="alNav"><div class="on" data-v="ov">Overview</div><div data-v="cat">Categories</div><div data-v="sui">Suites</div><div data-v="tl">Timeline</div></div></div>
+  <div class="al-main" id="alMain"></div>
+</div>
+
+<h2>Con Jenkins</h2>
+<div class="cols2">
+  <div class="card"><b>Jenkinsfile</b>
+<pre style="margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap">stage(<span style="color:#ce9178">'Pruebas de API'</span>) {
+  steps {
+    bat <span style="color:#ce9178">'newman run "postman/Taller Petstore.postman_collection.json" -e "postman/Petstore - QA.postman_environment.json" -r cli,allure --reporter-allure-export allure-results'</span>
+  }
+}
+post {
+  always {
+    allure results: [[path: <span style="color:#ce9178">'allure-results'</span>]]   <span style="color:#6a9955">// plugin "Allure" de Jenkins</span>
+  }
+}</pre></div>
+  <div class="tile"><b class="h">Lo que agrega Jenkins</b>Con el plugin <b>Allure</b>, cada build publica su reporte y el plugin se encarga solo del <b>historial</b>: la tendencia muestra cómo evolucionan las pruebas build tras build, sin copiar carpetas a mano.
+    <div class="note" style="margin-top:10px">💡 En tu PC usa los scripts del <code>package.json</code> del taller: <code>npm run test:allure</code> y <code>npm run allure:reporte</code>.</div></div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> el reporte HTML de Newman muestra <strong>una</strong> ejecución; Allure muestra la <strong>historia</strong>: qué falló, por qué, desde cuándo y si es un problema de la API o de la prueba.
+  Es el reporte que se comparte con el equipo y con quien toma decisiones.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+/* ---------- cadena ---------- */
+const FMSG=['<b>Newman</b> ejecuta la colección y, con el reporter de Allure, escribe un archivo por cada test.','En <b>allure-results</b> quedan los resultados crudos (JSON): todavía no es un reporte.','<b>allure generate</b> lee esos resultados (y el historial, si existe) y arma un sitio web.','<b>allure-report</b> es una carpeta con un <code>index.html</code>: se puede guardar, comprimir o publicar.','<b>allure open</b> lo abre en el navegador. ¡Listo para compartir!'];
+$('flowBtn').onclick=async()=>{
+  const ns=[...document.querySelectorAll('#flow .fn')]; ns.forEach(n=>n.classList.remove('on','done')); $('flowBtn').disabled=true;
+  for(let i=0;i<ns.length;i++){ns[i].classList.add('on');$('fmsg').innerHTML=FMSG[i];await new Promise(r=>setTimeout(r,1500));ns[i].classList.remove('on');ns[i].classList.add('done')}
+  $('flowBtn').disabled=false;
+};
+/* ---------- terminal ---------- */
+const P='C:\\taller-postman> ';
+const SEQ=[
+ [['p',P],['w','java -version\n'],['','openjdk version "17.0.12" 2024-07-16\nOpenJDK Runtime Environment Temurin-17.0.12+7\n']],
+ [['p',P],['w','npm install -g allure-commandline\n'],['','\nadded 1 package in 6s\n\n'],['p',P],['w','allure --version\n'],['g','2.30.0\n']],
+ [['p',P],['w','npm install -g newman-reporter-allure\n'],['','\nadded 14 packages in 5s\n']],
+ [['p',P],['w','newman run "Taller Petstore.postman_collection.json" -e "Petstore - QA.postman_environment.json" --folder "CRUD Mascota" --folder "Datos desde archivo" -d datos\\mascotas.csv -r cli,allure --reporter-allure-export allure-results\n'],['d','\n… 5 iteraciones …\n'],['r','  1.'],['','  El estado es un valor permitido  (iteración 5: Kira)\n\n'],['p',P],['w','dir /b allure-results\n'],['','0a3f…-result.json\n1b7c…-result.json\n…\n(un archivo por cada request ejecutado)\n']],
+ [['p',P],['w','allure generate allure-results --clean -o allure-report\n'],['g','Report successfully generated to allure-report\n\n'],['p',P],['w','allure open allure-report\n'],['','Starting web server…\nServer started at <http://127.0.0.1:52713/>. Press <Ctrl+C> to exit\n'],['d','(se abre el navegador con el reporte: explóralo más abajo)\n']],
+ [['d','rem Antes de generar, traer el historial del reporte anterior:\n'],['p',P],['w','xcopy /e /i /y allure-report\\history allure-results\\history\n'],['','6 archivos copiados\n\n'],['p',P],['w','allure generate allure-results --clean -o allure-report\n'],['g','Report successfully generated to allure-report\n'],['d','(ahora el gráfico de tendencia muestra también las ejecuciones anteriores)\n']],
+];
+let tm=null;
+function play(k){
+  const out=$('tAl').querySelector('pre'); clearTimeout(tm);
+  document.querySelectorAll('[data-term="tAl"] .st').forEach(s=>s.classList.toggle('on',+s.dataset.s===k));
+  const lines=SEQ[k]; let i=0,j=0,html='';
+  const step=()=>{ if(i>=lines.length) return;
+    const [c,t]=lines[i]; const cmd=c==='w'&&i>0&&lines[i-1][0]==='p'; const n=cmd?Math.min(t.length,j+3):t.length;
+    out.innerHTML=html+`<span class="${c}">${esc(t.slice(0,n))}</span>${cmd&&n<t.length?'<span class="w">▌</span>':''}`; out.scrollTop=out.scrollHeight;
+    if(n<t.length){j=n;tm=setTimeout(step,14);return} html+=`<span class="${c}">${esc(t)}</span>`;i++;j=0;tm=setTimeout(step,cmd?300:70)};
+  step();
+}
+document.querySelector('[data-term="tAl"]').onclick=e=>{const s=e.target.closest('.st');if(s)play(+s.dataset.s)};
+$('tAl').querySelector('pre').innerHTML='<span class="d">Haz clic en un paso de la izquierda para verlo en la terminal.</span>';
+
+/* ---------- datos del reporte ---------- */
+const COL={passed:'#97cc64',failed:'#fd5a3e',broken:'#ffd050',skipped:'#aaaaaa'};
+const T=[];
+[['01 Crear mascota','POST','801ms',['Status 200','Se creó con el nombre enviado']],['02 Consultar mascota','GET','645ms',['Status 200','Es la mascota creada']],['03 Actualizar mascota','PUT','712ms',['Status 200','Quedó vendida']],['04 Eliminar mascota','DELETE','690ms',['Status 200']],['05 Verificar eliminación','GET','602ms',['Ya no existe: 404']]]
+ .forEach(([n,m,d,steps])=>T.push({suite:'CRUD Mascota',name:n,m,d,status:'passed',steps:steps.map(s=>[s,'passed'])}));
+[['Firulais','available'],['Michi','pending'],['Rocky','sold'],['Luna','available'],['Kira','perdida']].forEach(([n,s],i)=>{
+  const bad=s==='perdida';
+  T.push({suite:'Datos desde archivo',name:`Crear mascota desde datos · ${n}`,m:'POST',d:(700+i*13)+'ms',status:bad?'failed':'passed',
+    steps:[[`Creó a ${n}`,'passed'],['Guardó el estado del archivo','passed'],['El estado es un valor permitido',bad?'failed':'passed']],
+    msg:bad?"AssertionError: expected 'perdida' to be one of [ 'available', 'pending', 'sold' ]":null,
+    att:bad?`POST https://petstore.swagger.io/v2/pet\n\n{ "name": "Kira", "status": "perdida", … }\n\n← 200 OK\n{ "id": 1791329120214, "name": "Kira", "status": "perdida" }`:null});
+  T.push({suite:'Datos desde archivo',name:`Limpiar: eliminar mascota · ${n}`,m:'DELETE',d:'650ms',status:'passed',steps:[['Mascota de prueba eliminada','passed']]});
+});
+const cnt=s=>T.filter(t=>t.status===s).length;
+const TOTAL=T.length, PASS=cnt('passed'), FAIL=cnt('failed');
+const HIST=[[13,2],[14,1],[15,0],[PASS,FAIL]];   // ejecuciones anteriores (pasados, fallidos)
+function donut(){
+  const r=46,c=2*Math.PI*r; let off=0;
+  const seg=(v,col)=>{const len=c*v/TOTAL;const s=`<circle r="${r}" cx="60" cy="60" fill="none" stroke="${col}" stroke-width="18" stroke-dasharray="${len} ${c-len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`;off+=len;return s};
+  return `<svg width="120" height="120">${seg(PASS,COL.passed)}${seg(FAIL,COL.failed)}<text x="60" y="58" text-anchor="middle" font-size="20" fill="#333">${Math.round(PASS/TOTAL*100)}%</text><text x="60" y="76" text-anchor="middle" font-size="10" fill="#888">pasaron</text></svg>`;
+}
+function trend(){
+  const w=300,h=110,mx=16; const x=i=>20+i*((w-30)/(HIST.length-1));
+  const yP=v=>h-15-(v/mx)*(h-25);
+  let s=`<svg width="100%" viewBox="0 0 ${w} ${h}">`;
+  HIST.forEach(([p,f],i)=>{ s+=`<rect x="${x(i)-14}" y="${yP(p+f)}" width="28" height="${yP(0)-yP(f)}" fill="${COL.failed}"/>`+`<rect x="${x(i)-14}" y="${yP(p)}" width="28" height="${yP(0)-yP(p)}" fill="${COL.passed}"/>`
+    +`<text x="${x(i)}" y="${h-2}" text-anchor="middle" font-size="9" fill="#888">${i===HIST.length-1?'actual':'#'+(i+1)}</text>`});
+  return s+'</svg>';
+}
+const VIEWS={
+ ov:()=>`<div class="al-h"><b>Taller Petstore</b><span>12/10/2026 07:00 · 1 ejecución con ${TOTAL} tests</span></div>
+  <div class="al-grid">
+   <div class="al-w"><h5>Resumen</h5><div class="al-big">${donut()}<div><div class="num">${TOTAL}<small>test cases</small></div>
+     <div class="al-leg" style="margin-top:8px"><div><i style="background:${COL.passed}"></i>${PASS} passed</div><div><i style="background:${COL.failed}"></i>${FAIL} failed</div><div><i style="background:${COL.broken}"></i>0 broken</div><div><i style="background:${COL.skipped}"></i>0 skipped</div></div></div></div></div>
+   <div class="al-w"><h5>Tendencia</h5>${trend()}<div style="font-size:11.5px;color:#888">Las 3 ejecuciones anteriores vienen del historial.</div></div>
+   <div class="al-w"><h5>Suites</h5>${['CRUD Mascota','Datos desde archivo'].map(sn=>{const ts=T.filter(t=>t.suite===sn),f=ts.filter(t=>t.status==='failed').length;
+     return `<div class="al-row" data-go="sui"><span>${sn}</span><span class="bar"><i style="width:${(ts.length-f)/ts.length*100}%;background:${COL.passed}"></i><i style="width:${f/ts.length*100}%;background:${COL.failed}"></i></span></div>`}).join('')}</div>
+   <div class="al-w"><h5>Environment</h5><div class="al-kv"><span>Collection</span><span>Taller Petstore</span><span>Environment</span><span>Petstore - QA</span><span>baseUrl</span><span>https://petstore.swagger.io/v2</span><span>Executor</span><span>Newman 6 · Windows</span></div></div>
+  </div>`,
+ cat:()=>`<div class="al-h"><b>Categories</b><span>clasificación de los fallos</span></div>
+  <div class="al-w"><div class="al-row" data-go="sui"><span><b style="color:${COL.failed}">●</b> Product defects <span style="color:#888">(la API respondió distinto a lo esperado)</span></span><b>${FAIL}</b></div>
+   <div class="al-row"><span><b style="color:${COL.broken}">●</b> Test defects <span style="color:#888">(el test no pudo ejecutarse: error de script, timeout…)</span></span><b>0</b></div></div>
+  <div style="margin-top:12px;font-size:12.5px;color:#666;line-height:1.6">💡 Esta separación ahorra tiempo: un <b>Product defect</b> se reporta al equipo de desarrollo; un <b>Test defect</b> lo corrige quien mantiene las pruebas.</div>`,
+ sui:(sel)=>{ sel=sel??T.findIndex(t=>t.status==='failed'); const t=T[sel];
+  const tree=['CRUD Mascota','Datos desde archivo'].map(sn=>`<div class="al-tree"><div class="g">▾ Taller Petstore / ${sn}</div>${T.map((x,i)=>x.suite===sn?`<div class="al-t ${i===sel?'sel':''}" data-i="${i}"><span class="s" style="background:${COL[x.status]}"></span>${esc(x.name)}<span class="d">${x.d}</span></div>`:'').join('')}</div>`).join('');
+  return `<div class="al-h"><b>Suites</b><span>haz clic en un test</span></div><div class="al-split"><div>${tree}</div>
+   <div class="al-det"><span class="st2" style="background:${COL[t.status]}">${t.status}</span><h4>${esc(t.name)}</h4><div style="color:#888;font-size:12px">${t.m} · Duración ${t.d} · Suite: ${t.suite}</div>
+   ${t.msg?`<div class="al-msg">${esc(t.msg)}</div>`:''}
+   <div style="margin-top:10px;font-weight:700;font-size:12px;color:#666">PASOS (assertions)</div>
+   ${t.steps.map(([n,s])=>`<div class="al-step"><span class="s" style="background:${COL[s]}"></span>${esc(n)}</div>`).join('')}
+   ${t.att?`<div style="margin-top:10px;font-weight:700;font-size:12px;color:#666">REQUEST / RESPONSE</div><div class="al-att">${esc(t.att)}</div>`:''}</div></div>`},
+ tl:()=>{ let acc=0; return `<div class="al-h"><b>Timeline</b><span>orden y duración de cada test</span></div><div class="al-tl">${T.map(t=>{const d=parseInt(t.d);const s=`<div class="r"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span><div style="position:relative;height:14px"><div class="b" style="position:absolute;left:${acc/120}%;width:${d/120}%;background:${COL[t.status]}"></div></div></div>`;acc+=d;return s}).join('')}</div>`},
+};
+let view='ov', selT=null;
+function show(v,sel){view=v;document.querySelectorAll('#alNav div').forEach(d=>d.classList.toggle('on',d.dataset.v===v));$('alMain').innerHTML=VIEWS[v](sel)}
+$('alNav').onclick=e=>{const d=e.target.closest('div[data-v]');if(d)show(d.dataset.v)};
+$('alMain').onclick=e=>{const g=e.target.closest('[data-go]');if(g)return show(g.dataset.go);const t=e.target.closest('.al-t');if(t)show('sui',+t.dataset.i)};
+show('ov');
+})();
+</script>
+</body></html>

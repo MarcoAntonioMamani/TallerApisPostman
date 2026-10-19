@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Repaso de APIs</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px;max-width:950px}
+h2{font-size:20px;margin:28px 0 12px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+button{padding:9px 13px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-weight:700;cursor:pointer;font-size:13px}
+button:hover{background:var(--panel2)}button.active{background:var(--orange);color:#111;border-color:var(--orange)}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.bar .count{margin-left:auto;color:var(--orange);font-weight:800}
+.qs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.q{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .2s}
+.q:hover{border-color:var(--orange)}
+.q .top{display:flex;gap:12px;align-items:flex-start}
+.q .n{display:inline-grid;place-items:center;min-width:30px;height:30px;border-radius:50%;background:var(--panel2);color:var(--orange);font-weight:800}
+.q.open .n{background:var(--green);color:#111}
+.q .txt{font-size:16px;line-height:1.45;font-weight:600;flex:1}
+.q .tag{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:3px}
+.q .ans{max-height:0;overflow:hidden;transition:max-height .35s ease,margin .35s;font-size:14px;line-height:1.6;color:var(--muted)}
+.q.open .ans{max-height:400px;margin-top:12px}
+.q .ans b{color:var(--text)}
+.q .ans code{color:var(--orange);font-family:Consolas,monospace}
+.q .hint{font-size:11px;color:var(--muted);margin-top:8px}
+.q.open .hint{display:none}
+
+/* ---------- Ejercicio ---------- */
+.ex{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px}
+.ex ol{margin:8px 0 14px;padding-left:20px;line-height:1.7;font-size:14px;color:var(--muted)}
+.ex ol b{color:var(--text)}
+.apps{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.apps button span{font-size:16px;margin-right:4px}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:860px}
+th{background:var(--panel2);color:var(--muted);font-size:12px;text-align:left;padding:9px 10px}
+td{padding:6px;border-bottom:1px solid var(--border)}
+td input,td select{width:100%;background:#141820;color:var(--text);border:1px solid var(--border);border-radius:7px;padding:8px;font-size:13px;font-family:inherit}
+td select{font-family:Consolas,monospace;font-weight:700}
+td input.mono{font-family:Consolas,monospace}
+.model{margin-top:14px;display:none}
+.model.show{display:block}
+.model table td{padding:9px 10px;font-family:Consolas,monospace;font-size:12.5px}
+.model table td:first-child{font-family:Segoe UI,Arial,sans-serif}
+.GET{color:var(--green)}.POST{color:var(--orange)}.PUT{color:var(--blue)}.PATCH{color:var(--purple)}.DELETE{color:var(--red)}
+.ok{color:var(--green)}.err{color:var(--red)}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+@media(max-width:850px){.qs{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Repaso: ¿qué aprendimos sobre APIs?</h1>
+<div class="sub">Intenta responder cada pregunta antes de abrirla. Haz clic en una tarjeta para ver la respuesta.</div>
+
+<div class="bar">
+  <button id="openAll">Mostrar todas</button>
+  <button id="closeAll">Ocultar todas</button>
+  <span class="count" id="count"></span>
+</div>
+<div class="qs" id="qs"></div>
+
+<h2>🧩 Ejercicio en equipos: diseña los endpoints de una app</h2>
+<div class="ex">
+  <ol>
+    <li>Elige una aplicación que conozcan.</li>
+    <li>Piensen en <b>4 acciones</b> que hace un usuario en esa app.</li>
+    <li>Para cada acción, completen: <b>método</b>, <b>endpoint</b>, si lleva <b>body</b>, el <b>status si sale bien</b> y un <b>status de error</b> posible.</li>
+    <li>Al terminar, comparen con el ejemplo y expliquen sus decisiones al grupo.</li>
+  </ol>
+  <div class="apps" id="apps">
+    <button data-a="banca" class="active"><span>🏦</span>Banca en línea</button>
+    <button data-a="vuelos"><span>✈️</span>Reserva de vuelos</button>
+    <button data-a="curso"><span>🎓</span>Educación en línea</button>
+    <button data-a="delivery"><span>🛵</span>Delivery de comida</button>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th style="width:22%">Acción del usuario</th><th style="width:11%">Método</th><th style="width:27%">Endpoint</th><th style="width:10%">¿Body?</th><th style="width:15%">Status OK</th><th style="width:15%">Status de error</th></tr></thead>
+      <tbody id="work"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+    <button id="showModel">👀 Ver ejemplo de solución</button>
+    <button id="clearWork">↻ Limpiar tabla</button>
+  </div>
+  <div class="model" id="model"></div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> si puedes explicar <strong>qué método, qué endpoint, qué se envía y qué debería responder</strong> cada acción de una app, ya tienes la base para probarla.
+  En el siguiente bloque se lleva esto a <strong>Postman</strong>: cada fila de esta tabla se convierte en un request.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const Q=[
+ ['Concepto','¿Qué es una API?','Un <b>intermediario</b> que permite que dos sistemas se comuniquen siguiendo reglas acordadas (un <b>contrato</b>): qué se puede pedir, cómo se pide y qué se recibe. Como el mesero de un restaurante.'],
+ ['Concepto','¿Qué es un endpoint y qué dos cosas lo definen?','Es una dirección concreta de la API donde se puede pedir algo. Lo definen el <b>método HTTP</b> y la <b>ruta</b>: <code>GET /clientes/{id}</code> y <code>DELETE /clientes/{id}</code> son endpoints distintos.'],
+ ['URL','Nombra las partes de esta URL: <code>https://api.demo.local:8443/api/v1/clientes/7?estado=activo</code>','<b>Protocolo</b> <code>https</code> · <b>host</b> <code>api.demo.local</code> · <b>puerto</b> <code>8443</code> · <b>ruta</b> <code>/api/v1/clientes</code> (con base path, versión y recurso) · <b>path param</b> <code>7</code> · <b>query param</b> <code>estado=activo</code>.'],
+ ['URL','¿Cuál es la diferencia entre un path param y un query param?','El <b>path param</b> es parte de la ruta e <b>identifica</b> un recurso (<code>/clientes/7</code>). El <b>query param</b> va después del <code>?</code>, es opcional y sirve para <b>filtrar, ordenar o paginar</b> (<code>?estado=activo</code>).'],
+ ['Métodos','¿Qué método usarías para crear, para modificar solo un campo y para eliminar?','Crear: <b>POST</b> · modificar un campo: <b>PATCH</b> (PUT reemplaza el recurso completo) · eliminar: <b>DELETE</b>.'],
+ ['Métodos','¿Por qué POST no es idempotente y DELETE sí?','Enviar el mismo <b>POST</b> dos veces crea <b>dos</b> registros. Enviar el mismo <b>DELETE</b> dos veces deja el servidor igual: el recurso sigue eliminado (la segunda vez responde 404, pero nada más cambia).'],
+ ['HTTP','¿Cuáles son las 4 partes de un mensaje HTTP?','<b>Línea de inicio</b> (método y ruta, o status) · <b>headers</b> · <b>línea vacía</b> · <b>body</b>. Request y response tienen la misma estructura.'],
+ ['HTTP','¿Para qué sirve el header Content-Type? Da 3 ejemplos.','Indica el <b>formato del body</b> para que se sepa cómo interpretarlo: <code>application/json</code>, <code>application/xml</code>, <code>text/html</code>, <code>text/plain</code>, <code>application/pdf</code>, <code>image/png</code>.'],
+ ['Status','¿Qué significan las familias 2xx, 4xx y 5xx?','<b>2xx</b>: salió bien · <b>4xx</b>: error de quien hace la petición (datos inválidos, sin permiso, no existe) · <b>5xx</b>: la petición era válida pero el servidor falló.'],
+ ['Status','¿Cuál es la diferencia entre 401 y 403?','<b>401 Unauthorized</b>: la API <b>no sabe quién eres</b> (falta el token o expiró). <b>403 Forbidden</b>: <b>sabe quién eres</b>, pero no tienes permiso para esa acción.'],
+ ['Tipos de API','¿Cuál es la principal diferencia entre REST y SOAP?','REST es un <b>estilo</b> que usa los métodos y status de HTTP, normalmente con <b>JSON</b>. SOAP es un <b>protocolo</b> estricto: siempre <b>XML</b> en un Envelope, contrato <b>WSDL</b> y errores en <code>&lt;soap:Fault&gt;</code>.'],
+ ['DevTools','¿Cómo puedes descubrir qué APIs llama una página web?','Con <b>DevTools</b> (<code>F12</code>) → pestaña <b>Network</b> → filtro <b>Fetch/XHR</b>, y haciendo acciones en la página. Luego <b>Copy as cURL</b> e importarlo en Postman.'],
+];
+$('qs').innerHTML=Q.map(([tag,q,a],i)=>`<div class="q" data-i="${i}"><div class="top"><span class="n">${i+1}</span><div class="txt"><span class="tag">${tag}</span>${q}</div></div><div class="ans">${a}</div><div class="hint">Clic para ver la respuesta</div></div>`).join('');
+const upd=()=>{$('count').textContent=`${document.querySelectorAll('.q.open').length} / ${Q.length} respondidas`};
+$('qs').onclick=e=>{const c=e.target.closest('.q');if(c){c.classList.toggle('open');upd()}};
+$('openAll').onclick=()=>{document.querySelectorAll('.q').forEach(c=>c.classList.add('open'));upd()};
+$('closeAll').onclick=()=>{document.querySelectorAll('.q').forEach(c=>c.classList.remove('open'));upd()};
+upd();
+
+/* ---------- Ejercicio ---------- */
+const M={
+ banca:[
+  ['Iniciar sesión','POST','/auth/login','Sí','200 OK','401 Unauthorized'],
+  ['Ver saldo de una cuenta','GET','/cuentas/{id}/saldo','No','200 OK','404 Not Found'],
+  ['Transferir a otra cuenta','POST','/transferencias','Sí','201 Created','422 (saldo insuficiente)'],
+  ['Actualizar correo de contacto','PATCH','/clientes/{id}','Sí','200 OK','400 Bad Request'],
+ ],
+ vuelos:[
+  ['Buscar vuelos','GET','/vuelos?origen=LPB&destino=VVI&fecha=…','No','200 OK','400 (fecha inválida)'],
+  ['Ver detalle de un vuelo','GET','/vuelos/{id}','No','200 OK','404 Not Found'],
+  ['Reservar un asiento','POST','/reservas','Sí','201 Created','409 (asiento ocupado)'],
+  ['Cancelar la reserva','DELETE','/reservas/{id}','No','204 No Content','404 Not Found'],
+ ],
+ curso:[
+  ['Listar cursos disponibles','GET','/cursos?categoria=qa','No','200 OK','401 (sin sesión)'],
+  ['Inscribirse a un curso','POST','/cursos/{id}/inscripciones','Sí','201 Created','409 (ya inscrito)'],
+  ['Entregar una tarea','POST','/tareas/{id}/entregas','Sí (archivo)','201 Created','413 / 415 (archivo inválido)'],
+  ['Ver mis calificaciones','GET','/estudiantes/{id}/notas','No','200 OK','403 (no es tu perfil)'],
+ ],
+ delivery:[
+  ['Ver restaurantes cercanos','GET','/restaurantes?lat=…&lon=…','No','200 OK','400 (ubicación inválida)'],
+  ['Ver el menú de un restaurante','GET','/restaurantes/{id}/menu','No','200 OK','404 Not Found'],
+  ['Hacer un pedido','POST','/pedidos','Sí','201 Created','422 (fuera de zona)'],
+  ['Consultar estado del pedido','GET','/pedidos/{id}','No','200 OK','404 Not Found'],
+ ],
+};
+const ACTIONS={
+ banca:['Iniciar sesión','Ver saldo de una cuenta','Transferir a otra cuenta','Actualizar correo de contacto'],
+ vuelos:['Buscar vuelos','Ver detalle de un vuelo','Reservar un asiento','Cancelar la reserva'],
+ curso:['Listar cursos disponibles','Inscribirse a un curso','Entregar una tarea','Ver mis calificaciones'],
+ delivery:['Ver restaurantes cercanos','Ver el menú de un restaurante','Hacer un pedido','Consultar estado del pedido'],
+};
+let app='banca';
+function work(){
+  $('work').innerHTML=ACTIONS[app].map(a=>`<tr>
+    <td><input value="${a}"></td>
+    <td><select><option value="">—</option><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select></td>
+    <td><input class="mono" placeholder="/recurso/{id}"></td>
+    <td><select style="font-family:inherit;font-weight:400"><option value="">—</option><option>Sí</option><option>No</option></select></td>
+    <td><input class="mono" placeholder="200, 201…"></td>
+    <td><input class="mono" placeholder="400, 404…"></td></tr>`).join('');
+  $('work').querySelectorAll('td:nth-child(2) select').forEach(s=>s.onchange=()=>{s.className=s.value});
+  $('model').classList.remove('show'); $('showModel').textContent='👀 Ver ejemplo de solución';
+}
+function model(){
+  $('model').innerHTML=`<div class="small" style="margin-bottom:8px">Ejemplo de solución (hay más de una respuesta válida; lo importante es poder justificarla):</div>
+  <div class="tbl"><table><thead><tr><th>Acción</th><th>Método</th><th>Endpoint</th><th>¿Body?</th><th>Status OK</th><th>Status de error</th></tr></thead><tbody>
+  ${M[app].map(([a,m,e,b,ok,er])=>`<tr><td>${a}</td><td class="${m}"><b>${m}</b></td><td>${e}</td><td>${b}</td><td class="ok">${ok}</td><td class="err">${er}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+$('apps').onclick=e=>{const b=e.target.closest('button');if(!b)return;app=b.dataset.a;
+  document.querySelectorAll('#apps button').forEach(x=>x.classList.toggle('active',x===b));work()};
+$('showModel').onclick=()=>{const m=$('model');if(m.classList.toggle('show')){model();$('showModel').textContent='🙈 Ocultar ejemplo'}else $('showModel').textContent='👀 Ver ejemplo de solución'};
+$('clearWork').onclick=work;
+work();
+})();
+</script>
+</body></html>

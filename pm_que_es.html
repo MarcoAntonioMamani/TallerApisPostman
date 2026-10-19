@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>¿Qué es Postman?</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.uses{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.inst{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;counter-reset:s}
+.inst .tile{position:relative;padding-top:38px}
+.inst .tile::before{counter-increment:s;content:counter(s);position:absolute;top:10px;left:14px;width:24px;height:24px;border-radius:50%;background:var(--orange);color:#111;font-weight:800;display:grid;place-items:center;font-size:12px}
+.mock{margin-top:10px;background:#141820;border-radius:8px;padding:10px;font-size:12px;color:var(--text);border:1px solid var(--border)}
+.mock .bt{display:inline-block;margin-top:6px;padding:5px 10px;border-radius:5px;background:#ff6c37;color:#fff;font-weight:700;font-size:11.5px}
+.mock .bt.gray{background:#3a3a3a}
+.alt{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.alt .tile{font-size:12.5px}
+@media(max-width:1000px){.uses,.inst,.alt{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>¿Qué es Postman?</h1>
+<div class="sub"><b>Postman</b> es una aplicación para <b>enviar requests a una API y ver sus respuestas</b> sin escribir código. Es como un navegador, pero para APIs: eliges el método, escribes la URL, agregas headers o body, presionas <b>Send</b> y ves el status, el tiempo y el body de la respuesta.
+Además permite guardar, organizar, automatizar y compartir esas pruebas.</div>
+
+<h2>¿Para qué se usa?</h2>
+<div class="uses">
+  <div class="tile"><b class="h">🔍 Explorar una API</b>Probar endpoints a mano para entender qué reciben y qué devuelven.</div>
+  <div class="tile"><b class="h">✅ Probar</b>Escribir tests que validan status, datos y reglas en cada respuesta.</div>
+  <div class="tile"><b class="h">🗂 Organizar</b>Guardar requests en colecciones, con variables y ambientes (DEV, QA).</div>
+  <div class="tile"><b class="h">⚙️ Automatizar</b>Ejecutar colecciones completas, con datos de archivos, desde la app o la terminal.</div>
+</div>
+
+<h2>Instalación en Windows</h2>
+<div class="inst">
+  <div class="tile"><b class="h">Descargar</b>Entra a <a href="https://www.postman.com/downloads/" target="_blank">postman.com/downloads</a> y descarga la versión para <b>Windows 64-bit</b>.
+    <div class="mock">postman.com/downloads<br><span class="bt">⬇ Windows 64-bit</span></div></div>
+  <div class="tile"><b class="h">Instalar</b>Ejecuta <code>Postman-win64-Setup.exe</code>. Se instala solo para tu usuario y se abre al terminar; no hay que configurar nada.
+    <div class="mock">⏳ Installing Postman…<br><span style="color:var(--muted)">se abre automáticamente</span></div></div>
+  <div class="tile"><b class="h">Iniciar sesión</b>Crea una cuenta gratuita o entra con la tuya. Con cuenta se guardan tus colecciones y workspaces.
+    <div class="mock"><span class="bt">Create Free Account</span> <span class="bt gray">Sign In</span></div></div>
+  <div class="tile"><b class="h">Listo</b>Postman abre en tu workspace personal, <b>My Workspace</b>. Ahí empieza todo.
+    <div class="mock">▦ My Workspace ▾<br><span style="color:var(--muted)">Collections · Environments · History</span></div></div>
+</div>
+<div class="note warn">⚠ <b>En equipos de trabajo:</b> Postman guarda las colecciones en la nube de tu cuenta. Antes de usarlo con APIs de la empresa, sigue las políticas internas: qué cuenta usar, qué datos se pueden guardar y dónde. <b>Nunca</b> guardes contraseñas, tokens ni datos reales de clientes en una colección.</div>
+<div class="note">💡 También existe <b>Postman en la web</b> (<a href="https://go.postman.co" target="_blank">go.postman.co</a>). Para llamar APIs internas o de tu propia máquina necesita el <b>Postman Desktop Agent</b>; por eso en el taller usamos la aplicación de escritorio.</div>
+
+<h2>Recorrido por la interfaz</h2>
+<div id="lab"></div>
+
+<h2>Otras herramientas que hacen lo mismo</h2>
+<div class="alt">
+  <div class="tile"><b class="h">Insomnia</b>Cliente de APIs muy parecido a Postman.</div>
+  <div class="tile"><b class="h">Bruno</b>Guarda las colecciones como archivos en tu repositorio, sin nube.</div>
+  <div class="tile"><b class="h">Thunder Client</b>Extensión dentro de VS Code.</div>
+  <div class="tile"><b class="h">curl</b>Línea de comandos: viene con Windows, Linux y Mac.</div>
+  <div class="tile"><b class="h">SoapUI</b>Muy usado para servicios SOAP.</div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> todo lo que viste en la Parte 1 —método, URL, params, headers, body, status— tiene <strong>su lugar en la pantalla de Postman</strong>. Postman no cambia cómo funcionan las APIs: solo te da una forma cómoda de enviarles requests y revisar sus respuestas.
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+const RESP=`[
+  {
+    "id": 1001,
+    "category": { "id": 1, "name": "Perros" },
+    "name": "Firulais",
+    "photoUrls": [],
+    "tags": [],
+    "status": "available"
+  },
+  {
+    "id": 1002,
+    "name": "Michi",
+    "photoUrls": [],
+    "tags": [],
+    "status": "available"
+  }
+]`;
+PMLab.mount(document.getElementById('lab'),{
+  title:'Partes de la pantalla',
+  intro:'Este es Postman ya con un request enviado. Presiona <b>Empezar</b> para conocer cada parte de la pantalla.',
+  state:{
+    cols:[{name:'Taller Petstore',items:[{name:'Buscar por estado',m:'GET',sel:true},{name:'Crear mascota',m:'POST'},{name:'Consultar mascota',m:'GET'},{name:'Eliminar mascota',m:'DELETE'}]}],
+    tabs:[{name:'Buscar por estado',m:'GET'}],
+    req:{name:'Buscar por estado',col:'Taller Petstore',method:'GET',url:'https://petstore.swagger.io/v2/pet/findByStatus?status=available'},
+    res:{status:'200 OK',code:200,time:'712 ms',size:'40.58 KB',body:RESP},
+  },
+  steps:[
+   {t:'Workspace',hl:'ws',d:'El <b>workspace</b> es tu espacio de trabajo: agrupa colecciones, environments e historial. Aquí puedes cambiar de uno a otro.'},
+   {t:'Barra lateral',hl:'side',d:'La <b>barra lateral</b> muestra tus <b>colecciones</b>: carpetas donde se guardan y ordenan los requests.'},
+   {t:'Collections, Environments, History',hl:'rail-env',d:'Con estos íconos cambias lo que muestra la barra lateral: <b>Collections</b>, <b>Environments</b> (variables por ambiente) e <b>History</b> (todo lo que enviaste).'},
+   {t:'Pestañas de requests',hl:'tabs',d:'Cada request abierto es una <b>pestaña</b>, como en un navegador. Con <b>＋</b> abres uno nuevo.'},
+   {t:'Selector de environment',hl:'env',d:'Aquí eliges el <b>environment</b> activo (por ejemplo DEV o QA). Lo veremos en la sección de variables.'},
+   {t:'Método HTTP',hl:'method',d:'El <b>método</b>: GET, POST, PUT, PATCH, DELETE… Se elige de una lista.'},
+   {t:'URL',hl:'url',d:'La <b>URL</b> del endpoint, con sus query params.'},
+   {t:'Botón Send',hl:'send',d:'<b>Send</b> envía el request. La respuesta aparece abajo.'},
+   {t:'Partes del request',hl:'rt-params',d:'Estas pestañas son las partes del request: <b>Params</b>, <b>Authorization</b>, <b>Headers</b>, <b>Body</b> y <b>Scripts</b> (código que se ejecuta antes o después del request).'},
+   {t:'Status, tiempo y tamaño',hl:'status',d:'Lo primero que se revisa en la respuesta: el <b>status</b> (200 OK), el <b>tiempo</b> y el <b>tamaño</b>.'},
+   {t:'Body de la respuesta',hl:'rbody',d:'El <b>body</b> de la respuesta, formateado (vista <i>Pretty</i>). Aquí está el JSON que devolvió la API.'},
+   {t:'Guardar',hl:'save',d:'<b>Save</b> (o <kbd>Ctrl</kbd>+<kbd>S</kbd>) guarda el request en una colección para reutilizarlo.'},
+  ]
+});
+</script>
+</body></html>

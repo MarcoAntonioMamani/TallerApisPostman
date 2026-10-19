@@ -1,0 +1,16 @@
+{
+  "name": "taller-api-pruebas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pruebas de API del taller (Petstore) con Newman, para ejecutar en Jenkins",
+  "scripts": {
+    "test": "newman run \"postman/Taller Petstore.postman_collection.json\" -e \"postman/Petstore - QA.postman_environment.json\" --env-var \"apiKey=special-key\" --folder \"CRUD Mascota\"",
+    "test:datos": "newman run \"postman/Taller Petstore.postman_collection.json\" -e \"postman/Petstore - QA.postman_environment.json\" --env-var \"apiKey=special-key\" --folder \"Datos desde archivo\" -d datos/mascotas.csv",
+    "test:allure": "newman run \"postman/Taller Petstore.postman_collection.json\" -e \"postman/Petstore - QA.postman_environment.json\" --env-var \"apiKey=special-key\" --folder \"CRUD Mascota\" -r cli,allure --reporter-allure-export allure-results"
+  },
+  "devDependencies": {
+    "newman": "6.2.3",
+    "newman-reporter-allure": "3.13.0",
+    "newman-reporter-htmlextra": "1.23.1"
+  }
+}

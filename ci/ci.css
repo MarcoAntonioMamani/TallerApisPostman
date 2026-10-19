@@ -1,0 +1,85 @@
+/* =====================================================================
+   Parte 4 · Git, GitHub y Jenkins — estilos compartidos (se carga después de pm/pm.css)
+   ===================================================================== */
+:root{--acc:#4fc1c9;--jk:#d24939;--ok:#57c785;--unst:#e8b13a;--fail:#ef6570}
+code{color:var(--acc)}
+.key strong{color:var(--acc)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button.on{background:var(--acc);color:#111;border-color:var(--acc)}
+.pane{display:none}.pane.on{display:block;animation:fadeIn .25s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.two{display:grid;grid-template-columns:1fr 1.15fr;gap:14px;align-items:start}
+.steps2{display:flex;flex-direction:column;gap:8px}
+.st{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:13.5px;line-height:1.55;color:var(--muted);cursor:pointer;transition:border-color .2s}
+.st:hover{border-color:color-mix(in srgb,var(--acc) 50%,var(--border))}
+.st.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 7%,var(--panel))}
+.st b.h{display:block;color:var(--text);font-size:14.5px;margin-bottom:2px}
+.st .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--acc);color:#111;font-weight:800;font-size:12px;margin-right:6px}
+.st code{font-size:12.5px}
+.term{background:#0c0c0c;border:1px solid #333;border-radius:10px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.45);position:sticky;top:10px}
+.term .tb{background:#1f1f1f;padding:7px 12px;font-size:12px;color:#aaa;display:flex;gap:8px;align-items:center}
+.term .tb i{width:10px;height:10px;border-radius:50%;display:inline-block;background:#555}
+.term .tb .k{margin-left:auto;color:#888}
+.term pre{margin:0;padding:12px 14px;font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;line-height:1.5;color:#ccc;white-space:pre-wrap;word-break:break-word;overflow:auto;height:400px}
+.term .p{color:#6bdd9a}.term .w{color:#fff;font-weight:700}.term .d{color:#777}.term .g{color:#6bdd9a}.term .r{color:#f79a8e}.term .y{color:#e8d36a}.term .u{color:#74aef6}.term .m{color:#c58af9}
+pre.code{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#d4d4d4}
+.c{color:#6a9955}.s{color:#ce9178}.k{color:#c586c0}.f{color:#dcdcaa}.kk{color:#9cdcfe}.nb{color:#b5cea8}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;line-height:1.5}
+.tbl th{background:var(--panel2);color:var(--muted);font-size:12px}
+.tbl td:first-child{color:var(--text);font-weight:700;white-space:nowrap}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:800}
+.pill.ok{background:var(--ok);color:#111}.pill.un{background:var(--unst);color:#111}.pill.ko{background:var(--fail);color:#111}.pill.gr{background:var(--panel2);color:var(--muted)}
+.glos{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.glos div{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13px;line-height:1.5;color:var(--muted)}
+.glos b{display:block;color:var(--text);font-size:14.5px;margin-bottom:3px}
+.glos b i{font-style:normal;margin-right:6px}
+
+/* ---------- Réplica de la interfaz de Jenkins ---------- */
+.jk{background:#fff;color:#1c1c1c;border-radius:12px;overflow:hidden;font-family:Segoe UI,Arial,sans-serif;font-size:13px;box-shadow:0 14px 44px rgba(0,0,0,.45)}
+.jk *{box-sizing:border-box}
+.jk-top{background:#1a1a1a;color:#fff;display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px}
+.jk-top .lg{font-weight:800;display:flex;align-items:center;gap:8px}
+.jk-top .lg span{width:24px;height:24px;border-radius:50%;background:var(--jk);display:grid;place-items:center;font-size:14px}
+.jk-top .r{margin-left:auto;color:#bbb;font-size:12px}
+.jk-crumb{padding:8px 16px;color:#555;font-size:12.5px;border-bottom:1px solid #e5e5e5;background:#fafafa}
+.jk-crumb b{color:#1c1c1c}
+.jk-body{display:grid;grid-template-columns:200px 1fr;min-height:360px}
+.jk-side{border-right:1px solid #eee;padding:10px 8px;background:#fcfcfc}
+.jk-side div{padding:7px 10px;border-radius:7px;color:#333;cursor:default;display:flex;gap:8px;align-items:center}
+.jk-side div.on{background:#e8eef8;font-weight:700}
+.jk-side div.hl{outline:2px solid var(--acc);outline-offset:-2px;background:#e9f9fa}
+.jk-side .hist{margin-top:12px;border-top:1px solid #eee;padding-top:8px}
+.jk-side .hist small{display:block;color:#888;font-size:11px;padding:0 10px 4px;text-transform:uppercase;letter-spacing:.05em}
+.jk-side .hist div{font-size:12.5px;padding:5px 10px}
+.jk-main{padding:14px 18px;overflow:auto}
+.jk-main h3{margin:0 0 10px;font-size:20px;display:flex;align-items:center;gap:10px}
+.jk .dot{width:14px;height:14px;border-radius:50%;display:inline-block;flex:0 0 auto}
+.jk .dot.ok{background:#1ea64b}.jk .dot.un{background:#e8a100}.jk .dot.ko{background:#d24939}.jk .dot.run{background:#3b82f6;animation:pulse 1s infinite}.jk .dot.no{background:#bbb}
+@keyframes pulse{50%{opacity:.35}}
+.jk input[type=text],.jk select{border:1px solid #c8c8c8;border-radius:6px;padding:6px 8px;font:inherit;font-size:13px;background:#fff;color:#1c1c1c;min-width:220px}
+.jk .fld{margin-bottom:12px}
+.jk .fld label{display:block;font-weight:700;margin-bottom:3px}
+.jk .fld small{display:block;color:#777;font-size:12px;margin-top:3px}
+.jk .jbtn{background:#1c64f2;color:#fff;border:0;border-radius:7px;padding:8px 16px;font-weight:700;cursor:pointer;font:inherit;font-weight:700}
+.jk .jbtn:disabled{opacity:.5;cursor:default}
+.jk .jbtn.sec{background:#eee;color:#333}
+/* stage view */
+.sv{border:1px solid #e3e3e3;border-radius:8px;overflow:hidden;margin-top:6px}
+.sv table{width:100%;border-collapse:collapse;font-size:12px}
+.sv th{background:#f5f5f5;padding:7px 8px;font-weight:700;color:#444;border-left:1px solid #e9e9e9;text-align:center}
+.sv th:first-child{border-left:0;text-align:left;width:120px}
+.sv td{padding:0;border-top:1px solid #eee;border-left:1px solid #f0f0f0;height:44px;text-align:center;color:#333}
+.sv td:first-child{border-left:0;text-align:left;padding:4px 8px;font-size:11.5px;color:#555}
+.sv td.c-ok{background:#e3f6e9}.sv td.c-un{background:#fdf1cf}.sv td.c-ko{background:#fbe0dc}.sv td.c-run{background:repeating-linear-gradient(45deg,#dfeafd,#dfeafd 8px,#eef4fe 8px,#eef4fe 16px);background-size:23px 23px;animation:mv 1s linear infinite}.sv td.c-skip{background:#f4f4f4;color:#aaa}
+@keyframes mv{to{background-position:23px 0}}
+.jk-console{background:#1e1e1e;color:#d4d4d4;font-family:Consolas,monospace;font-size:12px;line-height:1.5;border-radius:8px;padding:10px 12px;height:250px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin-top:10px}
+.jk-console .g{color:#6bdd9a}.jk-console .r{color:#f79a8e}.jk-console .y{color:#e8d36a}.jk-console .d{color:#888}.jk-console .u{color:#74aef6}.jk-console .w{color:#fff;font-weight:700}
+.jk .plist{display:grid;gap:6px}
+.jk .plist div{display:flex;gap:10px;align-items:center;border:1px solid #e5e5e5;border-radius:8px;padding:8px 10px}
+.jk .plist div input{width:16px;height:16px}
+.jk .plist div span{flex:1}
+.jk .plist small{color:#777}
+.cmd{background:#141820;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#d4d4d4}
+.cmd .p{background:color-mix(in srgb,var(--acc) 25%,transparent);color:#fff;border-radius:4px;padding:0 3px}
+@media(max-width:1000px){.two{grid-template-columns:1fr}.glos{grid-template-columns:1fr 1fr}.jk-body{grid-template-columns:1fr}.jk-side{display:none}}

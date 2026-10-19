@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Newman a fondo</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button.on{background:var(--orange);color:#111;border-color:var(--orange)}
+.pane{display:none}.pane.on{display:block}
+.two{display:grid;grid-template-columns:1fr 1.15fr;gap:14px;align-items:start}
+.steps2{display:flex;flex-direction:column;gap:8px}
+.st{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:13.5px;line-height:1.55;color:var(--muted);cursor:pointer;transition:border-color .2s}
+.st:hover{border-color:color-mix(in srgb,var(--orange) 50%,var(--border))}
+.st.on{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 6%,var(--panel))}
+.st b.h{display:block;color:var(--text);font-size:14.5px;margin-bottom:2px}
+.st .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--orange);color:#111;font-weight:800;font-size:12px;margin-right:6px}
+.st code{font-size:12.5px}
+.term{background:#0c0c0c;border:1px solid #333;border-radius:10px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.45);position:sticky;top:10px}
+.term .tb{background:#1f1f1f;padding:7px 12px;font-size:12px;color:#aaa;display:flex;gap:8px;align-items:center}
+.term .tb i{width:10px;height:10px;border-radius:50%;display:inline-block;background:#555}
+.term .tb .k{margin-left:auto;color:#888}
+.term pre{margin:0;padding:12px 14px;font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;line-height:1.5;color:#ccc;white-space:pre-wrap;word-break:break-word;overflow:auto;height:420px}
+.term .p{color:#6bdd9a}.term .w{color:#fff;font-weight:700}.term .d{color:#777}.term .g{color:#6bdd9a}.term .r{color:#f79a8e}.term .y{color:#e8d36a}.term .u{color:#74aef6}
+.opts{width:100%;border-collapse:collapse;font-size:13px}
+.opts td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
+.opts td:first-child{font-family:Consolas,monospace;color:#dcdcaa;white-space:nowrap}
+pre.code{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.c{color:#6a9955}.s{color:#ce9178}.k{color:#dcdcaa}.kk{color:#9cdcfe}
+/* reporte HTML simulado */
+.rep{background:#1e1e2e;border-radius:10px;overflow:hidden;border:1px solid #333;font-size:12.5px}
+.rep .rh{background:#2b2b40;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.rep .rh b{font-size:14px}
+.rep .kp{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px}
+.rep .kp div{background:#2b2b40;border-radius:8px;padding:10px;text-align:center}
+.rep .kp b{display:block;font-size:20px}
+.rep .kp span{color:#aaa;font-size:11px}
+.rep .rr{padding:0 12px 12px}
+.rep .rr div{display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;margin-bottom:4px;background:#26263a}
+.rep .ok{color:#6bdd9a}.rep .ko{color:#f79a8e}
+.files a{display:inline-block;margin:6px 8px 0 0;text-decoration:none}
+.prob{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.prob .tile pre{margin:8px 0 0;background:#0c0c0c;border-radius:8px;padding:9px 11px;font-family:Consolas,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;color:#ccc}
+.prob .tile .err{color:#f79a8e}
+@media(max-width:1000px){.two,.prob{grid-template-columns:1fr}.term{position:static}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Newman a fondo</h1>
+<div class="sub"><b>Newman</b> es el ejecutor de colecciones de Postman por línea de comandos. Es <b>open source</b>, funciona sobre <b>Node.js</b> y no necesita una cuenta de Postman: ejecuta los archivos <code>.json</code> exportados.
+Aquí verás cómo instalarlo en Windows, cómo ejecutarlo con todas sus opciones útiles, cómo generar reportes y cómo automatizarlo dentro de la red de la empresa.</div>
+
+<div class="tabs" id="tabs">
+  <button class="btn on" data-t="inst">1 · Instalación en Windows</button>
+  <button class="btn" data-t="run">2 · Ejecutar</button>
+  <button class="btn" data-t="rep">3 · Reportes</button>
+  <button class="btn" data-t="auto">4 · Automatizar</button>
+  <button class="btn" data-t="prob">5 · Problemas comunes</button>
+</div>
+
+<!-- ======================= 1. INSTALACIÓN ======================= -->
+<section class="pane on" id="p-inst">
+  <div class="two">
+    <div class="steps2" data-term="tInst">
+      <div class="st" data-s="0"><b class="h"><span class="n">1</span>Descargar Node.js (versión LTS)</b>Entra a <a href="https://nodejs.org" target="_blank">nodejs.org</a> → <b>Download</b> → versión <b>LTS</b> (la estable). Dos opciones:
+        <br>• <b>Windows Installer (.msi)</b>: instalación normal. Suele pedir permisos de administrador.
+        <br>• <b>Standalone binary (.zip)</b>: se descomprime en una carpeta propia, <b>sin administrador</b>. Útil en equipos corporativos.</div>
+      <div class="st" data-s="1"><b class="h"><span class="n">2</span>Instalar</b>Con el <b>.msi</b>: Siguiente → Siguiente, dejando marcada la opción <b>Add to PATH</b>.
+        <br>Con el <b>.zip</b>: descomprimir en <code>C:\herramientas\node</code> y agregar esa carpeta al <b>PATH de tu usuario</b> (Inicio → “variables de entorno” → <i>Editar las variables de entorno de esta cuenta</i>).</div>
+      <div class="st" data-s="2"><b class="h"><span class="n">3</span>Verificar Node y npm</b>Abre una terminal <b>nueva</b> (Símbolo del sistema) y verifica las versiones. <b>npm</b> es el instalador de paquetes que viene con Node.</div>
+      <div class="st" data-s="3"><b class="h"><span class="n">4</span>Instalar Newman</b><code>npm install -g newman</code>. El <code>-g</code> lo instala de forma <b>global</b> para tu usuario, para usarlo desde cualquier carpeta. No necesita administrador.</div>
+      <div class="st" data-s="4"><b class="h"><span class="n">5</span>Instalar el reporte HTML</b><code>npm install -g newman-reporter-htmlextra</code> agrega el reporte HTML navegable.</div>
+      <div class="st" data-s="5"><b class="h"><span class="n">6</span>Comprobar que funciona</b><code>newman -v</code> muestra la versión. Si aparece, Newman quedó listo.</div>
+    </div>
+    <div class="term" id="tInst"><div class="tb"><i></i><i></i><i></i> Símbolo del sistema <span class="k">clic en un paso ▸</span></div><pre></pre></div>
+  </div>
+  <div class="note warn">⚠ En equipos de la empresa, instalar software puede requerir una <b>solicitud a soporte</b>. Si la red usa <b>proxy</b> o certificados propios, npm puede fallar al descargar: revisa la pestaña <b>5 · Problemas comunes</b>.</div>
+</section>
+
+<!-- ======================= 2. EJECUTAR ======================= -->
+<section class="pane" id="p-run">
+  <div class="two">
+    <div class="steps2" data-term="tRun">
+      <div class="st" data-s="0"><b class="h"><span class="n">1</span>Exportar desde Postman</b>Colección → <b>⋯ → More → Export collection → Other</b> → <b>Collection v2.1</b>. Environment: primero <b>☁ Share</b> en cada valor que Newman necesita (si no, se exporta vacío), luego <b>⋯ → Export</b>. Guarda los dos <code>.json</code> en una carpeta del proyecto.</div>
+      <div class="st" data-s="1"><b class="h"><span class="n">2</span>Ejecución básica</b><code>newman run coleccion.json -e environment.json</code>. Igual que el Runner, pero sin abrir Postman.</div>
+      <div class="st" data-s="2"><b class="h"><span class="n">3</span>Solo una carpeta, varias veces</b><code>--folder</code> elige la carpeta (se puede repetir) y <code>-n</code> la cantidad de iteraciones.</div>
+      <div class="st" data-s="3"><b class="h"><span class="n">4</span>Secretos por parámetro</b><code>--env-var "apiKey=…"</code> reemplaza una variable al ejecutar. Así la clave no queda escrita en el archivo del environment ni en el repositorio.</div>
+      <div class="st" data-s="4"><b class="h"><span class="n">5</span>Detener al primer error</b><code>--bail</code> corta la ejecución en cuanto falla un test: no sigue llenando el reporte de errores en cadena.</div>
+      <div class="st" data-s="5"><b class="h"><span class="n">6</span>Guardar las variables resultantes</b><code>--export-environment</code> escribe el environment al terminar, con los valores que guardaron los scripts (por ejemplo, el último <code>petId</code>).</div>
+    </div>
+    <div class="term" id="tRun"><div class="tb"><i></i><i></i><i></i> Símbolo del sistema — C:\taller-postman <span class="k">clic en un paso ▸</span></div><pre></pre></div>
+  </div>
+  <h2>Opciones más útiles</h2>
+  <div class="card"><table class="opts">
+    <tr><td>-e archivo.json</td><td>Environment a usar.</td></tr>
+    <tr><td>-g globals.json</td><td>Variables globales exportadas.</td></tr>
+    <tr><td>--folder "Nombre"</td><td>Ejecutar solo esa carpeta. Se puede repetir para varias.</td></tr>
+    <tr><td>-n 3</td><td>Iteraciones.</td></tr>
+    <tr><td>-d datos.csv</td><td>Archivo de datos (CSV o JSON): una iteración por fila.</td></tr>
+    <tr><td>--env-var "clave=valor"</td><td>Sobrescribe una variable del environment al ejecutar (ideal para secretos desde Jenkins).</td></tr>
+    <tr><td>--delay-request 200</td><td>Espera en ms entre requests.</td></tr>
+    <tr><td>--timeout-request 10000</td><td>Tiempo máximo de cada request en ms.</td></tr>
+    <tr><td>--bail</td><td>Detener al primer fallo.</td></tr>
+    <tr><td>--export-environment salida.json</td><td>Guardar el environment final.</td></tr>
+    <tr><td>--suppress-exit-code</td><td>Terminar con código 0 aunque fallen tests (para que el pipeline no se detenga; úsalo con criterio).</td></tr>
+    <tr><td>--verbose</td><td>Muestra el detalle de cada request y response: útil para depurar.</td></tr>
+  </table></div>
+</section>
+
+<!-- ======================= 3. REPORTES ======================= -->
+<section class="pane" id="p-rep">
+  <div class="two">
+    <div class="steps2" data-term="tRep">
+      <div class="st" data-s="0"><b class="h"><span class="n">1</span>CLI (en pantalla)</b>Es el reporte por defecto: lo que ves en la terminal. Bueno para mirar, no para guardar.</div>
+      <div class="st" data-s="1"><b class="h"><span class="n">2</span>HTML (htmlextra)</b>Un archivo <code>.html</code> con resumen, gráficos y el detalle de cada request y test. Ideal como <b>evidencia</b> o para compartir.</div>
+      <div class="st" data-s="2"><b class="h"><span class="n">3</span>JUnit (para Jenkins)</b>Un <code>.xml</code> estándar que Jenkins, Azure DevOps y otras herramientas de CI entienden y muestran como resultados de prueba.</div>
+      <div class="st" data-s="3"><b class="h"><span class="n">4</span>Allure</b>Reporte profesional con historial y tendencias. Necesita <code>newman-reporter-allure</code> y la herramienta Allure (que requiere Java) para generar la vista.</div>
+      <div class="st" data-s="4"><b class="h"><span class="n">5</span>Varios a la vez</b><code>-r cli,htmlextra,junit</code> genera los tres en una sola ejecución.</div>
+    </div>
+    <div class="term" id="tRep"><div class="tb"><i></i><i></i><i></i> Símbolo del sistema — C:\taller-postman <span class="k">clic en un paso ▸</span></div><pre></pre></div>
+  </div>
+  <h2>Así se ve el reporte HTML</h2>
+  <div class="rep">
+    <div class="rh"><b>📊 Newman Report · Taller Petstore</b><span style="color:#aaa">htmlextra · 12/10/2026 07:00</span></div>
+    <div class="kp"><div><b>1</b><span>Iterations</span></div><div><b>5</b><span>Requests</span></div><div><b class="ok">8</b><span>Assertions passed</span></div><div><b>0</b><span>Failed tests</span></div></div>
+    <div class="rr">
+      <div><span><b style="color:#ffe47e">POST</b> 01 Crear mascota</span><span class="ok">200 OK · 801 ms · 2/2 ✓</span></div>
+      <div><span><b style="color:#6bdd9a">GET</b> 02 Consultar mascota</span><span class="ok">200 OK · 645 ms · 2/2 ✓</span></div>
+      <div><span><b style="color:#74aef6">PUT</b> 03 Actualizar mascota</span><span class="ok">200 OK · 712 ms · 2/2 ✓</span></div>
+      <div><span><b style="color:#f79a8e">DELETE</b> 04 Eliminar mascota</span><span class="ok">200 OK · 690 ms · 1/1 ✓</span></div>
+      <div><span><b style="color:#6bdd9a">GET</b> 05 Verificar eliminación</span><span class="ok">404 · 602 ms · 1/1 ✓</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 4. AUTOMATIZAR ======================= -->
+<section class="pane" id="p-auto">
+  <div class="two">
+    <div class="steps2" data-term="tAuto">
+      <div class="st" data-s="0"><b class="h"><span class="n">1</span>Scripts de npm</b>En <code>package.json</code> se guardan los comandos largos con un nombre corto: <code>npm run test:crud</code>. Todo el equipo ejecuta exactamente lo mismo.</div>
+      <div class="st" data-s="1"><b class="h"><span class="n">2</span>Un archivo .bat</b><code>ejecutar_pruebas.bat</code> agrupa los pasos (ir a la carpeta, ejecutar, generar reporte) en un doble clic.</div>
+      <div class="st" data-s="2"><b class="h"><span class="n">3</span>Programador de tareas de Windows</b>Ejecuta el <code>.bat</code> solo, por ejemplo todos los días a las 7:00. Corre <b>dentro de la red</b>, así que <b>sí alcanza APIs internas</b>, a diferencia de las ejecuciones agendadas en la nube de Postman.</div>
+      <div class="st" data-s="3"><b class="h"><span class="n">4</span>Jenkins</b>En un pipeline, el mismo comando corre en cada despliegue y publica el JUnit. Los secretos se pasan con <code>--env-var</code> desde las credenciales de Jenkins.</div>
+    </div>
+    <div class="term" id="tAuto"><div class="tb"><i></i><i></i><i></i> Símbolo del sistema — C:\taller-postman <span class="k">clic en un paso ▸</span></div><pre></pre></div>
+  </div>
+  <h2>Archivos listos para usar</h2>
+  <div class="cols2">
+    <div class="card"><b>📦 package.json</b>
+<pre class="code">{
+  <span class="kk">"scripts"</span>: {
+    <span class="kk">"test:crud"</span>: <span class="s">"newman run \"Taller Petstore.postman_collection.json\" -e \"Petstore - QA.postman_environment.json\" --folder \"CRUD Mascota\""</span>,
+    <span class="kk">"test:datos"</span>: <span class="s">"newman run … --folder \"Datos desde archivo\" -d datos/mascotas.csv"</span>,
+    <span class="kk">"test:reporte"</span>: <span class="s">"newman run … -r cli,htmlextra,junit …"</span>
+  }
+}</pre>
+      <div class="files"><a class="btn" href="postman/package.json" download>⬇ package.json</a></div></div>
+    <div class="card"><b>🪟 ejecutar_pruebas.bat</b>
+<pre class="code"><span class="c">@echo off</span>
+cd /d "%~dp0"
+if not exist reports mkdir reports
+call newman run "Taller Petstore.postman_collection.json" ^
+  -e "Petstore - QA.postman_environment.json" ^
+  --folder "CRUD Mascota" ^
+  -r cli,htmlextra,junit ^
+  --reporter-htmlextra-export reports\reporte.html ^
+  --reporter-junit-export reports\junit.xml
+<span class="c">rem El código de salida indica si pasaron todos los tests</span>
+exit /b %ERRORLEVEL%</pre>
+      <div class="files"><a class="btn" href="postman/ejecutar_pruebas.bat" download>⬇ ejecutar_pruebas.bat</a></div></div>
+  </div>
+</section>
+
+<!-- ======================= 5. PROBLEMAS ======================= -->
+<section class="pane" id="p-prob">
+  <div class="prob">
+    <div class="tile"><b class="h">🔒 “La ejecución de scripts está deshabilitada”</b>En <b>PowerShell</b>, npm instala Newman como un script <code>.ps1</code> que la política de la empresa puede bloquear.
+<pre><span class="err">newman : No se puede cargar el archivo C:\Users\…\AppData\Roaming\npm\newman.ps1 porque la ejecución de scripts está deshabilitada en este sistema.</span></pre>
+      <b style="color:var(--text)">Solución:</b> usar el <b>Símbolo del sistema (cmd)</b>, o escribir <code>newman.cmd</code> en lugar de <code>newman</code>. Cambiar la política de PowerShell solo con autorización de seguridad.</div>
+    <div class="tile"><b class="h">❓ “newman no se reconoce como un comando”</b>La carpeta de npm no está en el <b>PATH</b>, o la terminal se abrió antes de instalar.
+<pre><span class="err">"newman" no se reconoce como un comando interno o externo,
+programa o archivo por lotes ejecutable.</span></pre>
+      <b style="color:var(--text)">Solución:</b> cerrar y abrir una terminal nueva. Si sigue, agregar <code>%APPDATA%\npm</code> al PATH de tu usuario.</div>
+    <div class="tile"><b class="h">🌐 npm no descarga (proxy de la empresa)</b>La red sale a internet por un <b>proxy</b> y npm no lo conoce.
+<pre><span class="err">npm ERR! code ETIMEDOUT
+npm ERR! network request to https://registry.npmjs.org/newman failed</span></pre>
+      <b style="color:var(--text)">Solución:</b> configurar el proxy que indique el área de infraestructura:
+<pre>npm config set proxy http://proxy.empresa.local:8080
+npm config set https-proxy http://proxy.empresa.local:8080</pre></div>
+    <div class="tile"><b class="h">📜 Error de certificado</b>La empresa inspecciona el tráfico con su propio certificado y Node no lo reconoce.
+<pre><span class="err">npm ERR! code SELF_SIGNED_CERT_IN_CHAIN
+Error: unable to get local issuer certificate</span></pre>
+      <b style="color:var(--text)">Solución:</b> pedir el certificado raíz de la empresa (<code>.pem</code>) e indicarlo, <b>en vez de desactivar la verificación</b>:
+<pre>npm config set cafile C:\certs\ca-empresa.pem
+newman run … --ssl-extra-ca-certs C:\certs\ca-empresa.pem</pre></div>
+  </div>
+  <div class="note warn">⚠ Evita <code>npm config set strict-ssl false</code> y <code>newman --insecure</code> como solución permanente: desactivan la verificación de certificados y abren la puerta a ataques de intermediario. Úsalos, si acaso, solo de forma puntual en ambientes de prueba y con autorización.</div>
+</section>
+
+<div class="key">
+  <strong>Idea clave:</strong> Newman convierte la colección en algo que se ejecuta <strong>sin intervención humana</strong>: en tu PC con un doble clic, en un servidor con el Programador de tareas o en cada despliegue con Jenkins, siempre <strong>dentro de la red</strong> y con reportes como evidencia.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const P='C:\\taller-postman> ', U='C:\\Users\\ana> ';
+const C='newman run "Taller Petstore.postman_collection.json" -e "Petstore - QA.postman_environment.json"';
+const TABLE=(it,rq,as,fa)=>[['','┌─────────────────────────┬──────────┬──────────┐\n│                         │ executed │   failed │\n├─────────────────────────┼──────────┼──────────┤\n'],
+  ['',`│              iterations │ ${String(it).padStart(8)} │        0 │\n│                requests │ ${String(rq).padStart(8)} │        0 │\n│              assertions │ ${String(as).padStart(8)} │ `],[fa?'r':'',String(fa).padStart(8)],['',' │\n└─────────────────────────┴──────────┴──────────┘\n']];
+const CRUD_OUT=[['','\nnewman\n\nTaller Petstore\n\n❏ CRUD Mascota\n↳ 01 Crear mascota\n'],['d','  POST https://petstore.swagger.io/v2/pet [200 OK, 312B, 801ms]\n'],['g','  ✓'],['','  Status 200\n'],['d','  … (02 a 05) …\n\n']];
+const SEQ={
+ tInst:[
+  [['d','(en el navegador) nodejs.org → Download → LTS\n'],['y','  ⬇ node-v22.x-x64.msi   o   node-v22.x-win-x64.zip\n']],
+  [['d','(instalador .msi) ☑ Add to PATH → Install → Finish\n'],['d','(o .zip) descomprimir en C:\\herramientas\\node y agregarlo al PATH del usuario\n']],
+  [['p',U],['w','node -v\n'],['','v22.11.0\n'],['p',U],['w','npm -v\n'],['','10.9.0\n']],
+  [['p',U],['w','npm install -g newman\n'],['','\nadded 128 packages in 14s\n'],['d','(instalado en C:\\Users\\ana\\AppData\\Roaming\\npm)\n']],
+  [['p',U],['w','npm install -g newman-reporter-htmlextra\n'],['','\nadded 61 packages in 9s\n']],
+  [['p',U],['w','newman -v\n'],['g','6.2.1\n'],['d','\n✔ Newman instalado y listo.\n']],
+ ],
+ tRun:[
+  [['d','(en Postman) Taller Petstore → ⋯ → More → Export collection → Other → Collection v2.1\n'],['d','(en Postman) Petstore - QA → ☁ Share en baseUrl, status y apiKey → ⋯ → Export\n\n'],['p',P],['w','dir /b\n'],['','Petstore - QA.postman_environment.json\nTaller Petstore.postman_collection.json\n']],
+  [['p',P],['w',C+'\n'],...CRUD_OUT,...TABLE(1,8,14,0)],
+  [['p',P],['w',C+' --folder "CRUD Mascota" -n 3\n'],['','\nnewman\n\nTaller Petstore\n'],['d','Iteration 1/3 … Iteration 2/3 … Iteration 3/3\n'],...TABLE(3,15,24,0)],
+  [['p',P],['w',C+' --env-var "apiKey=%PETSTORE_KEY%"\n'],['d','\n(la clave viene de una variable de entorno de Windows, no del archivo)\n'],...CRUD_OUT,...TABLE(1,8,14,0)],
+  [['p',P],['w',C+' --folder "Datos desde archivo" -d datos\\mascotas.csv --bail\n'],['d','\n… Iteration 5/5 …\n'],['r','  1.'],['','  El estado es un valor permitido\n'],['y','\nnewman: run interrupted by --bail at first failure\n']],
+  [['p',P],['w',C+' --folder "CRUD Mascota" --export-environment salida.json\n'],...CRUD_OUT,...TABLE(1,5,8,0),['p',P],['w','type salida.json | findstr petId\n'],['','      "key": "petId",\n      "value": 1791322494976,\n']],
+ ],
+ tRep:[
+  [['p',P],['w',C+' --folder "CRUD Mascota"\n'],...CRUD_OUT,...TABLE(1,5,8,0)],
+  [['p',P],['w',C+' --folder "CRUD Mascota" -r htmlextra --reporter-htmlextra-export reports\\reporte.html --reporter-htmlextra-title "Taller Petstore"\n'],['g','\n  ✔ reports\\reporte.html\n\n'],['p',P],['w','start reports\\reporte.html\n'],['d','(se abre en el navegador: ver la vista de abajo)\n']],
+  [['p',P],['w',C+' -r junit --reporter-junit-export reports\\junit.xml\n'],['g','\n  ✔ reports\\junit.xml\n\n'],['p',P],['w','type reports\\junit.xml\n'],['u','<testsuites name="Taller Petstore" tests="14" failures="0" time="3.9">\n  <testsuite name="01 Crear mascota" tests="2" failures="0">\n    <testcase name="Status 200" time="0.801"/>\n    …\n']],
+  [['p',P],['w','npm install -g newman-reporter-allure\n'],['','added 12 packages in 4s\n'],['p',P],['w',C+' -r allure --reporter-allure-export allure-results\n'],['g','  ✔ allure-results\\ (archivos .json)\n'],['p',P],['w','allure serve allure-results\n'],['d','(requiere Java y la herramienta Allure: abre un reporte con gráficos e historial)\n']],
+  [['p',P],['w',C+' -r cli,htmlextra,junit --reporter-htmlextra-export reports\\reporte.html --reporter-junit-export reports\\junit.xml\n'],...CRUD_OUT,...TABLE(1,8,14,0),['g','  ✔ reports\\reporte.html\n  ✔ reports\\junit.xml\n']],
+ ],
+ tAuto:[
+  [['p',P],['w','npm run test:crud\n'],['d','\n> taller-petstore@1.0.0 test:crud\n> newman run "Taller Petstore.postman_collection.json" -e … --folder "CRUD Mascota"\n'],...CRUD_OUT,...TABLE(1,5,8,0)],
+  [['p',P],['w','ejecutar_pruebas.bat\n'],...CRUD_OUT,...TABLE(1,5,8,0),['g','  ✔ reports\\reporte.html\n  ✔ reports\\junit.xml\n']],
+  [['p',P],['w','schtasks /create /tn "Regresion API Petstore" /tr "C:\\taller-postman\\ejecutar_pruebas.bat" /sc daily /st 07:00\n'],['g','\nCORRECTO: se creó correctamente la tarea programada "Regresion API Petstore".\n\n'],['p',P],['w','schtasks /query /tn "Regresion API Petstore"\n'],['','\nNombre de tarea                 Hora próxima ejec.    Estado\n=============================== ===================== ========\nRegresion API Petstore          13/10/2026 7:00:00    Listo\n']],
+  [['d','// Jenkinsfile (agente Windows)\n'],['u',"stage('Pruebas de API') {\n  steps {\n    withCredentials([string(credentialsId: 'petstore-api-key', variable: 'API_KEY')]) {\n      bat 'newman run \"postman/Taller Petstore.postman_collection.json\" -e \"postman/Petstore - QA.postman_environment.json\" --env-var \"apiKey=%API_KEY%\" -r cli,junit --reporter-junit-export reports/junit.xml'\n    }\n  }\n}\npost { always { junit 'reports/junit.xml' } }\n"]],
+ ],
+};
+const timers={};
+function play(termId,k){
+  const out=$(termId).querySelector('pre'); clearTimeout(timers[termId]);
+  document.querySelectorAll(`[data-term="${termId}"] .st`).forEach(s=>s.classList.toggle('on',+s.dataset.s===k));
+  const lines=SEQ[termId][k]; let i=0,j=0,html='';
+  const step=()=>{
+    if(i>=lines.length) return;
+    const [cls,txt]=lines[i]; const isCmd=cls==='w'&&i>0&&lines[i-1][0]==='p';
+    const n=isCmd?Math.min(txt.length,j+3):txt.length;
+    out.innerHTML=html+`<span class="${cls}">${esc(txt.slice(0,n))}</span>${isCmd&&n<txt.length?'<span class="w">▌</span>':''}`;
+    out.scrollTop=out.scrollHeight;
+    if(n<txt.length){j=n;timers[termId]=setTimeout(step,14);return}
+    html+=`<span class="${cls}">${esc(txt)}</span>`;i++;j=0;timers[termId]=setTimeout(step,isCmd?300:70);
+  };
+  step();
+}
+document.querySelectorAll('[data-term]').forEach(box=>{
+  const id=box.dataset.term;
+  box.addEventListener('click',e=>{const s=e.target.closest('.st');if(s)play(id,+s.dataset.s)});
+  $(id).querySelector('pre').innerHTML='<span class="d">Haz clic en un paso de la izquierda para verlo en la terminal.</span>';
+});
+$('tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.t));};
+})();
+</script>
+</body></html>

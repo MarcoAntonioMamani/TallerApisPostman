@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>k6 - Simulación VUs, Pods, HPA y 503</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 20px}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+button{padding:10px 15px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-weight:700;cursor:pointer}
+button:hover,button.active{background:var(--orange);color:#111;border-color:var(--orange)}
+.grid{display:grid;grid-template-columns:1.4fr .8fr;gap:16px}.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.title{font-weight:800;font-size:18px}.small{font-size:12px;color:var(--muted);line-height:1.5}
+svg{width:100%;height:auto;margin-top:10px;background:#141820;border-radius:10px}
+.axis{stroke:#596273;stroke-width:1.4}.guide{stroke:#333b49;stroke-width:1}.load{fill:none;stroke:var(--orange);stroke-width:4}.ok{fill:none;stroke:var(--green);stroke-width:4}.err{fill:none;stroke:var(--red);stroke-width:4}.threshold{stroke:var(--purple);stroke-width:2;stroke-dasharray:8 6}
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}.metric{background:var(--panel2);border-radius:9px;padding:10px;text-align:center}.metric b{display:block;font-size:22px}.metric span{font-size:11px;color:var(--muted)}
+.arch{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:16px 0}.node{padding:9px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:9px;font-size:12px;font-weight:700}.arrow{color:var(--muted)}
+.pods{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}.pod{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--panel2)}.pod.off{opacity:.2}.pod.hot{border-color:var(--red)}.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--green);margin-right:6px}.pod.hot .dot{background:var(--red)}
+.status{padding:13px;border-radius:10px;background:var(--panel2);margin-top:12px}.status.bad{border-left:5px solid var(--red)}.status.good{border-left:5px solid var(--green)}.status.scale{border-left:5px solid var(--orange)}
+.bar{height:9px;background:#303846;border-radius:20px;overflow:hidden;margin-top:7px}.bar div{height:100%;background:var(--orange);width:10%;transition:width .2s}
+.explain{margin-top:16px;line-height:1.65}.explain strong{color:var(--orange)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:7px}.legend i{display:inline-block;width:18px;height:4px;margin-right:5px;vertical-align:middle}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>k6 · VUs → Saturación → HPA → Pods → Recuperación</h1>
+<div class="sub">Simulación didáctica. Cada pod soporta aproximadamente <b>100 VUs</b> en este ejemplo ficticio. El HPA intenta escalar cuando la carga supera la capacidad. También puedes desactivar el HPA para observar errores HTTP 503.</div>
+
+<div class="controls">
+<button id="normal" class="active">✓ HPA activado</button>
+<button id="disabled">✕ HPA desactivado</button>
+<button id="play">▶ Ejecutar</button><button id="pause">Ⅱ Pausar</button><button id="reset">↻ Reiniciar</button>
+</div>
+
+<div class="grid">
+<section class="card">
+<div class="title">Carga generada por k6</div>
+<div class="small">La carga sube progresivamente hasta 350 VUs y después disminuye.</div>
+<div class="legend"><span><i style="background:var(--orange)"></i>VUs enviados</span><span><i style="background:var(--green)"></i>Atendidos</span><span><i style="background:var(--red)"></i>503</span></div>
+<svg viewBox="0 0 760 390">
+<g id="guides"></g>
+<line x1="65" y1="30" x2="65" y2="335" class="axis"/><line x1="65" y1="335" x2="730" y2="335" class="axis"/>
+<line id="th" x1="65" y1="259" x2="730" y2="259" class="threshold"/>
+<text x="720" y="250" text-anchor="end" fill="#a982e2" font-size="11">capacidad inicial: 1 pod ≈ 100 VUs</text>
+<polyline id="loadLine" class="load" points=""/><polyline id="okLine" class="ok" points=""/><polyline id="errLine" class="err" points=""/>
+<line id="cursor" x1="65" y1="30" x2="65" y2="335" stroke="#fff" opacity=".25"/>
+<circle id="point" r="7" fill="#f3a43b"/>
+<text x="680" y="365" fill="#aab3c2" font-size="11">Tiempo →</text><text x="14" y="25" fill="#aab3c2" font-size="11">VUs</text>
+</svg>
+<div class="metrics">
+<div class="metric"><b id="vus">0</b><span>VUs actuales</span></div>
+<div class="metric"><b id="servedRate">0</b><span>Atendidos/s</span></div>
+<div class="metric"><b id="served">0</b><span>Atendidos acumulados</span></div>
+<div class="metric"><b id="errors">0</b><span>HTTP 503 actuales/s</span></div>
+<div class="metric"><b id="total503">0</b><span>HTTP 503 acumulados</span></div>
+<div class="metric"><b id="errPct">0%</b><span>Error acumulado</span></div>
+</div>
+</section>
+
+<aside class="card">
+<div class="title">Kubernetes + HPA</div>
+<div class="arch"><div class="node">k6</div><div class="arrow">→</div><div class="node">Service</div><div class="arrow">→</div><div class="node">Pods</div></div>
+<div class="small">Utilización simulada</div><div class="bar"><div id="cpuBar"></div></div>
+<div style="display:flex;justify-content:space-between;margin-top:5px"><b id="cpu">0%</b><span id="hpa" class="small">HPA estable</span></div>
+<div id="pods" class="pods"></div>
+<div class="metrics" style="grid-template-columns:1fr 1fr"><div class="metric"><b id="podN">1</b><span>Pods activos</span></div><div class="metric"><b id="capacity">100</b><span>Capacidad VUs*</span></div></div>
+<div id="status" class="status good"><b id="state">Sistema estable</b><div id="desc" class="small" style="margin-top:5px">El pod puede procesar la carga.</div></div>
+</aside>
+</div>
+
+<div class="card explain">
+<div class="title">¿Qué está pasando?</div>
+<div id="speech">Al inicio hay <strong>1 pod</strong>. Mientras la carga está por debajo de su capacidad, el servicio responde normalmente. Cuando la carga supera aproximadamente <strong>100 VUs</strong>, el HPA detecta utilización alta. No escala instantáneamente: durante un momento el pod puede quedar saturado. Después aparece un segundo pod y aumenta la capacidad.</div>
+</div>
+<div class="small" style="margin-top:12px">* Los 100 VUs por pod son únicamente un valor didáctico. En un sistema real el HPA normalmente escala según métricas como CPU, memoria o métricas personalizadas; la capacidad real debe medirse.</div>
+<div class="card explain">
+<div class="title">Cómo funciona el ciclo completo</div>
+<div class="small" style="font-size:13px">
+<b>1.</b> k6 aumenta la carga → sube la utilización del pod.<br>
+<b>2.</b> La métrica supera el objetivo → HPA solicita más réplicas.<br>
+<b>3.</b> El nuevo pod tarda un momento en estar listo → durante ese intervalo puede haber saturación y 503.<br>
+<b>4.</b> Con más pods aumenta la capacidad → suben los <b>atendidos/s</b>, los <b>atendidos acumulados</b> continúan creciendo y los 503 actuales pueden volver a 0. El contador <b>503 acumulados conserva los errores ocurridos</b>.<br>
+<b>5.</b> Cuando la carga baja → HPA espera el periodo de estabilización y realiza <b>scale down</b> gradualmente hasta el mínimo de pods.<br>
+<b>6.</b> Con HPA desactivado → permanece un solo pod; si la carga supera su capacidad, los 503 continúan hasta que la demanda vuelve a estar por debajo de esa capacidad.
+</div></div>
+</div>
+
+<script>
+(()=>{
+const loads=[10,25,45,70,90,105,125,155,185,210,245,285,320,350,330,290,240,190,145,100,60,25];
+const maxV=400, capPerPod=100, maxPods=4;
+let p=0,running=true,hpaEnabled=true,pods=1,last=performance.now(),overSince=null,scaleReady=null,underSince=null,total503=0,totalServed=0,lastCountAt=performance.now();
+const $=id=>document.getElementById(id);
+let guides='';for(let i=0;i<=4;i++){let y=335-i*76.25;guides+=`<line x1="65" y1="${y}" x2="730" y2="${y}" class="guide"/><text x="53" y="${y+4}" text-anchor="end" fill="#aab3c2" font-size="10">${i*100}</text>`}$('guides').innerHTML=guides;
+function interp(t){let z=t*(loads.length-1),i=Math.floor(z),f=z-i;return i>=loads.length-1?loads.at(-1):loads[i]+(loads[i+1]-loads[i])*f}
+function xy(t,v){return[65+t*665,335-(v/maxV)*305]}
+function podsUI(util){let h='';for(let i=1;i<=maxPods;i++){let on=i<=pods;h+=`<div class="pod ${on?'':'off'} ${on&&util>90?'hot':''}"><span class="dot"></span><b>pod-${i}</b><div class="small">${on?(util>90?'Saturado':'Running'):'No creado'}</div></div>`}$('pods').innerHTML=h}
+function historicalPods(t){if(!hpaEnabled)return 1;if(t>.63)return 4;if(t>.48)return 3;if(t>.32)return 2;return 1}
+function drawLines(){
+ let lp=[],op=[],ep=[];
+ for(let i=0;i<=Math.floor(p*100);i++){let t=i/100,l=interp(t),hp=historicalPods(t),cap=hp*capPerPod,err=Math.max(0,l-cap),ok=l-err;lp.push(xy(t,l).join(','));op.push(xy(t,ok).join(','));ep.push(xy(t,err).join(','))}
+ $('loadLine').setAttribute('points',lp.join(' '));$('okLine').setAttribute('points',op.join(' '));$('errLine').setAttribute('points',ep.join(' '));
+}
+function update(now){
+ let load=interp(p),cap=pods*capPerPod,util=Math.min(100,Math.round(load/cap*100));
+ if(hpaEnabled){
+   if(load>cap*.9&&pods<maxPods){
+     underSince=null;if(overSince===null)overSince=now;
+     if(now-overSince>1000&&scaleReady===null){scaleReady=now+850;$('hpa').textContent='HPA: creando pod…'}
+   }else overSince=null;
+   if(scaleReady&&now>=scaleReady){pods++;scaleReady=null;overSince=null;$('hpa').textContent='HPA: escaló a '+pods+' pods'}
+   if(load<cap*.42&&pods>1&&p>.72){if(underSince===null)underSince=now;if(now-underSince>2600){pods--;underSince=null;$('hpa').textContent='HPA: scale down → '+pods+' pods'}}else underSince=null;
+ } else {$('hpa').textContent='HPA DESACTIVADO';pods=1}
+ cap=pods*capPerPod;let errors=Math.max(0,Math.round(load-cap));let served=Math.max(0,Math.round(load-errors));util=Math.min(100,Math.round(load/cap*100));
+ if(now-lastCountAt>=250){let elapsed=(now-lastCountAt)/1000;total503+=Math.round(errors*elapsed);totalServed+=Math.round(served*elapsed);lastCountAt=now}
+ $('vus').textContent=Math.round(load);$('servedRate').textContent=served;$('served').textContent=totalServed.toLocaleString('es-BO');$('errors').textContent=errors;$('total503').textContent=total503.toLocaleString('es-BO');$('errPct').textContent=((totalServed+total503)>0?(total503/(totalServed+total503))*100:0).toFixed(2)+'%';$('cpu').textContent=util+'%';$('cpuBar').style.width=util+'%';$('podN').textContent=pods;$('capacity').textContent=cap;podsUI(util);
+ let st=$('status');if(errors>0){st.className='status bad';$('state').textContent='⚠ HTTP 503';$('desc').textContent=hpaEnabled?'La carga superó temporalmente la capacidad disponible. El HPA necesita tiempo para reaccionar.':'El único pod está saturado y no existe autoscaling para agregar capacidad.';$('speech').innerHTML=hpaEnabled?'La carga acaba de superar la capacidad disponible. Aparecen <strong>503 temporales</strong>. El HPA detecta la saturación, crea otro pod y, cuando esa réplica está disponible, aumenta la capacidad y los errores comienzan a desaparecer.':'Con el HPA desactivado, la carga sigue subiendo pero existe <strong>un solo pod</strong>. Al superar su capacidad empiezan los <strong>HTTP 503</strong> y continúan mientras la demanda sea mayor que lo que puede procesar.'}else if(util>85&&hpaEnabled&&pods<maxPods){st.className='status scale';$('state').textContent='↑ HPA evaluando';$('desc').textContent='La utilización es alta. Si se mantiene, Kubernetes agregará una réplica.'}else if(hpaEnabled&&pods>1&&load<cap*.42&&p>.72){st.className='status scale';$('state').textContent='↓ HPA reduciendo réplicas';$('desc').textContent='La carga ya bajó. El HPA espera un periodo de estabilización y elimina pods gradualmente para no mantener recursos innecesarios.';$('speech').innerHTML='La demanda disminuye. Kubernetes no debería apagar todos los pods de golpe. Después del periodo de estabilización, el HPA hace <strong>scale down</strong>: reduce las réplicas gradualmente hasta volver al mínimo configurado. Los <strong>requests atendidos siguen acumulándose</strong> mientras el sistema está estable y los <strong>503 acumulados no desaparecen</strong>; ambos quedan como resultado de la prueba.'}else{st.className='status good';$('state').textContent=p>.7?'✓ Sistema recuperado':'✓ Sistema estable';$('desc').textContent='La capacidad disponible puede atender la carga actual.'}
+ let q=xy(p,load);$('cursor').setAttribute('x1',q[0]);$('cursor').setAttribute('x2',q[0]);$('point').setAttribute('cx',q[0]);$('point').setAttribute('cy',q[1]);drawLines()
+}
+function reset(){p=0;pods=1;overSince=null;scaleReady=null;underSince=null;total503=0;totalServed=0;lastCountAt=performance.now();$('total503').textContent='0';$('served').textContent='0';$('servedRate').textContent='0';update(performance.now())}
+function frame(now){let dt=now-last;last=now;if(running){p+=dt/28000;if(p>=1){p=1;running=false}update(now)}requestAnimationFrame(frame)}
+$('normal').onclick=()=>{hpaEnabled=true;$('normal').classList.add('active');$('disabled').classList.remove('active');reset();running=true}
+$('disabled').onclick=()=>{hpaEnabled=false;$('disabled').classList.add('active');$('normal').classList.remove('active');reset();running=true}
+$('play').onclick=()=>{if(p>=1)reset();running=true};$('pause').onclick=()=>running=false;$('reset').onclick=()=>{reset();running=true}
+reset();requestAnimationFrame(frame)
+})();
+</script></body></html>

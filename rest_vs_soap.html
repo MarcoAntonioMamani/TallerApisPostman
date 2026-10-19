@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REST vs SOAP</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px}
+h2{font-size:20px;margin:26px 0 12px}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+button{padding:10px 14px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-weight:700;cursor:pointer;font-size:13px}
+button:hover{background:var(--panel2)}button.active{background:var(--orange);color:#111;border-color:var(--orange)}
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.lane-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tag{font-weight:800;font-size:20px}
+.rest .tag{color:var(--blue)}.soap .tag{color:var(--purple)}
+.pill{font-size:11px;padding:4px 10px;border-radius:999px;background:var(--panel2);color:var(--muted);white-space:nowrap}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+svg{width:100%;height:auto;margin-top:10px;background:#141820;border-radius:10px;display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.stat{background:var(--panel2);border-radius:9px;padding:9px;text-align:center}
+.stat b{display:block;font-size:18px}.stat span{font-size:11px;color:var(--muted)}
+.tabs{display:flex;gap:6px;margin-top:12px}
+.tabs button{padding:6px 10px;font-size:12px}
+pre{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;height:300px;overflow:auto}
+.t{color:var(--purple)}.a{color:var(--blue)}.s{color:var(--green)}.m{color:var(--orange);font-weight:700}.h{color:var(--muted)}.e{color:var(--red);font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13px;background:var(--panel);border-radius:14px;overflow:hidden}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.45}
+th{background:var(--panel2);font-size:12px;color:var(--muted);font-weight:700}
+td:first-child{font-weight:700;color:var(--muted);width:20%}
+th.r{color:var(--blue)}th.so{color:var(--purple)}
+.pros{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pros ul{margin:8px 0 0;padding-left:18px;line-height:1.7;font-size:14px}
+.pros h3{margin:0;font-size:16px}
+.pros .rest h3{color:var(--blue)}.pros .soap h3{color:var(--purple)}
+.pros .cons{color:var(--muted)}
+.uses{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.use{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:13px;line-height:1.5}
+.use b{display:block;margin-bottom:4px}
+.use .who{font-size:11px;font-weight:800;letter-spacing:.05em}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+@media(max-width:850px){.lanes,.pros{grid-template-columns:1fr}.uses{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>REST vs SOAP</h1>
+<div class="sub">Son dos formas de construir servicios web. Las dos viajan sobre HTTP, pero cambia <b>cómo se escribe el mensaje</b>, <b>cómo se define el contrato</b> y <b>cómo se reportan los errores</b>.
+Abajo se envía la misma operación a ambos servicios al mismo tiempo.</div>
+
+<div class="controls" id="ops"></div>
+<div class="controls">
+  <button id="send">▶ Enviar a ambos</button>
+  <button id="reset">↻ Reiniciar</button>
+</div>
+
+<div class="lanes">
+  <section class="card rest" id="lane-rest">
+    <div class="lane-head"><span class="tag">REST</span><span class="pill">JSON · contrato OpenAPI</span></div>
+    <svg viewBox="0 0 560 150"><g class="scene"></g></svg>
+    <div class="stats">
+      <div class="stat"><b class="st-method">—</b><span>Método HTTP</span></div>
+      <div class="stat"><b class="st-bytes">—</b><span>Tamaño request</span></div>
+      <div class="stat"><b class="st-status">—</b><span>Respuesta</span></div>
+    </div>
+    <div class="tabs"><button class="active" data-v="req">Request</button><button data-v="res">Response</button></div>
+    <pre class="code"></pre>
+  </section>
+  <section class="card soap" id="lane-soap">
+    <div class="lane-head"><span class="tag">SOAP</span><span class="pill">XML · contrato WSDL</span></div>
+    <svg viewBox="0 0 560 150"><g class="scene"></g></svg>
+    <div class="stats">
+      <div class="stat"><b class="st-method">—</b><span>Método HTTP</span></div>
+      <div class="stat"><b class="st-bytes">—</b><span>Tamaño request</span></div>
+      <div class="stat"><b class="st-status">—</b><span>Respuesta</span></div>
+    </div>
+    <div class="tabs"><button class="active" data-v="req">Request</button><button data-v="res">Response</button></div>
+    <pre class="code"></pre>
+  </section>
+</div>
+
+<div class="key" id="opKey"></div>
+
+<h2>Diferencias principales</h2>
+<table>
+  <tr><th></th><th class="r">REST</th><th class="so">SOAP</th></tr>
+  <tr><td>¿Qué es?</td><td>Un <b>estilo de arquitectura</b>: reglas para usar HTTP de forma ordenada.</td><td>Un <b>protocolo</b> estándar (W3C) con reglas estrictas para el mensaje.</td></tr>
+  <tr><td>Formato</td><td>Normalmente <b>JSON</b> (también XML, texto, etc.).</td><td>Siempre <b>XML</b> dentro de un <code>Envelope</code>.</td></tr>
+  <tr><td>Cómo se identifica la operación</td><td>Por la <b>URL + método</b>: <code>GET /clientes/123</code>.</td><td>Por el <b>nombre de la operación</b> dentro del XML. Casi siempre usa <b>POST</b> a una única URL.</td></tr>
+  <tr><td>Contrato</td><td><b>OpenAPI / Swagger</b> (opcional, pero recomendado).</td><td><b>WSDL</b> obligatorio: define operaciones, tipos y la URL del servicio.</td></tr>
+  <tr><td>Errores</td><td><b>Status codes HTTP</b>: 400, 404, 409, 500…</td><td>Un bloque <code>&lt;soap:Fault&gt;</code> en el XML, normalmente con HTTP 500.</td></tr>
+  <tr><td>Tamaño del mensaje</td><td>Liviano.</td><td>Más pesado: el envelope y los namespaces agregan texto.</td></tr>
+  <tr><td>Seguridad</td><td>HTTPS + tokens (OAuth 2.0, JWT, API keys).</td><td>HTTPS + <b>WS-Security</b> (firma y cifrado dentro del mensaje).</td></tr>
+  <tr><td>Estado</td><td>Sin estado (stateless): cada request trae todo lo necesario.</td><td>Normalmente sin estado, aunque los estándares WS-* permiten flujos con estado.</td></tr>
+  <tr><td>Cache</td><td>Las respuestas GET se pueden cachear.</td><td>Al ser POST, no se cachea por HTTP.</td></tr>
+  <tr><td>Herramientas para probar</td><td>Postman, Newman, k6, curl, Karate.</td><td>SoapUI, Postman (con XML), Karate, k6.</td></tr>
+</table>
+
+<h2>Ventajas y desventajas</h2>
+<div class="pros">
+  <div class="card rest">
+    <h3>REST</h3>
+    <ul>
+      <li>Simple de leer, escribir y depurar.</li>
+      <li>Mensajes livianos: ideal para apps móviles y web.</li>
+      <li>Aprovecha HTTP: métodos, status codes, cache.</li>
+      <li>Fácil de consumir desde cualquier lenguaje o navegador.</li>
+      <li class="cons">✕ Sin un contrato estricto por defecto: depende de documentarlo bien (OpenAPI).</li>
+      <li class="cons">✕ Cada equipo puede diseñarlo distinto si no hay estándares internos.</li>
+    </ul>
+  </div>
+  <div class="card soap">
+    <h3>SOAP</h3>
+    <ul>
+      <li>Contrato estricto (WSDL): cliente y servidor saben exactamente qué esperar.</li>
+      <li>Validación de tipos con XSD antes de procesar.</li>
+      <li>Seguridad a nivel de mensaje (WS-Security), útil entre instituciones.</li>
+      <li>Muy presente en sistemas bancarios, core y legados.</li>
+      <li class="cons">✕ Mensajes grandes y difíciles de leer a simple vista.</li>
+      <li class="cons">✕ Más lento de desarrollar y más pesado de procesar.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>¿Dónde se encuentra cada uno?</h2>
+<div class="uses">
+  <div class="use"><span class="who" style="color:var(--blue)">REST</span><b>Apps móviles y web</b>Consultar saldos, listar productos, registrar solicitudes.</div>
+  <div class="use"><span class="who" style="color:var(--blue)">REST</span><b>Microservicios</b>Servicios pequeños que se comunican entre sí dentro de una plataforma.</div>
+  <div class="use"><span class="who" style="color:var(--purple)">SOAP</span><b>Core bancario y sistemas legados</b>Servicios construidos hace años que siguen siendo críticos.</div>
+  <div class="use"><span class="who" style="color:var(--purple)">SOAP</span><b>Integraciones entre instituciones</b>Entes reguladores, aseguradoras, pasarelas que exigen contrato formal.</div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> no es que uno sea “mejor”. REST domina en servicios nuevos por su simplicidad; SOAP sigue vivo donde se necesita un contrato estricto o donde ya existe una integración estable.
+  Es común que una misma empresa tenga ambos: una <strong>API REST</strong> moderna que, por detrás, llama a un <strong>servicio SOAP</strong> del sistema central. Al probar, hay que saber leer los dos formatos.
+</div>
+</div>
+
+<script>
+(()=>{
+/* ---------- Operaciones de ejemplo (datos ficticios) ---------- */
+const OPS={
+ get:{btn:'Consultar cliente',
+  key:'<strong>Consultar:</strong> en REST la operación está en la <strong>URL</strong> (<code>GET /clientes/123</code>). En SOAP siempre se hace un <strong>POST</strong> a la misma dirección y la operación (<code>ConsultarCliente</code>) va escrita dentro del XML. Observa la diferencia de tamaño del mensaje.',
+  rest:{method:'GET',status:'200 OK',ok:true,
+   req:`GET /api/v1/clientes/123 HTTP/1.1
+Host: api.demo.local
+Accept: application/json
+Authorization: Bearer <token>`,
+   res:`HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": 123,
+  "nombre": "Cliente Demo",
+  "estado": "activo"
+}`},
+  soap:{method:'POST',status:'200 OK',ok:true,
+   req:`POST /ws/ClienteService HTTP/1.1
+Host: soap.demo.local
+Content-Type: text/xml; charset=utf-8
+SOAPAction: "ConsultarCliente"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:cli="http://demo.local/clientes">
+  <soap:Header/>
+  <soap:Body>
+    <cli:ConsultarClienteRequest>
+      <cli:id>123</cli:id>
+    </cli:ConsultarClienteRequest>
+  </soap:Body>
+</soap:Envelope>`,
+   res:`HTTP/1.1 200 OK
+Content-Type: text/xml; charset=utf-8
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:cli="http://demo.local/clientes">
+  <soap:Body>
+    <cli:ConsultarClienteResponse>
+      <cli:id>123</cli:id>
+      <cli:nombre>Cliente Demo</cli:nombre>
+      <cli:estado>activo</cli:estado>
+    </cli:ConsultarClienteResponse>
+  </soap:Body>
+</soap:Envelope>`}},
+
+ post:{btn:'Crear solicitud',
+  key:'<strong>Crear:</strong> REST usa <strong>POST</strong> sobre el recurso y responde <strong>201 Created</strong>. SOAP no distingue tipos de operación por HTTP: todo es POST y suele responder <strong>200</strong>; el resultado se lee en el XML de respuesta.',
+  rest:{method:'POST',status:'201 Created',ok:true,
+   req:`POST /api/v1/solicitudes HTTP/1.1
+Host: api.demo.local
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "clienteId": 123,
+  "monto": 5000,
+  "plazoMeses": 12
+}`,
+   res:`HTTP/1.1 201 Created
+Location: /api/v1/solicitudes/SOL-0001
+Content-Type: application/json
+
+{
+  "id": "SOL-0001",
+  "estado": "registrada"
+}`},
+  soap:{method:'POST',status:'200 OK',ok:true,
+   req:`POST /ws/SolicitudService HTTP/1.1
+Host: soap.demo.local
+Content-Type: text/xml; charset=utf-8
+SOAPAction: "CrearSolicitud"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sol="http://demo.local/solicitudes">
+  <soap:Header/>
+  <soap:Body>
+    <sol:CrearSolicitudRequest>
+      <sol:clienteId>123</sol:clienteId>
+      <sol:monto>5000</sol:monto>
+      <sol:plazoMeses>12</sol:plazoMeses>
+    </sol:CrearSolicitudRequest>
+  </soap:Body>
+</soap:Envelope>`,
+   res:`HTTP/1.1 200 OK
+Content-Type: text/xml; charset=utf-8
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sol="http://demo.local/solicitudes">
+  <soap:Body>
+    <sol:CrearSolicitudResponse>
+      <sol:id>SOL-0001</sol:id>
+      <sol:estado>registrada</sol:estado>
+    </sol:CrearSolicitudResponse>
+  </soap:Body>
+</soap:Envelope>`}},
+
+ err:{btn:'Error: cliente no existe',
+  key:'<strong>Errores:</strong> REST comunica el problema con el <strong>status code</strong> (<code>404 Not Found</code>) y un JSON descriptivo. SOAP devuelve un <code>&lt;soap:Fault&gt;</code> dentro del XML, casi siempre con <strong>HTTP 500</strong>. Por eso, al probar SOAP no basta con mirar el status: hay que leer el <code>faultcode</code> y el <code>faultstring</code>.',
+  rest:{method:'GET',status:'404 Not Found',ok:false,
+   req:`GET /api/v1/clientes/999 HTTP/1.1
+Host: api.demo.local
+Accept: application/json
+Authorization: Bearer <token>`,
+   res:`HTTP/1.1 404 Not Found
+Content-Type: application/json
+
+{
+  "codigo": "CLIENTE_NO_ENCONTRADO",
+  "mensaje": "No existe un cliente con id 999"
+}`},
+  soap:{method:'POST',status:'500 Fault',ok:false,
+   req:`POST /ws/ClienteService HTTP/1.1
+Host: soap.demo.local
+Content-Type: text/xml; charset=utf-8
+SOAPAction: "ConsultarCliente"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:cli="http://demo.local/clientes">
+  <soap:Header/>
+  <soap:Body>
+    <cli:ConsultarClienteRequest>
+      <cli:id>999</cli:id>
+    </cli:ConsultarClienteRequest>
+  </soap:Body>
+</soap:Envelope>`,
+   res:`HTTP/1.1 500 Internal Server Error
+Content-Type: text/xml; charset=utf-8
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <soap:Fault>
+      <faultcode>soap:Client</faultcode>
+      <faultstring>Cliente no encontrado</faultstring>
+      <detail>
+        <codigo>CLIENTE_NO_ENCONTRADO</codigo>
+      </detail>
+    </soap:Fault>
+  </soap:Body>
+</soap:Envelope>`}},
+};
+
+/* ---------- Resaltado de sintaxis simple ---------- */
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function hl(raw){
+  const [head,...rest]=raw.split('\n\n'); const body=rest.join('\n\n');
+  let h=esc(head).replace(/^(GET|POST|PUT|DELETE)\b/,'<span class="m">$1</span>')
+    .replace(/^(HTTP\/1\.1) (2\d\d [^\n]*)/,'$1 <span class="s">$2</span>')
+    .replace(/^(HTTP\/1\.1) ([45]\d\d [^\n]*)/,'$1 <span class="e">$2</span>')
+    .replace(/\n([\w-]+):/g,'\n<span class="h">$1:</span>');
+  let b=esc(body);
+  if(body.trim().startsWith('<')){
+    b=b.replace(/(&lt;\/?)([\w:]+)([^&]*?)(\/?&gt;)/g,(m,o,tag,attrs,c)=>
+      `${o}<span class="${/Fault|fault/.test(tag)?'e':'t'}">${tag}</span>${attrs.replace(/([\w:]+)=("[^"]*")/g,'<span class="a">$1</span>=<span class="s">$2</span>')}${c}`);
+  } else {
+    b=b.replace(/("[\w]+")(:)/g,'<span class="a">$1</span>$2').replace(/: ("[^"]*")/g,': <span class="s">$1</span>');
+  }
+  return h+(body?'\n\n'+b:'');
+}
+const bytes=s=>new TextEncoder().encode(s.replace(/\n/g,'\r\n')).length;
+
+/* ---------- Escena animada por carril ---------- */
+const COL={rest:'#59a9e6',soap:'#a982e2',ok:'#57c785',err:'#ef6570'};
+function scene(kind){
+  return `
+  <rect x="14" y="40" width="120" height="70" rx="12" fill="#222936" stroke="#4a5263" stroke-width="2"/>
+  <text x="74" y="72" text-anchor="middle" fill="#f5f7fb" font-size="14" font-weight="700">📱 Cliente</text>
+  <text x="74" y="92" text-anchor="middle" fill="#aab3c2" font-size="11">app / Postman</text>
+  <rect x="426" y="40" width="120" height="70" rx="12" fill="#222936" stroke="#4a5263" stroke-width="2" class="srv"/>
+  <text x="486" y="72" text-anchor="middle" fill="#f5f7fb" font-size="14" font-weight="700">⚙️ Servicio</text>
+  <text x="486" y="92" text-anchor="middle" fill="#aab3c2" font-size="11">${kind==='rest'?'/api/v1/…':'/ws/…?wsdl'}</text>
+  <line x1="134" y1="75" x2="426" y2="75" stroke="#333b49" stroke-width="3"/>
+  <text x="280" y="135" text-anchor="middle" fill="#aab3c2" font-size="11" class="cap">HTTP</text>
+  <g class="pkt"></g>`;
+}
+/* Paquete: REST = sobre pequeño de JSON; SOAP = sobre grande (envelope XML) */
+function packet(kind,x,color,label){
+  const w=kind==='rest'?46:84, h=kind==='rest'?28:44, y=75-h/2;
+  return `<rect x="${x-w/2}" y="${y}" width="${w}" height="${h}" rx="5" fill="${color}" opacity=".9"/>
+    <polyline points="${x-w/2},${y} ${x},${y+h*0.55} ${x+w/2},${y}" fill="none" stroke="#10131a" stroke-width="2"/>
+    <text x="${x}" y="${y-8}" text-anchor="middle" fill="${color}" font-size="11" font-weight="700" font-family="Consolas,monospace">${label}</text>`;
+}
+
+const lanes={rest:document.getElementById('lane-rest'),soap:document.getElementById('lane-soap')};
+let op='get', runId=0, view={rest:'req',soap:'req'};
+
+function showCode(kind){
+  const L=lanes[kind], d=OPS[op][kind];
+  L.querySelector('.code').innerHTML=hl(d[view[kind]]);
+  L.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.v===view[kind]));
+}
+function setOp(k){
+  op=k; runId++;
+  document.querySelectorAll('#ops button').forEach(b=>b.classList.toggle('active',b.dataset.k===k));
+  document.getElementById('opKey').innerHTML=OPS[k].key;
+  for(const kind of ['rest','soap']){
+    const L=lanes[kind], d=OPS[k][kind];
+    L.querySelector('.scene').innerHTML=scene(kind);
+    L.querySelector('.st-method').textContent=d.method;
+    L.querySelector('.st-bytes').textContent=bytes(d.req)+' B';
+    L.querySelector('.st-status').textContent='—';
+    L.querySelector('.st-status').style.color='';
+    view[kind]='req'; showCode(kind);
+  }
+}
+
+function animate(kind,id){
+  const L=lanes[kind], d=OPS[op][kind], g=L.querySelector('.pkt'), cap=L.querySelector('.cap'), srv=L.querySelector('.srv');
+  const resColor=d.ok?COL.ok:COL.err;
+  // SOAP tarda un poco más: mensaje más grande + parseo de XML
+  const travel=kind==='rest'?1300:1800, proc=kind==='rest'?500:900;
+  const phases=[
+    {t:travel, from:170,to:390, color:COL[kind], label:d.method, cap:'request · '+bytes(d.req)+' B', v:'req'},
+    {t:proc,   proc:true, cap:kind==='rest'?'procesando JSON…':'validando XML contra el WSDL…'},
+    {t:travel, from:390,to:170, color:resColor, label:d.status, cap:'response · '+bytes(d.res)+' B', v:'res'},
+  ];
+  let i=0, t0=performance.now();
+  view[kind]='req'; showCode(kind);
+  L.querySelector('.st-status').textContent='…'; L.querySelector('.st-status').style.color='';
+  const tick=now=>{
+    if(id!==runId) return;
+    const ph=phases[i], p=Math.min(1,(now-t0)/ph.t), e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+    cap.textContent=ph.cap;
+    if(ph.proc){ g.innerHTML=''; srv.setAttribute('stroke', p*10%2<1?'#f3a43b':'#4a5263'); }
+    else { srv.setAttribute('stroke','#4a5263'); g.innerHTML=packet(kind,ph.from+(ph.to-ph.from)*e,ph.color,ph.label); }
+    if(p>=1){
+      i++; t0=now;
+      if(i===2){ view[kind]='res'; showCode(kind); }
+      if(i>=phases.length){
+        L.querySelector('.st-status').textContent=d.status;
+        L.querySelector('.st-status').style.color=resColor;
+        return;
+      }
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+document.getElementById('ops').innerHTML=Object.entries(OPS).map(([k,o])=>`<button data-k="${k}">${o.btn}</button>`).join('');
+document.getElementById('ops').onclick=e=>{const b=e.target.closest('button');if(b)setOp(b.dataset.k)};
+document.getElementById('send').onclick=()=>{setOp(op);const id=runId;animate('rest',id);animate('soap',id)};
+document.getElementById('reset').onclick=()=>setOp(op);
+for(const kind of ['rest','soap'])
+  lanes[kind].querySelector('.tabs').onclick=e=>{const b=e.target.closest('button');if(b){view[kind]=b.dataset.v;showCode(kind)}};
+
+setOp('get');
+})();
+</script>
+</body></html>

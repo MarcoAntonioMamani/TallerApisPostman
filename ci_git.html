@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Git y GitHub</title>
+<link rel="stylesheet" href="pm/pm.css">
+<link rel="stylesheet" href="ci/ci.css">
+<style>
+.flow{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}
+.zone{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;min-height:220px;transition:border-color .3s,box-shadow .3s}
+.zone.hot{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
+.zone h4{margin:0;font-size:15px;display:flex;gap:8px;align-items:center}
+.zone h4 i{font-style:normal;font-size:20px}
+.zone small{display:block;color:var(--muted);font-size:12px;line-height:1.45;margin:4px 0 10px}
+.zone .files{display:grid;gap:5px}
+.fi{font-family:Consolas,monospace;font-size:12px;background:var(--panel2);border-radius:7px;padding:5px 8px;display:flex;gap:6px;align-items:center;animation:pop .35s}
+.fi.mod{outline:1px solid var(--yellow)}.fi.mod::after{content:'M';margin-left:auto;color:var(--yellow);font-weight:800}
+.fi.new::after{content:'U';margin-left:auto;color:var(--green);font-weight:800}
+.fi.cm{flex-direction:column;align-items:flex-start;gap:1px}
+.fi.cm b{color:var(--acc);font-size:11px}
+.fi.cm span{color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
+.arrows{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:10px}
+.arrows .btn{width:100%;font-family:Consolas,monospace}
+.arrows .btn.go{background:var(--acc);color:#111;border-color:var(--acc)}
+.chip{position:absolute;top:58px;left:0;width:calc(25% - 10px);pointer-events:none;opacity:0;transition:left .9s cubic-bezier(.5,0,.3,1),opacity .2s;display:flex;justify-content:center}
+.chip span{background:var(--acc);color:#111;font-weight:800;font-family:Consolas,monospace;font-size:12px;padding:5px 10px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.explain2{margin-top:12px;background:var(--panel2);border-radius:10px;padding:11px 13px;font-size:14px;line-height:1.6;min-height:48px;color:var(--muted)}
+.explain2 b{color:var(--text)}
+.tree2{font-family:Consolas,monospace;font-size:13px;line-height:1.75;background:#141820;border-radius:10px;padding:12px 14px;color:var(--text)}
+.tree2 .d{color:var(--muted)}.tree2 .x{color:var(--red)}
+.gh{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:16px;color:#e6edf3;font-size:13px}
+.gh h4{margin:0 0 12px;font-size:17px}
+.gh .f{margin-bottom:10px}.gh .f label{display:block;font-weight:700;margin-bottom:4px;font-size:12.5px}
+.gh .in{border:1px solid #30363d;background:#010409;border-radius:6px;padding:6px 9px;font-family:Consolas,monospace;font-size:12.5px;display:inline-block;min-width:220px}
+.gh .rad{display:flex;gap:8px;align-items:flex-start;margin:5px 0;color:#8d96a0}
+.gh .rad b{color:#e6edf3}
+.gh .bt{display:inline-block;background:#238636;color:#fff;border-radius:6px;padding:6px 14px;font-weight:700;margin-top:6px}
+.gh .tip{border-left:3px solid var(--acc);padding-left:8px;color:#8d96a0;font-size:12px;margin-top:4px}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Git y GitHub: tu proyecto en un repositorio</h1>
+<div class="sub">Antes de automatizar con Jenkins, las pruebas tienen que vivir en un <b>repositorio</b>. <b>Git</b> guarda el historial de cada cambio en tu PC; <b>GitHub</b> guarda una copia en la nube que comparte el equipo… y desde donde <b>Jenkins</b> descarga las pruebas para ejecutarlas.</div>
+
+<div class="tabs" id="tabs">
+  <button class="btn on" data-t="que">1 · Cómo funciona Git</button>
+  <button class="btn" data-t="inst">2 · Instalar y configurar</button>
+  <button class="btn" data-t="gh">3 · Crear el repositorio</button>
+  <button class="btn" data-t="push">4 · Subir el proyecto</button>
+  <button class="btn" data-t="dia">5 · El día a día</button>
+</div>
+
+<!-- ======================= 1. CÓMO FUNCIONA ======================= -->
+<section class="pane on" id="p-que">
+  <div class="flow" id="flow">
+    <div class="zone" id="z0"><h4><i>📁</i>Carpeta de trabajo</h4><small>Tus archivos tal como los ves en el explorador. Aquí editas.</small><div class="files"></div></div>
+    <div class="zone" id="z1"><h4><i>📋</i>Staging</h4><small>Los cambios que elegiste para el próximo commit.</small><div class="files"></div></div>
+    <div class="zone" id="z2"><h4><i>🗃️</i>Repositorio local</h4><small>El historial: cada <b>commit</b> es una “foto” con mensaje, autor y fecha.</small><div class="files"></div></div>
+    <div class="zone" id="z3"><h4><i>☁️</i>GitHub (remoto)</h4><small>La copia compartida. <b>Jenkins</b> descarga de aquí.</small><div class="files"></div></div>
+    <div class="chip" id="chip"><span>git add</span></div>
+  </div>
+  <div class="arrows">
+    <button class="btn" data-a="edit">✏️ Editar la colección</button>
+    <button class="btn" data-a="add">git add</button>
+    <button class="btn" data-a="commit">git commit</button>
+    <button class="btn" data-a="push">git push</button>
+  </div>
+  <div class="explain2" id="exp">Presiona los botones en orden para ver el viaje de un cambio, desde tu PC hasta GitHub.</div>
+  <h2>Vocabulario mínimo</h2>
+  <div class="glos">
+    <div><b><i>📦</i>Repositorio</b>Carpeta del proyecto con todo su historial de cambios.</div>
+    <div><b><i>📸</i>Commit</b>Un punto guardado en el historial, con un mensaje que explica qué cambió.</div>
+    <div><b><i>🌿</i>Rama (branch)</b>Una línea de trabajo. La principal se llama <code>main</code>.</div>
+    <div><b><i>🔗</i>Remoto (origin)</b>La copia del repositorio en GitHub.</div>
+    <div><b><i>⬆️</i>push</b>Enviar tus commits al remoto.</div>
+    <div><b><i>⬇️</i>pull</b>Traer los commits nuevos del remoto a tu PC.</div>
+    <div><b><i>📥</i>clone</b>Descargar un repositorio completo por primera vez. Es lo que hace Jenkins.</div>
+    <div><b><i>🙈</i>.gitignore</b>Lista de lo que Git <b>no</b> debe subir: dependencias, reportes, secretos.</div>
+  </div>
+</section>
+
+<!-- ======================= 2. INSTALAR ======================= -->
+<section class="pane" id="p-inst">
+  <div class="two">
+    <div class="steps2" data-term="tInst">
+      <div class="st" data-s="0"><b class="h"><span class="n">1</span>Descargar Git para Windows</b>Entra a <a href="https://git-scm.com/downloads/win" target="_blank">git-scm.com</a> → <b>Download for Windows</b>. Instala con las opciones por defecto: incluye <b>Git Bash</b> y el <b>Git Credential Manager</b>, que guarda tu inicio de sesión de GitHub.</div>
+      <div class="st" data-s="1"><b class="h"><span class="n">2</span>Verificar</b>Abre una terminal <b>nueva</b> y revisa la versión.</div>
+      <div class="st" data-s="2"><b class="h"><span class="n">3</span>Decirle a Git quién eres</b>Cada commit lleva nombre y correo. Se configura <b>una sola vez</b> por PC con <code>--global</code>. Usa el mismo correo de tu cuenta de GitHub.</div>
+      <div class="st" data-s="3"><b class="h"><span class="n">4</span>Rama principal: main</b>Hace que los repositorios nuevos empiecen en <code>main</code>, el mismo nombre que usa GitHub.</div>
+      <div class="st" data-s="4"><b class="h"><span class="n">5</span>Revisar la configuración</b><code>git config --list</code> muestra lo que quedó guardado.</div>
+      <div class="st" data-s="5"><b class="h"><span class="n">6</span>Red corporativa con proxy</b>Si <code>git push</code> no logra conectarse, la red puede exigir un proxy. Pide la dirección a soporte y configúrala. <b>No</b> escribas tu contraseña dentro de la URL del proxy.</div>
+    </div>
+    <div class="term" id="tInst"><div class="tb"><i></i><i></i><i></i> Símbolo del sistema <span class="k">clic en un paso ▸</span></div><pre></pre></div>
+  </div>
+  <div class="note">💡 También necesitas una <b>cuenta de GitHub</b> (gratuita) en <a href="https://github.com/signup" target="_blank">github.com/signup</a>. Activa la verificación en dos pasos: GitHub la exige para subir código.</div>
+</section>
+
+<!-- ======================= 3. CREAR EL REPOSITORIO ======================= -->
+<section class="pane" id="p-gh">
+  <div class="cols2">
+    <div class="gh">
+      <h4>Create a new repository</h4>
+      <div class="f"><label>Repository name *</label><span class="in">taller-api-pruebas</span><div class="tip">Corto, en minúsculas y con guiones.</div></div>
+      <div class="f"><label>Description</label><span class="in">Pruebas de API con Postman, Newman y Jenkins</span></div>
+      <div class="f"><label>Visibility</label>
+        <div class="rad">◉ <span><b>Public</b> · cualquiera puede verlo. Jenkins lo descarga sin credenciales.</span></div>
+        <div class="rad">○ <span><b>Private</b> · solo tú y quienes invites. Jenkins necesitará un token para descargarlo.</span></div></div>
+      <div class="f"><label>Initialize this repository with:</label>
+        <div class="rad">☐ <span>Add a README file</span></div>
+        <div class="rad">☐ <span>Add .gitignore</span></div>
+        <div class="tip">Déjalos <b>sin marcar</b>: ya tienes el proyecto en tu PC y lo vas a subir completo.</div></div>
+      <span class="bt">Create repository</span>
+    </div>
+    <div>
+      <div class="steps2">
+        <div class="st"><b class="h"><span class="n">1</span>Nuevo repositorio</b>En GitHub, botón <b>＋</b> (arriba a la derecha) → <b>New repository</b>.</div>
+        <div class="st"><b class="h"><span class="n">2</span>Llena el formulario</b>Como en la imagen. Para el taller usa <b>Public</b>: es lo más simple para conectar Jenkins.</div>
+        <div class="st"><b class="h"><span class="n">3</span>Copia la URL</b>GitHub muestra una página con la dirección del repositorio, por ejemplo<br><code>https://github.com/tu-usuario/taller-api-pruebas.git</code><br>La usarás en el paso siguiente y en Jenkins.</div>
+      </div>
+      <div class="note warn">🔐 <b>Público significa público.</b> Sube solo datos ficticios: nada de URLs internas, tokens, contraseñas ni datos de clientes. Los proyectos de la empresa van en el <b>repositorio corporativo</b> que defina tu organización, nunca en una cuenta personal.</div>
+    </div>
+  </div>
+  <h2>Qué se sube y qué no</h2>
+  <div class="cols2">
+<div class="tree2">📦 taller-api-pruebas
+ ├─ 📁 postman
+ │   ├─ Taller Petstore.postman_collection.json
+ │   └─ Petstore - QA.postman_environment.json   <span class="d">← apiKey vacía</span>
+ ├─ 📁 datos
+ │   ├─ mascotas.csv
+ │   └─ mascotas.json
+ ├─ package.json      <span class="d">← newman y reporteros</span>
+ ├─ Jenkinsfile       <span class="d">← el pipeline</span>
+ ├─ .gitignore
+ └─ README.md
+ <span class="x">✗ node_modules/  ✗ reports/  ✗ allure-results/</span></div>
+<pre class="code"><span class="c"># .gitignore</span>
+<span class="c"># Dependencias (se instalan con npm install)</span>
+node_modules/
+
+<span class="c"># Resultados y reportes (los genera cada ejecución)</span>
+reports/
+allure-results/
+allure-report/
+
+<span class="c"># Nunca subir secretos</span>
+*.local.json
+.env</pre>
+  </div>
+</section>
+
+<!-- ======================= 4. SUBIR ======================= -->
+<section class="pane" id="p-push">
+  <div class="two">
+    <div class="steps2" data-term="tPush">
+      <div class="st" data-s="0"><b class="h"><span class="n">1</span>Entrar a la carpeta del proyecto</b>Con la colección y el environment <b>exportados</b> desde Postman, más los datos, el <code>package.json</code>, el <code>Jenkinsfile</code> y el <code>.gitignore</code>.</div>
+      <div class="st" data-s="1"><b class="h"><span class="n">2</span>git init</b>Convierte la carpeta en un repositorio (crea la carpeta oculta <code>.git</code>).</div>
+      <div class="st" data-s="2"><b class="h"><span class="n">3</span>git status</b>El comando que más usarás: muestra qué cambió y qué falta guardar. Fíjate que <code>node_modules</code> no aparece: lo excluye el <code>.gitignore</code>.</div>
+      <div class="st" data-s="3"><b class="h"><span class="n">4</span>git add + git commit</b><code>git add .</code> pasa todo a staging y <code>git commit -m "…"</code> crea la primera foto del historial. Escribe mensajes que expliquen <b>qué</b> y <b>por qué</b>.</div>
+      <div class="st" data-s="4"><b class="h"><span class="n">5</span>Conectar con GitHub</b><code>git remote add origin &lt;URL&gt;</code> le dice a Git dónde está la copia remota.</div>
+      <div class="st" data-s="5"><b class="h"><span class="n">6</span>git push</b>Sube los commits. La primera vez se abre el navegador para iniciar sesión en GitHub (Credential Manager) y queda recordado. <code>-u</code> enlaza tu rama con la remota: luego basta <code>git push</code>.</div>
+      <div class="st" data-s="6"><b class="h"><span class="n">7</span>Verificar</b>Recarga la página del repositorio en GitHub: ahí están tus archivos. <code>git log --oneline</code> muestra el historial.</div>
+    </div>
+    <div class="term" id="tPush"><div class="tb"><i></i><i></i><i></i> Símbolo del sistema — C:\proyectos\taller-api-pruebas <span class="k">clic en un paso ▸</span></div><pre></pre></div>
+  </div>
+</section>
+
+<!-- ======================= 5. DÍA A DÍA ======================= -->
+<section class="pane" id="p-dia">
+  <div class="two">
+    <div class="steps2" data-term="tDia">
+      <div class="st" data-s="0"><b class="h"><span class="n">1</span>Cambias la colección en Postman</b>Agregas un test, lo pruebas y vuelves a <b>exportar</b> la colección encima del archivo de la carpeta <code>postman/</code>.</div>
+      <div class="st" data-s="1"><b class="h"><span class="n">2</span>Revisas qué cambió</b><code>git status</code> y <code>git diff</code> muestran exactamente las líneas modificadas, antes de guardarlas.</div>
+      <div class="st" data-s="2"><b class="h"><span class="n">3</span>Guardas y subes</b><code>add</code> → <code>commit</code> → <code>push</code>. Jenkins usará esta versión en su próxima ejecución.</div>
+      <div class="st" data-s="3"><b class="h"><span class="n">4</span>Traes cambios de otros</b>Si alguien más subió cambios, <code>git pull</code> los descarga y los une con los tuyos.</div>
+      <div class="st" data-s="4"><b class="h"><span class="n">5</span>Error: rejected</b>GitHub tiene commits que tú no tienes. Primero <code>git pull --rebase</code>, después <code>git push</code>.</div>
+      <div class="st" data-s="5"><b class="h"><span class="n">6</span>Subí un secreto por error</b>Borrarlo en un commit nuevo <b>no</b> basta: sigue en el historial. Lo correcto es <b>revocar y cambiar</b> ese token o clave de inmediato.</div>
+    </div>
+    <div class="term" id="tDia"><div class="tb"><i></i><i></i><i></i> Símbolo del sistema — C:\proyectos\taller-api-pruebas <span class="k">clic en un paso ▸</span></div><pre></pre></div>
+  </div>
+</section>
+
+<div class="key"><strong>Idea clave:</strong> el repositorio es la <strong>única fuente de verdad</strong> de tus pruebas. Lo que está en GitHub es lo que Jenkins ejecuta: si no hiciste <strong>push</strong>, Jenkins no se entera del cambio.</div>
+</div>
+
+<script src="ci/ci.js"></script>
+<script>
+(()=>{
+const {$}=CI; CI.tabs();
+/* ---------- animación de las 4 zonas ---------- */
+const Z=[0,1,2,3].map(i=>$('z'+i).querySelector('.files'));
+const base=['postman/Taller Petstore.json','datos/mascotas.csv','package.json','Jenkinsfile'];
+let stage=-1;
+function reset(){
+  Z[0].innerHTML=base.map(f=>`<div class="fi">📄 ${f}</div>`).join('');
+  Z[1].innerHTML='';Z[2].innerHTML='<div class="fi cm"><b>a1f3c9e</b><span>Primera versión de las pruebas</span></div>';Z[3].innerHTML='<div class="fi cm"><b>a1f3c9e</b><span>Primera versión de las pruebas</span></div>';
+  stage=-1; mark();
+}
+const EXP={
+  edit:'<b>Editaste</b> la colección (agregaste un test) y la exportaste. Git detecta el archivo <b>modificado (M)</b>, pero todavía no lo guarda.',
+  add:'<b>git add</b> pasa el cambio a <b>staging</b>: “esto va en el próximo commit”. Puedes elegir qué archivos entran.',
+  commit:'<b>git commit -m "Agrega test de tiempo de respuesta"</b> crea una foto en tu historial <b>local</b>. Solo existe en tu PC.',
+  push:'<b>git push</b> envía el commit a <b>GitHub</b>. Ahora el equipo lo ve… y Jenkins lo ejecutará en el próximo build.'};
+const ORDER=['edit','add','commit','push'];
+function mark(){document.querySelectorAll('.arrows .btn').forEach((b,i)=>b.classList.toggle('go',i===stage+1))}
+function fly(from,to,label){
+  const chip=$('chip');chip.querySelector('span').textContent=label;
+  chip.style.transition='none';chip.style.left=`calc(${from*25}% + ${from*3.5}px)`;chip.style.opacity=1;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{chip.style.transition='';chip.style.left=`calc(${to*25}% + ${to*3.5}px)`}));
+  setTimeout(()=>chip.style.opacity=0,950);
+}
+function hot(i){document.querySelectorAll('.zone').forEach((z,k)=>z.classList.toggle('hot',k===i))}
+document.querySelector('.arrows').onclick=e=>{
+  const b=e.target.closest('.btn');if(!b)return;const a=b.dataset.a,k=ORDER.indexOf(a);
+  if(k===0)reset(); else if(k!==stage+1){ $('exp').innerHTML='⚠ Sigue el orden: <b>'+ORDER[stage+1].replace(/^(?!edit)/,'git ').replace('edit','Editar')+'</b>.';return }
+  stage=k;mark();$('exp').innerHTML=EXP[a];
+  if(a==='edit'){Z[0].children[0].classList.add('mod');hot(0)}
+  if(a==='add'){fly(0,1,'git add');setTimeout(()=>{Z[1].innerHTML='<div class="fi mod">📄 postman/Taller Petstore.json</div>';Z[0].children[0].classList.remove('mod');hot(1)},850)}
+  if(a==='commit'){fly(1,2,'git commit');setTimeout(()=>{Z[1].innerHTML='';Z[2].insertAdjacentHTML('afterbegin','<div class="fi cm"><b>7be20d4</b><span>Agrega test de tiempo de respuesta</span></div>');hot(2)},850)}
+  if(a==='push'){fly(2,3,'git push');setTimeout(()=>{Z[3].insertAdjacentHTML('afterbegin','<div class="fi cm"><b>7be20d4</b><span>Agrega test de tiempo de respuesta</span></div><div class="fi" style="color:var(--acc)">🤖 Jenkins: nuevo commit detectado</div>');hot(3);stage=-1;mark()},850)}
+};
+reset();
+
+/* ---------- terminales ---------- */
+const U='C:\\Users\\ana> ',P='C:\\proyectos\\taller-api-pruebas> ';
+const SEQ={
+ tInst:[
+  [['d','(navegador) git-scm.com → Download for Windows\n'],['y','  ⬇ Git-2.x-64-bit.exe\n'],['d','(instalador) Next → Next → … → Install → Finish\n  ✔ Git Bash   ✔ Git Credential Manager\n']],
+  [['p',U],['w','git --version\n'],['','git version 2.51.0.windows.1\n']],
+  [['p',U],['w','git config --global user.name "Ana Quispe"\n'],['p',U],['w','git config --global user.email "ana.quispe@ejemplo.com"\n'],['d','(sin mensaje = quedó guardado)\n']],
+  [['p',U],['w','git config --global init.defaultBranch main\n']],
+  [['p',U],['w','git config --list --global\n'],['','user.name=Ana Quispe\nuser.email=ana.quispe@ejemplo.com\ninit.defaultbranch=main\n']],
+  [['p',U],['w','git config --global http.proxy http://proxy.empresa.local:8080\n'],['d','(la dirección te la da soporte; para quitarlo:)\n'],['p',U],['w','git config --global --unset http.proxy\n']],
+ ],
+ tPush:[
+  [['p','C:\\proyectos> '],['w','cd taller-api-pruebas\n'],['p',P],['w','dir /b /a\n'],['','.gitignore\ndatos\nJenkinsfile\npackage.json\npostman\nREADME.md\n']],
+  [['p',P],['w','git init\n'],['','Initialized empty Git repository in C:/proyectos/taller-api-pruebas/.git/\n']],
+  [['p',P],['w','git status\n'],['','On branch main\n\nNo commits yet\n\nUntracked files:\n  (use "git add <file>..." to include in what will be committed)\n'],['r','        .gitignore\n        Jenkinsfile\n        README.md\n        datos/\n        package.json\n        postman/\n'],['','\nnothing added to commit but untracked files present\n']],
+  [['p',P],['w','git add .\n'],['p',P],['w','git commit -m "Pruebas de API de Petstore con pipeline de Jenkins"\n'],['','[main (root-commit) a1f3c9e] Pruebas de API de Petstore con pipeline de Jenkins\n 8 files changed, 412 insertions(+)\n create mode 100644 .gitignore\n create mode 100644 Jenkinsfile\n …\n']],
+  [['p',P],['w','git remote add origin https://github.com/ana-quispe/taller-api-pruebas.git\n'],['p',P],['w','git remote -v\n'],['','origin  https://github.com/ana-quispe/taller-api-pruebas.git (fetch)\norigin  https://github.com/ana-quispe/taller-api-pruebas.git (push)\n']],
+  [['p',P],['w','git push -u origin main\n'],['y','(se abre el navegador: “Sign in with your browser” → Authorize)\n'],['','Enumerating objects: 12, done.\nWriting objects: 100% (12/12), 5.83 KiB | 1.94 MiB/s, done.\nTo https://github.com/ana-quispe/taller-api-pruebas.git\n'],['g',' * [new branch]      main -> main\n'],['',"branch 'main' set up to track 'origin/main'.\n"]],
+  [['p',P],['w','git log --oneline\n'],['u','a1f3c9e (HEAD -> main, origin/main) '],['','Pruebas de API de Petstore con pipeline de Jenkins\n'],['d','\n(en GitHub ya se ven los archivos y el README)\n']],
+ ],
+ tDia:[
+  [['d','(Postman) Taller Petstore → agregar test "Responde en menos de 2 s"\n(Postman) ⋯ → More → Export collection → Other → Collection v2.1 → reemplazar postman\\Taller Petstore.postman_collection.json\n']],
+  [['p',P],['w','git status\n'],['','Changes not staged for commit:\n'],['r','        modified:   postman/Taller Petstore.postman_collection.json\n'],['p',P],['w','git diff --stat\n'],['',' postman/Taller Petstore.postman_collection.json | 9 '],['g','++++++'],['r','+++\n'],['',' 1 file changed, 9 insertions(+)\n']],
+  [['p',P],['w','git add postman\n'],['p',P],['w','git commit -m "Agrega test de tiempo de respuesta"\n'],['','[main 7be20d4] Agrega test de tiempo de respuesta\n 1 file changed, 9 insertions(+)\n'],['p',P],['w','git push\n'],['','To https://github.com/ana-quispe/taller-api-pruebas.git\n   a1f3c9e..7be20d4  main -> main\n']],
+  [['p',P],['w','git pull\n'],['','Updating 7be20d4..c41e8b2\nFast-forward\n datos/mascotas.csv | 1 +\n 1 file changed, 1 insertion(+)\n']],
+  [['p',P],['w','git push\n'],['r',' ! [rejected]        main -> main (fetch first)\nerror: failed to push some refs to \'https://github.com/ana-quispe/taller-api-pruebas.git\'\n'],['y','hint: Updates were rejected because the remote contains work that you do not have locally.\n'],['p',P],['w','git pull --rebase\n'],['','Successfully rebased and updated refs/heads/main.\n'],['p',P],['w','git push\n'],['g','   c41e8b2..9d03a7f  main -> main\n']],
+  [['d','1. Revocar el token o clave en el sistema que lo emitió (queda inválido).\n2. Generar uno nuevo y guardarlo en las credenciales de Jenkins, no en el repo.\n3. Agregar el archivo al .gitignore y avisar al equipo de seguridad.\n'],['y','\n⚠ Un secreto que llegó a un repositorio público debe considerarse comprometido.\n']],
+ ],
+};
+CI.terms(SEQ);
+})();
+</script>
+</body></html>

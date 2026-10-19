@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Datos de prueba desde CSV y JSON</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.dd{display:grid;grid-template-columns:.9fr 1.1fr;gap:14px}
+.csv{width:100%;border-collapse:collapse;font-family:Consolas,monospace;font-size:13px}
+.csv th{background:var(--panel2);color:var(--orange);text-align:left;padding:7px 10px}
+.csv td{padding:7px 10px;border-bottom:1px solid var(--border);transition:background .3s}
+.csv tr.cur td{background:rgba(243,164,59,.18)}
+.csv tr.ok td:last-child::after{content:'  ✓';color:var(--green);font-weight:800}
+.csv tr.ko td:last-child::after{content:'  ✗';color:var(--red);font-weight:800}
+.csv tr.ko td{background:rgba(239,101,112,.12)}
+pre.tpl{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap}
+.tpl .v{color:var(--orange);font-weight:700;transition:color .3s}
+.tpl .v.fill{color:var(--green)}
+.res{margin-top:10px;display:grid;gap:4px}
+.res div{font-size:12.5px;display:flex;gap:6px;align-items:center}
+.res .P{background:#1f5f3a;color:#9be3b6;font-size:10px;font-weight:800;padding:1px 6px;border-radius:3px}
+.res .F{background:#6b2525;color:#f7b1a8;font-size:10px;font-weight:800;padding:1px 6px;border-radius:3px}
+.fmt{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fmt pre{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.55;white-space:pre}
+.k{color:#9cdcfe}.s{color:#ce9178}.c{color:#6a9955}.kw{color:#dcdcaa}
+@media(max-width:1000px){.dd,.fmt{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Datos de prueba desde archivos CSV y JSON</h1>
+<div class="sub">Hasta ahora cada request tenía <b>un</b> juego de datos. Con un <b>archivo de datos</b>, el mismo request se ejecuta <b>una vez por cada fila</b>: cada fila es una <b>iteración</b> y cada columna se convierte en una <b>variable</b>.
+A esto se le llama pruebas <b>data-driven</b> (dirigidas por datos): agregar un caso de prueba es agregar una fila, sin tocar la colección.</div>
+
+<h2>Cómo funciona</h2>
+<div class="dd">
+  <div class="card"><b>📄 mascotas.csv</b> <span class="small">· cada fila = una iteración</span>
+    <table class="csv" id="csv"></table>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" id="go">▶ Ejecutar con el Runner</button><button class="btn" id="rs">↻</button></div>
+    <div class="small" id="msg" style="margin-top:8px"></div></div>
+  <div class="card"><b>📨 El request usa las columnas como variables</b>
+<pre class="tpl" id="tpl"></pre>
+    <div class="res" id="res"></div></div>
+</div>
+
+<h2>Los dos formatos</h2>
+<div class="fmt">
+  <div class="card"><b>CSV</b> <span class="small">· la primera fila son los nombres de las variables</span>
+<pre><span class="k">nombre,categoria,status</span>
+Firulais,Perros,available
+Michi,Gatos,pending
+Rocky,Perros,sold
+Luna,Gatos,available
+Kira,Perros,perdida</pre>
+    <div class="small" style="margin-top:8px">Simple y fácil de editar en Excel. Todos los valores llegan como <b>texto</b>.</div>
+    <a class="btn" href="postman/datos/mascotas.csv" download style="display:inline-block;margin-top:8px;text-decoration:none">⬇ Descargar mascotas.csv</a></div>
+  <div class="card"><b>JSON</b> <span class="small">· una lista de objetos, uno por iteración</span>
+<pre>[
+  { <span class="k">"nombre"</span>: <span class="s">"Firulais"</span>, <span class="k">"categoria"</span>: <span class="s">"Perros"</span>, <span class="k">"status"</span>: <span class="s">"available"</span> },
+  { <span class="k">"nombre"</span>: <span class="s">"Michi"</span>,    <span class="k">"categoria"</span>: <span class="s">"Gatos"</span>,  <span class="k">"status"</span>: <span class="s">"pending"</span> },
+  …
+]</pre>
+    <div class="small" style="margin-top:8px">Permite <b>números, booleanos y objetos</b> (por ejemplo, un body completo por fila).</div>
+    <a class="btn" href="postman/datos/mascotas.json" download style="display:inline-block;margin-top:8px;text-decoration:none">⬇ Descargar mascotas.json</a></div>
+</div>
+
+<h2>Usar los datos en el request y en los scripts</h2>
+<div class="cols2">
+  <div class="tile"><b class="h">En URL, headers y body</b>Igual que cualquier variable: <code>{{nombre}}</code>, <code>{{status}}</code>. Las variables de datos tienen <b>prioridad</b> sobre las del environment (alcance <i>Data</i>).</div>
+  <div class="tile"><b class="h">En los scripts</b><code>pm.iterationData.get("nombre")</code> devuelve el valor de la fila actual. Ideal para que el <b>resultado esperado</b> también venga del archivo.</div>
+</div>
+
+<h2>Laboratorio: ejecuta la carpeta con el archivo</h2>
+<div id="lab"></div>
+
+<h2>Errores comunes</h2>
+<div class="cols3">
+  <div class="tile"><b class="h">✗ Nombres que no coinciden</b>La columna se llama <code>Nombre</code> y el body usa <code>{{nombre}}</code>: no se reemplaza. Mayúsculas y tildes cuentan.</div>
+  <div class="tile"><b class="h">✗ Ejecutar toda la colección</b>Con el archivo cargado, <b>todos</b> los requests se repiten por cada fila. Ejecuta solo la carpeta que usa los datos.</div>
+  <div class="tile"><b class="h">✗ CSV mal guardado</b>Guárdalo como <b>CSV UTF-8</b> para no perder las tildes, y cuidado con las comas dentro de un valor: ese valor va entre comillas.</div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> el request es la <strong>plantilla</strong> y el archivo trae los <strong>casos</strong>. Con 5 filas probamos 5 combinaciones y apareció un defecto real: la fila de <strong>Kira</strong> usa un estado que la documentación no permite (<code>perdida</code>), y la API lo acepta igual.
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const ROWS=[['Firulais','Perros','available'],['Michi','Gatos','pending'],['Rocky','Perros','sold'],['Luna','Gatos','available'],['Kira','Perros','perdida']];
+const TPL=(r)=>`POST {{baseUrl}}/pet
+{
+  "id": {{petId}},
+  "category": { "id": 1, "name": <span class="v ${r?'fill':''}">"${r?r[1]:'{{categoria}}'}"</span> },
+  "name": <span class="v ${r?'fill':''}">"${r?r[0]:'{{nombre}}'}"</span>,
+  "status": <span class="v ${r?'fill':''}">"${r?r[2]:'{{status}}'}"</span>
+}`;
+function reset(){
+  $('csv').innerHTML='<tr><th>nombre</th><th>categoria</th><th>status</th></tr>'+ROWS.map((r,i)=>`<tr id="r${i}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+  $('tpl').innerHTML=TPL(null); $('res').innerHTML=''; $('msg').innerHTML='5 filas → el Runner hará <b>5 iteraciones</b> automáticamente.'; $('go').disabled=false;
+}
+$('go').onclick=async()=>{
+  reset(); $('go').disabled=true; let fails=0;
+  for(let i=0;i<ROWS.length;i++){
+    const r=ROWS[i], tr=$('r'+i); document.querySelectorAll('.csv tr').forEach(x=>x.classList.remove('cur')); tr.classList.add('cur');
+    $('msg').innerHTML=`<b>Iteración ${i+1} de 5:</b> las variables toman los valores de la fila ${i+1}.`;
+    $('tpl').innerHTML=TPL(r); $('res').innerHTML='';
+    await new Promise(x=>setTimeout(x,700));
+    const ok=['available','pending','sold'].includes(r[2]);
+    $('res').innerHTML=`<div><span class="P">PASS</span>Creó a ${r[0]}</div><div><span class="P">PASS</span>Guardó el estado del archivo</div><div><span class="${ok?'P':'F'}">${ok?'PASS':'FAIL'}</span>El estado es un valor permitido${ok?'':` <span style="color:#f7b1a8;font-family:Consolas,monospace;font-size:11px">expected '${r[2]}' to be one of [available, pending, sold]</span>`}</div>`;
+    tr.classList.remove('cur'); tr.classList.add(ok?'ok':'ko'); if(!ok) fails++;
+    await new Promise(x=>setTimeout(x,ok?700:1800));
+  }
+  $('msg').innerHTML=`🏁 <b>5 iteraciones, ${fails} con fallas.</b> La fila de Kira descubrió un defecto: la API aceptó un estado que su documentación no permite.`;
+  $('go').disabled=false;
+};
+$('rs').onclick=reset; reset();
+})();
+
+const DITEMS=[{name:'Crear mascota desde datos',m:'POST'},{name:'Limpiar: eliminar mascota',m:'DELETE'}];
+const COLS=[{name:'Taller Petstore',items:[{name:'Buscar mascotas por estado',m:'GET'},{name:'CRUD Mascota',open:false,items:[]},{name:'Datos desde archivo',items:DITEMS}]}];
+const ITER=(n,c,s,ok)=>({data:`${n} · ${c} · ${s}`,reqs:[
+  {m:'POST',name:'Crear mascota desde datos',code:200,ms:'7'+Math.floor(Math.random()*90+10)+' ms',tests:[[`Creó a ${n}`,true],['Guardó el estado del archivo',true],['El estado es un valor permitido',ok,ok?'':`expected '${s}' to be one of [ 'available', 'pending', 'sold' ]`]]},
+  {m:'DELETE',name:'Limpiar: eliminar mascota',code:200,ms:'650 ms',tests:[['Mascota de prueba eliminada',true]]}]});
+PMLab.mount(document.getElementById('lab'),{
+  title:'Data-driven',
+  intro:'Usaremos la carpeta <b>Datos desde archivo</b> de la colección del taller y el archivo <code>mascotas.csv</code>. Presiona <b>Empezar</b>.',
+  state:{ws:'Taller APIs - Ana Rojas',env:'Petstore - QA',envs:[{name:'Petstore - QA',vars:[]}],cols:COLS,tabs:[{name:'Crear mascota desde datos',m:'POST'}],
+    req:{name:'Crear mascota desde datos',col:'Taller Petstore / Datos desde archivo',method:'POST',url:'{{baseUrl}}/pet',rtab:'body',body:{mode:'raw',raw:`{
+  "id": {{petId}},
+  "category": { "id": 1, "name": "{{categoria}}" },
+  "name": "{{nombre}}",
+  "photoUrls": [],
+  "tags": [],
+  "status": "{{status}}"
+}`}}},
+  steps:[
+   {t:'Mira el body',hl:'body-raw',d:'El body usa <code>{{nombre}}</code>, <code>{{categoria}}</code> y <code>{{status}}</code>: los mismos nombres que las columnas del CSV.'},
+   {t:'Mira los tests',hl:'scr-code',d:'Los tests leen el valor esperado <b>de la fila actual</b> con <code>pm.iterationData.get()</code>.',
+    set:{req:{rtab:'scripts',stab:'post',post:`const nombre = pm.iterationData.get("nombre");
+const status = pm.iterationData.get("status");
+
+pm.test(\`Creó a \${nombre}\`, () => pm.response.to.have.status(200));
+const json = pm.response.json();
+pm.test("Guardó el estado del archivo", () => pm.expect(json.status).to.eql(status));
+pm.test("El estado es un valor permitido", () =>
+  pm.expect(json.status).to.be.oneOf(["available", "pending", "sold"]));
+pm.environment.set("petId", json.id);`}}},
+   {t:'Run folder',hl:'run-order',d:'Carpeta <b>Datos desde archivo</b> → <b>⋯</b> → <b>Run folder</b>. Corre solo los 2 requests de esta carpeta.',
+    set:{view:'runner',tabs:[{name:'Runner',m:''}],runner:{col:'Datos desde archivo',items:DITEMS.map(i=>({...i,on:true})),mode:'manual',iter:1,delay:0}}},
+   {t:'Select File',hl:'run-data',d:'En <b>Test data file</b> → <b>Select File</b> → elige <code>mascotas.csv</code>.',set:{runner:{data:{file:'mascotas.csv'}}}},
+   {t:'Preview',hl:'modal',d:'Con <b>Preview</b> verificas que Postman leyó bien el archivo: 3 columnas y 5 filas, con sus tildes.',
+    set:{modal:{title:'Preview data',sub:'mascotas.csv · 5 iterations',html:`<table class="pm-kv" style="margin-top:6px"><tr><th>Iteration</th><th>nombre</th><th>categoria</th><th>status</th></tr>
+      <tr><td>1</td><td>Firulais</td><td>Perros</td><td>available</td></tr><tr><td>2</td><td>Michi</td><td>Gatos</td><td>pending</td></tr><tr><td>3</td><td>Rocky</td><td>Perros</td><td>sold</td></tr><tr><td>4</td><td>Luna</td><td>Gatos</td><td>available</td></tr><tr><td>5</td><td>Kira</td><td>Perros</td><td>perdida</td></tr></table>`,btns:['Close']}}},
+   {t:'Iterations = 5',hl:'run-iter',d:'Al cerrar el preview, <b>Iterations</b> cambió solo a <b>5</b>: una por fila.',set:{modal:null,runner:{iter:5}}},
+   {t:'Run',hl:'run-btn',d:'Presiona <b>Run Datos desde archivo</b>.'},
+   {t:'Resultado: un defecto',hl:'run-req:5:1',d:'4 iteraciones pasan completas. En la <b>5 (Kira)</b>, el test “El estado es un valor permitido” <b style="color:#f79a8e">falla</b>: la API aceptó <code>perdida</code>. Encontramos un defecto agregando <b>una fila</b>, sin escribir un request nuevo.',
+    set:{runner:{results:{how:'Ran manually',env:'Petstore - QA',duration:'7s 210ms',avg:'701 ms',iterations:[ITER('Firulais','Perros','available',true),ITER('Michi','Gatos','pending',true),ITER('Rocky','Perros','sold',true),ITER('Luna','Gatos','available',true),ITER('Kira','Perros','perdida',false)]}}}},
+  ]
+});
+</script>
+</body></html>

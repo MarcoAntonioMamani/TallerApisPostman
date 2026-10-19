@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Autenticación en Postman</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.an{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.an .tile b.h{font-size:16px}
+/* ---------- explorador ---------- */
+.types{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.types button.on{background:var(--orange);color:#111;border-color:var(--orange)}
+.ex{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}
+svg{width:100%;height:auto;display:block;background:#141820;border-radius:10px}
+.raw{margin-top:10px;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-all;min-height:110px}
+.raw .m{color:#ffe47e;font-weight:700}.raw .h{color:#9cdcfe}.raw .a{color:var(--orange);font-weight:700}
+.modes{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.modes button.on{background:var(--panel2);border-color:var(--orange)}
+.side .tile{margin-bottom:10px}
+.b64{margin-top:10px;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:13px;line-height:1.9}
+.b64 .arr{color:var(--muted)}
+.b64 .o{color:var(--green)}.b64 .r{color:var(--red)}
+.jwt{font-family:Consolas,monospace;font-size:12px;word-break:break-all;line-height:1.6;margin-top:6px}
+.jwt .p1{color:#f79a8e}.jwt .p2{color:#c0a8e1}.jwt .p3{color:#74aef6}
+.jwtd{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.jwtd pre{margin:0;background:#141820;border-radius:8px;padding:8px;font-size:11.5px;font-family:Consolas,monospace;white-space:pre-wrap}
+/* ---------- laboratorios ---------- */
+.labtabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.labtabs button.on{background:var(--orange);color:#111;border-color:var(--orange)}
+.labp{display:none}.labp.on{display:block}
+.cred{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.cred th{background:var(--panel2);color:var(--muted);font-size:12px;text-align:left;padding:8px 10px}
+.cred td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.55}
+.cred code{font-size:12px}
+.cred code.cp{background:#141820;border:1px solid var(--border);border-radius:5px;padding:1px 7px;color:var(--green);font-weight:700}
+.cred pre.cbody{margin:0;background:#141820;border-radius:6px;padding:6px 9px;font-family:Consolas,monospace;font-size:12px;color:var(--text)}
+.find{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:1000px){.an,.ex,.find{grid-template-columns:1fr}.jwtd{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Autenticación: cómo demostrarle a la API quién eres</h1>
+<div class="sub">La mayoría de las APIs no responden a cualquiera: piden <b>credenciales</b>. En Postman se configuran en la pestaña <b>Authorization</b>, y Postman arma el header correspondiente al enviar.
+Aquí verás los tipos más usados, qué viaja realmente en cada uno y cómo configurarlos con APIs públicas de práctica.</div>
+
+<div class="an">
+  <div class="tile"><b class="h">🪪 Autenticación: ¿quién eres?</b>La API verifica tu identidad. Si faltan o fallan las credenciales responde <b>401 Unauthorized</b>.</div>
+  <div class="tile"><b class="h">🚦 Autorización: ¿qué puedes hacer?</b>Ya sabe quién eres, pero revisa si tienes permiso para esa acción o ese dato. Si no lo tienes, <b>403 Forbidden</b>.</div>
+</div>
+
+<h2>¿Qué viaja en cada tipo?</h2>
+<div class="types" id="types"></div>
+<div class="ex">
+  <div class="card">
+    <svg viewBox="0 0 640 150" id="anim"></svg>
+    <div class="modes" id="modes"><button class="btn on" data-m="ok">✓ Credenciales correctas</button><button class="btn" data-m="none">Sin credenciales</button><button class="btn" data-m="bad">Credenciales incorrectas</button></div>
+    <div class="raw" id="raw"></div>
+  </div>
+  <div class="side" id="side"></div>
+</div>
+
+<h2>Laboratorios</h2>
+<div class="card" style="margin-bottom:14px">
+  <b style="font-size:15px">🔑 Credenciales de práctica</b> <span class="small">· son <b>públicas</b>: las publica cada API para que cualquiera pueda probar. No son datos reales.</span>
+  <table class="cred">
+    <tr><th>Tipo</th><th>Request</th><th>Qué usar</th><th>Dónde se configura en Postman</th></tr>
+    <tr><td><b>Basic Auth</b></td><td><code>GET https://httpbin.org/basic-auth/qa/taller123</code></td>
+      <td>Usuario: <code class="cp">qa</code><br>Clave: <code class="cp">taller123</code></td>
+      <td>Authorization → <b>Basic Auth</b> → Username / Password</td></tr>
+    <tr><td><b>API Key</b></td><td><code>GET https://api.nasa.gov/planetary/apod</code></td>
+      <td>Key: <code class="cp">api_key</code><br>Value: <code class="cp">DEMO_KEY</code></td>
+      <td>Authorization → <b>API Key</b> → Add to: <b>Query Params</b><br><span class="small">⚠ máx. 10 requests por hora para toda la red</span></td></tr>
+    <tr><td rowspan="2"><b>Bearer Token</b></td><td><b>1.</b> <code>POST https://dummyjson.com/auth/login</code><br>Body → raw → JSON</td>
+      <td><pre class="cbody">{
+  "username": "emilys",
+  "password": "emilyspass",
+  "expiresInMins": 30
+}</pre></td>
+      <td>Body (sin auth). La respuesta trae <code>accessToken</code>: <b>ese es el token</b>.</td></tr>
+    <tr><td><b>2.</b> <code>GET https://dummyjson.com/auth/me</code></td>
+      <td>Token: el <code>accessToken</code> del paso 1<br><span class="small">(cambia en cada login y vence en 30 min)</span></td>
+      <td>Authorization → <b>Bearer Token</b> → Token</td></tr>
+    <tr><td><b>API Key (header)</b></td><td><code>DELETE https://petstore.swagger.io/v2/pet/{id}</code></td>
+      <td>Header: <code class="cp">api_key</code><br>Value: <code class="cp">special-key</code></td>
+      <td>Headers, o Authorization → API Key → Add to: <b>Header</b></td></tr>
+  </table>
+  <div class="note">💡 El <b>Bearer token no es fijo</b>: no hay un token para copiar de antemano. Siempre se obtiene enviando el login y copiando el <code>accessToken</code> de la respuesta, o mejor, guardándolo con un script, como en el laboratorio 3.</div>
+</div>
+<div class="labtabs" id="labtabs">
+  <button class="btn on" data-l="basic">1 · Basic Auth</button>
+  <button class="btn" data-l="apikey">2 · API Key</button>
+  <button class="btn" data-l="bearer">3 · Bearer Token (login + token automático)</button>
+  <button class="btn" data-l="inherit">4 · Heredar desde la colección</button>
+</div>
+<div class="labp on" id="lab-basic"></div>
+<div class="labp" id="lab-apikey"></div>
+<div class="labp" id="lab-bearer"></div>
+<div class="labp" id="lab-inherit"></div>
+
+<h2>🔍 Hallazgos para investigar en estas APIs</h2>
+<div class="find">
+  <div class="tile"><b class="h">Token inválido → 500</b><code>GET /auth/me</code> en DummyJSON con un token inventado responde <b>500</b> <code>"invalid token"</code>. Debería ser <b>401</b>: un token malo es un error del cliente, no del servidor.</div>
+  <div class="tile"><b class="h">Clave incorrecta → 400</b>El login de DummyJSON con contraseña equivocada responde <b>400</b> <code>"Invalid credentials"</code>. Lo habitual es <b>401</b>. ¿Qué dice su documentación?</div>
+  <div class="tile"><b class="h">Sin token → 401 ✓</b>Sin header <code>Authorization</code>, <code>/auth/me</code> responde <b>401</b> <code>"Access Token is required"</code>. Este sí es el comportamiento correcto.</div>
+</div>
+
+<h2>Buenas prácticas</h2>
+<div class="cols3">
+  <div class="tile"><b class="h">🔐 Credenciales en variables secret</b>Usuario, clave, API key y token van en variables tipo <b>secret</b>, con el <b>Initial value vacío</b>. Nunca escritos en el request.</div>
+  <div class="tile"><b class="h">🧬 Auth en la colección</b>Configura la autenticación <b>una vez</b> en la colección y deja los requests en <b>Inherit auth from parent</b>. Si cambia, se cambia en un solo lugar.</div>
+  <div class="tile"><b class="h">⏱ Tokens que vencen</b>Los tokens expiran. Obtén uno nuevo con un request de login y guárdalo con un script; no copies y pegues tokens a mano.</div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> todos los tipos terminan en lo mismo: <strong>un dato extra en el request</strong> (casi siempre el header <code>Authorization</code>) que la API verifica.
+  Al probar, revisa siempre los tres casos: <strong>con credenciales correctas</strong> (200), <strong>sin credenciales</strong> (401) y <strong>con credenciales inválidas</strong> (401/403).
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+/* =================== EXPLORADOR =================== */
+(()=>{
+const $=id=>document.getElementById(id);
+const T={
+ none:{n:'No Auth',chip:'(sin credenciales)',side:`<div class="tile"><b class="h">No Auth</b>El request no lleva credenciales. Sirve para APIs públicas como el GET de Petstore.</div>`,
+  raw:{ok:'<span class="m">GET</span> /v2/pet/findByStatus?status=available HTTP/1.1\n<span class="h">Host:</span> petstore.swagger.io'},res:{ok:['200 OK','#6bdd9a']},only:'ok'},
+ basic:{n:'Basic Auth',chip:'Authorization: Basic cWE6dGFs…',
+  side:`<div class="tile"><b class="h">Basic Auth</b>Envía <b>usuario y contraseña</b> unidos con <code>:</code> y codificados en <b>Base64</b>.</div>
+   <div class="b64">qa<span class="arr"> : </span>taller123<br><span class="arr">↓ Base64</span><br><span class="o">cWE6dGFsbGVyMTIz</span></div>
+   <div class="note warn">⚠ Base64 <b>no es cifrado</b>: cualquiera lo decodifica en un segundo. Basic Auth solo es aceptable sobre <b>HTTPS</b>.</div>`,
+  raw:{ok:'<span class="m">GET</span> /basic-auth/qa/taller123 HTTP/1.1\n<span class="h">Host:</span> httpbin.org\n<span class="a">Authorization: Basic cWE6dGFsbGVyMTIz</span>',
+       none:'<span class="m">GET</span> /basic-auth/qa/taller123 HTTP/1.1\n<span class="h">Host:</span> httpbin.org\n<span style="color:var(--muted)">(sin header Authorization)</span>',
+       bad:'<span class="m">GET</span> /basic-auth/qa/taller123 HTTP/1.1\n<span class="h">Host:</span> httpbin.org\n<span class="a">Authorization: Basic cWE6bWFsYQ==</span>   <span style="color:var(--muted)">← qa:mala</span>'},
+  res:{ok:['200 {"authenticated": true, "user": "qa"}','#6bdd9a'],none:['401 Unauthorized','#f79a8e'],bad:['401 Unauthorized','#f79a8e']}},
+ apikey:{n:'API Key',chip:'?api_key=••••••',
+  side:`<div class="tile"><b class="h">API Key</b>Una <b>clave fija</b> que identifica a la aplicación. Puede ir en un <b>header</b> (<code>x-api-key</code>, <code>api_key</code>…) o en un <b>query param</b> (<code>?api_key=</code>). La documentación dice dónde.</div>
+   <div class="note">💡 En la URL la clave queda en logs e historial del navegador: si la API lo permite, es mejor enviarla en un <b>header</b>.</div>`,
+  raw:{ok:'<span class="m">GET</span> /planetary/apod?<span class="a">api_key=••••••</span> HTTP/1.1\n<span class="h">Host:</span> api.nasa.gov',
+       none:'<span class="m">GET</span> /planetary/apod HTTP/1.1\n<span class="h">Host:</span> api.nasa.gov',
+       bad:'<span class="m">GET</span> /planetary/apod?<span class="a">api_key=CLAVE_INVENTADA</span> HTTP/1.1\n<span class="h">Host:</span> api.nasa.gov'},
+  res:{ok:['200 OK · foto del día','#6bdd9a'],none:['403 API_KEY_MISSING','#f79a8e'],bad:['403 API_KEY_INVALID','#f79a8e']}},
+ bearer:{n:'Bearer Token',chip:'Authorization: Bearer eyJhbGci…',
+  side:`<div class="tile"><b class="h">Bearer Token</b>Primero haces <b>login</b> y la API te entrega un <b>token</b> temporal. Después lo envías en cada request: <code>Authorization: Bearer &lt;token&gt;</code>.</div>
+   <div class="tile"><b class="h">Por dentro (JWT)</b>Muchos tokens son <b>JWT</b>: tres partes separadas por puntos.
+    <div class="jwt"><span class="p1">eyJhbGciOiJIUzI1NiJ9</span>.<span class="p2">eyJpZCI6MSwidXNlcm5hbWUiOiJlbWlseXMiLCJleHAiOjE3OTE…</span>.<span class="p3">f8Kx…</span></div>
+    <div class="jwtd"><pre><span class="p1">HEADER</span>\n{ "alg": "HS256" }</pre><pre><span class="p2">PAYLOAD</span>\n{ "id": 1,\n  "username": "emilys",\n  "exp": 1791… }</pre><pre><span class="p3">FIRMA</span>\nverifica que nadie lo modificó</pre></div></div>`,
+  raw:{ok:'<span class="m">GET</span> /auth/me HTTP/1.1\n<span class="h">Host:</span> dummyjson.com\n<span class="a">Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MS…</span>',
+       none:'<span class="m">GET</span> /auth/me HTTP/1.1\n<span class="h">Host:</span> dummyjson.com\n<span style="color:var(--muted)">(sin header Authorization)</span>',
+       bad:'<span class="m">GET</span> /auth/me HTTP/1.1\n<span class="h">Host:</span> dummyjson.com\n<span class="a">Authorization: Bearer abc.def.ghi</span>'},
+  res:{ok:['200 { "username": "emilys" … }','#6bdd9a'],none:['401 Access Token is required','#f79a8e'],bad:['500 invalid token  ⚠','#f79a8e']}},
+ oauth:{n:'OAuth 2.0',chip:'Authorization: Bearer (de OAuth)',
+  side:`<div class="tile"><b class="h">OAuth 2.0</b>Un <b>servidor de autorización</b> separado entrega el token (como “Iniciar sesión con Google”). La API solo recibe el <b>Bearer token</b> resultante.</div>
+   <div class="tile">En Postman: Authorization → <b>OAuth 2.0</b> → completar los datos que da el proveedor → <b>Get New Access Token</b>. Es muy usado en APIs corporativas.</div>`,
+  raw:{ok:'<span style="color:var(--muted)">1. Postman → servidor de autorización: client_id + client_secret</span>\n<span style="color:var(--muted)">2. Servidor de autorización → Postman: access_token</span>\n<span class="m">GET</span> /api/v1/clientes HTTP/1.1\n<span class="a">Authorization: Bearer eyJ…(access_token)</span>'},res:{ok:['200 OK','#6bdd9a']},only:'ok'},
+};
+const ORDER=['none','basic','apikey','bearer','oauth'];
+let cur='basic', mode='ok', anim=null;
+$('types').innerHTML=ORDER.map(k=>`<button class="btn ${k===cur?'on':''}" data-k="${k}">${T[k].n}</button>`).join('');
+function draw(){
+  const t=T[cur]; const m=t.only||mode;
+  document.querySelectorAll('#types button').forEach(b=>b.classList.toggle('on',b.dataset.k===cur));
+  document.querySelectorAll('#modes button').forEach(b=>{b.classList.toggle('on',b.dataset.m===mode);b.disabled=!!t.only&&b.dataset.m!=='ok'});
+  $('raw').innerHTML=t.raw[m]; $('side').innerHTML=t.side;
+  const [rt,rc]=t.res[m];
+  const chip=m==='none'?'(sin credenciales)':m==='bad'?(cur==='bearer'?'Bearer abc.def.ghi':cur==='apikey'?'?api_key=CLAVE_INVENTADA':'Basic cWE6bWFsYQ=='):t.chip;
+  cancelAnimationFrame(anim); const t0=performance.now();
+  const frame=now=>{
+    const p=Math.min(1,(now-t0)/1600), q=Math.max(0,Math.min(1,(now-t0-1900)/1200));
+    const x=150+(p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2)*320, x2=470-(q<.5?2*q*q:1-Math.pow(-2*q+2,2)/2)*320;
+    const w=Math.min(300,chip.length*6.8+20);
+    $('anim').innerHTML=`<rect x="14" y="45" width="120" height="56" rx="10" fill="#222936" stroke="#4a5263"/><text x="74" y="78" text-anchor="middle" fill="#ff6c37" font-size="14" font-weight="800">✱ Postman</text>
+      <rect x="506" y="45" width="120" height="56" rx="10" fill="#222936" stroke="${q>=1?rc:'#4a5263'}" stroke-width="2"/><text x="566" y="78" text-anchor="middle" fill="#f5f7fb" font-size="14" font-weight="700">⚙️ API</text>
+      <line x1="134" y1="62" x2="506" y2="62" stroke="#333b49" stroke-width="2"/><line x1="134" y1="86" x2="506" y2="86" stroke="#333b49" stroke-width="2" stroke-dasharray="5 6"/>
+      ${p<1||q===0?`<circle cx="${x}" cy="62" r="7" fill="#f3a43b"/><rect x="${x-w/2}" y="20" width="${w}" height="22" rx="6" fill="#10131a" stroke="#f3a43b"/><text x="${x}" y="35" text-anchor="middle" fill="#f3a43b" font-size="11" font-weight="700" font-family="Consolas,monospace">${chip}</text>`:''}
+      ${q>0?`<circle cx="${x2}" cy="86" r="7" fill="${rc}"/><rect x="${x2-Math.min(280,rt.length*6.6+20)/2}" y="98" width="${Math.min(280,rt.length*6.6+20)}" height="22" rx="6" fill="#10131a" stroke="${rc}"/><text x="${x2}" y="113" text-anchor="middle" fill="${rc}" font-size="11" font-weight="700" font-family="Consolas,monospace">${rt}</text>`:''}`;
+    if(q<1) anim=requestAnimationFrame(frame);
+  };
+  anim=requestAnimationFrame(frame);
+}
+$('types').onclick=e=>{const b=e.target.closest('button');if(b){cur=b.dataset.k;draw()}};
+$('modes').onclick=e=>{const b=e.target.closest('button');if(b&&!b.disabled){mode=b.dataset.m;draw()}};
+draw();
+
+/* pestañas de laboratorio */
+$('labtabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#labtabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.labp').forEach(p=>p.classList.toggle('on',p.id==='lab-'+b.dataset.l));};
+})();
+
+/* =================== LABORATORIOS =================== */
+const WS='Taller APIs - Ana Rojas';
+const COLS_AUTH=(sel,items)=>[{name:'Taller Petstore',open:false,items:[]},{name:'Autenticación',items:items.map(i=>({...i,sel:i.name===sel}))}];
+
+/* ---- 1. Basic ---- */
+PMLab.mount(document.getElementById('lab-basic'),{
+  title:'Basic Auth · httpbin',
+  intro:'Usaremos <b>httpbin.org</b>. Su endpoint <code>/basic-auth/{usuario}/{clave}</code> acepta exactamente el usuario y la clave que pongas en la URL: con <code>/basic-auth/qa/taller123</code>, el usuario válido es <code>qa</code> y la clave <code>taller123</code>. Presiona <b>Empezar</b>.',
+  state:{ws:WS,env:'Httpbin - QA',envs:[{name:'Httpbin - QA',vars:[['authUser','','qa',true],['authPass','','taller123',true]]}],
+    cols:COLS_AUTH('Basic Auth',[{name:'Basic Auth',m:'GET'}]),tabs:[{name:'Basic Auth',m:'GET'}],req:{name:'Basic Auth',col:'Autenticación',url:'https://httpbin.org/basic-auth/qa/taller123'}},
+  steps:[
+   {t:'Envía sin credenciales',hl:'status',d:'Primero presiona <b>Send</b> sin configurar nada: <b>401 Unauthorized</b> y body vacío. <b>No es un error del endpoint</b>: así responde una API protegida cuando no recibe credenciales. (Si abres esta URL en el navegador, verás una ventana pidiendo usuario y clave por el mismo motivo.)',
+    set:{res:{status:'401 Unauthorized',code:401,time:'402 ms',size:'0 B',body:'(sin body)',raw:true}}},
+   {t:'Pestaña Authorization',hl:'rt-auth',d:'Abre la pestaña <b>Authorization</b>.',set:{req:{rtab:'auth'}}},
+   {t:'Tipo Basic Auth',hl:'auth-type',d:'En <b>Auth Type</b> elige <b>Basic Auth</b>.',set:{req:{auth:{type:'Basic Auth',user:'',pass:''}}}},
+   {t:'Usuario y clave como variables',hl:'auth-fields',d:'Username: <code>{{authUser}}</code> · Password: <code>{{authPass}}</code>. Las dos son <b>secret</b> en el environment <i>Httpbin - QA</i> (valores <code>qa</code> y <code>taller123</code>).',
+    set:{req:{auth:{user:'{{authUser}}',pass:'{{authPass}}'}}}},
+   {t:'Mira el header generado',hl:'ed',d:'En <b>Headers</b> aparece solo <code>Authorization: Basic cWE6dGFsbGVyMTIz</code> (🔒 = lo agrega Postman). Es el Base64 de <code>qa:taller123</code>.',
+    set:{req:{rtab:'headers',auth:{user:'qa',pass:'taller123'}},res:null}},
+   {t:'Send',hl:'rbody',d:'Send → <b>200 OK</b>. La respuesta confirma <b>quién</b> se autenticó: <code>"user": "qa"</code>.',
+    set:{req:{rtab:'auth',auth:{user:'{{authUser}}',pass:'{{authPass}}'}},res:{status:'200 OK',code:200,time:'389 ms',size:'49 B',body:'{\n  "authenticated": true,\n  "user": "qa"\n}',raw:false}}},
+   {t:'Prueba el caso negativo',hl:'status',d:'Cambia temporalmente el Current value de <code>authPass</code> por <code>mala</code> y envía: <b>401</b>. Sin credenciales, correctas e incorrectas son <b>tres pruebas distintas</b>.',
+    set:{res:{status:'401 Unauthorized',code:401,time:'371 ms',size:'0 B',body:'(sin body)',raw:true}}},
+   {t:'Agrega tests',hl:'scr-code',type:'req.post',d:'Post-response para el caso correcto: valida el status, que esté autenticado y que sea el usuario esperado.',
+    set:{req:{rtab:'scripts',stab:'post',post:`pm.test("Status 200", () => pm.response.to.have.status(200));
+const json = pm.response.json();
+pm.test("Usuario autenticado", () => pm.expect(json.authenticated).to.be.true);
+pm.test("Es el usuario esperado", () =>
+  pm.expect(json.user).to.eql(pm.environment.get("authUser")));`},res:{status:'200 OK',code:200,time:'389 ms',size:'49 B',body:'{\n  "authenticated": true,\n  "user": "qa"\n}',raw:false,rtab:'tests',tests:[['Status 200',true],['Usuario autenticado',true],['Es el usuario esperado',true]]}}},
+  ]
+});
+
+/* ---- 2. API Key ---- */
+const APOD=`{
+  "date": "2026-10-06",
+  "explanation": "…",
+  "media_type": "image",
+  "title": "…",
+  "url": "https://apod.nasa.gov/apod/image/…jpg"
+}`;
+PMLab.mount(document.getElementById('lab-apikey'),{
+  title:'API Key · NASA',
+  intro:'La API de NASA pide una <b>api_key</b> como query param. Para practicar existe <code>DEMO_KEY</code>, que solo permite <b>10 requests por hora</b> por red: úsala con cuidado, o crea tu propia clave gratis en <a href="https://api.nasa.gov" target="_blank">api.nasa.gov</a>.',
+  state:{ws:WS,env:'NASA',envs:[{name:'NASA',vars:[['nasaKey','','DEMO_KEY',true]]}],
+    cols:COLS_AUTH('API Key',[{name:'Basic Auth',m:'GET'},{name:'API Key',m:'GET'}]),tabs:[{name:'API Key',m:'GET'}],req:{name:'API Key',col:'Autenticación',url:'https://api.nasa.gov/planetary/apod'}},
+  steps:[
+   {t:'Envía sin clave',hl:'rbody',d:'Send sin clave → <b>403</b> con <code>API_KEY_MISSING</code>. La API explica qué falta.',
+    set:{res:{status:'403 Forbidden',code:403,time:'512 ms',size:'163 B',body:'{\n  "error": {\n    "code": "API_KEY_MISSING",\n    "message": "No api_key was supplied. Get one at https://api.nasa.gov:443"\n  }\n}'}}},
+   {t:'Authorization → API Key',hl:'auth-type',d:'Pestaña <b>Authorization</b> → tipo <b>API Key</b>.',set:{req:{rtab:'auth',auth:{type:'API Key',key:'',value:'',addTo:'Query Params'}}}},
+   {t:'Key, Value y Add to',hl:'auth-fields',d:'Key: <code>api_key</code> (el nombre que pide la documentación) · Value: <code>{{nasaKey}}</code> · Add to: <b>Query Params</b>.',
+    set:{req:{auth:{key:'api_key',value:'{{nasaKey}}'}}}},
+   {t:'Send',hl:'status',d:'Send → <b>200 OK</b> con la foto astronómica del día. Postman agregó <code>?api_key=…</code> a la URL al enviar.',
+    set:{res:{status:'200 OK',code:200,time:'688 ms',size:'1.2 KB',body:APOD}}},
+   {t:'Header o Query',hl:'auth-fields',d:'Si la documentación pidiera la clave en un header (por ejemplo Petstore con <code>api_key</code>), solo cambias <b>Add to: Header</b>. El resto es igual.',
+    set:{req:{auth:{addTo:'Header'}}}},
+  ]
+});
+
+/* ---- 3. Bearer ---- */
+const LOGIN_BODY=`{
+  "username": "{{username}}",
+  "password": "{{password}}",
+  "expiresInMins": 30
+}`;
+const LOGIN_RES=`{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MS…",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MS…",
+  "id": 1,
+  "username": "emilys",
+  "firstName": "Emily",
+  "lastName": "Johnson"
+}`;
+const LOGIN_POST=`pm.test("Login exitoso", () => pm.response.to.have.status(200));
+const json = pm.response.json();
+pm.test("Devuelve un token", () => pm.expect(json.accessToken).to.be.a("string"));
+// Guardar el token para los siguientes requests
+pm.environment.set("accessToken", json.accessToken);`;
+const ENV_D=(tok='')=>[{name:'DummyJSON - QA',vars:[['baseUrl','https://dummyjson.com','https://dummyjson.com'],['username','','emilys',true],['password','','emilyspass',true],['accessToken','',tok,true]]}];
+const BITEMS=[{name:'Basic Auth',m:'GET'},{name:'API Key',m:'GET'},{name:'Login',m:'POST'},{name:'Mi perfil',m:'GET'}];
+PMLab.mount(document.getElementById('lab-bearer'),{
+  title:'Bearer · DummyJSON',
+  intro:'Flujo real: un request de <b>login</b> obtiene el token, un script lo guarda, y el siguiente request lo usa. DummyJSON publica el usuario de prueba <code>emilys</code> / <code>emilyspass</code>.',
+  state:{ws:WS,env:'DummyJSON - QA',envs:ENV_D(),cols:COLS_AUTH('Login',BITEMS.slice(0,3)),tabs:[{name:'Login',m:'POST'}],
+    req:{name:'Login',col:'Autenticación',method:'POST',url:'{{baseUrl}}/auth/login'}},
+  steps:[
+   {t:'Login: body',hl:'body-raw',type:'req.body.raw',d:'Request <b>Login</b>: POST <code>{{baseUrl}}/auth/login</code>, Body → raw → JSON con las credenciales desde variables <b>secret</b>.',
+    set:{req:{rtab:'body',body:{mode:'raw',raw:LOGIN_BODY}}}},
+   {t:'Login: guarda el token',hl:'scr-code',type:'req.post',d:'Post-response: valida el login y <b>guarda</b> <code>accessToken</code> en el environment. Nadie copia ni pega tokens.',
+    set:{req:{rtab:'scripts',stab:'post',post:LOGIN_POST}}},
+   {t:'Login: Send',hl:'rbody',d:'Send → <b>200</b>. La respuesta trae <code>accessToken</code>, y el script ya lo guardó.',
+    set:{res:{status:'200 OK',code:200,time:'544 ms',size:'1.4 KB',body:LOGIN_RES,rtab:'body',tests:[['Login exitoso',true],['Devuelve un token',true]]},envs:ENV_D('eyJhbGciOiJIUzI1NiIs…')}},
+   {t:'Mi perfil: sin token',hl:'rbody',d:'Nuevo request <b>Mi perfil</b>: GET <code>{{baseUrl}}/auth/me</code>. Send sin auth → <b>401</b> <code>Access Token is required</code>.',
+    set:{cols:COLS_AUTH('Mi perfil',BITEMS),tabs:[{name:'Login',m:'POST'},{name:'Mi perfil',m:'GET'}],active:1,
+      req:{name:'Mi perfil',method:'GET',url:'{{baseUrl}}/auth/me',rtab:'params',body:{mode:'none',raw:''},post:''},res:{status:'401 Unauthorized',code:401,time:'301 ms',size:'52 B',body:'{\n  "message": "Access Token is required"\n}',rtab:'body',tests:[]}}},
+   {t:'Bearer Token',hl:'auth-fields',d:'Authorization → <b>Bearer Token</b> → Token: <code>{{accessToken}}</code>. Postman arma <code>Authorization: Bearer …</code>.',
+    set:{req:{rtab:'auth',auth:{type:'Bearer Token',token:'{{accessToken}}'}}}},
+   {t:'Send',hl:'rbody',d:'Send → <b>200</b> con los datos del usuario <b>emilys</b>. El token llegó solo, desde el login.',
+    set:{res:{status:'200 OK',code:200,time:'318 ms',size:'2.1 KB',body:'{\n  "id": 1,\n  "username": "emilys",\n  "firstName": "Emily",\n  "lastName": "Johnson",\n  "email": "emily.johnson@x.dummyjson.com"\n}'}}},
+   {t:'Cuando el token vence',hl:'status',d:'El token dura 30 minutos (<code>expiresInMins</code>). Cuando venza, vuelve a enviar <b>Login</b> y el script guarda uno nuevo. En el Collection Runner, Login va <b>primero</b>.'},
+  ]
+});
+
+/* ---- 4. Herencia ---- */
+PMLab.mount(document.getElementById('lab-inherit'),{
+  title:'Auth en la colección',
+  intro:'Configurar el token request por request es repetitivo. Lo profesional es definirlo <b>una vez</b> en la colección (o carpeta) y que los requests lo <b>hereden</b>.',
+  state:{ws:WS,env:'DummyJSON - QA',envs:ENV_D('eyJhbGciOiJIUzI1NiIs…'),cols:COLS_AUTH('Autenticación',BITEMS),tabs:[{name:'Autenticación',m:''}],
+    view:'html',viewHtml:'<h3>🗂 Autenticación</h3><div class="muted">Overview · <b style="color:#e6e6e6;box-shadow:inset 0 -2px 0 #ff6c37">Authorization</b> · Scripts · Variables · Runs</div>'},
+  steps:[
+   {t:'Abre la colección',hl:'item:Autenticación',d:'Haz clic en la colección (o carpeta) y abre su pestaña <b>Authorization</b>.'},
+   {t:'Bearer en la colección',hl:'view',d:'Tipo <b>Bearer Token</b>, Token <code>{{accessToken}}</code>. Guarda.',
+    set:{viewHtml:`<h3>🗂 Autenticación</h3><div class="muted">Overview · <b style="color:#e6e6e6;box-shadow:inset 0 -2px 0 #ff6c37">Authorization</b> · Scripts · Variables · Runs</div>
+      <div class="pm-card"><div class="pm-auth"><div class="lft">Auth Type<div class="sel">Bearer Token ▾</div><div style="margin-top:8px">Se aplica a todos los requests que usen <b>Inherit auth from parent</b>.</div></div><div class="flds"><span>Token</span><div>{{accessToken}}</div></div></div></div>`}},
+   {t:'Requests en Inherit',hl:'auth-type',d:'En cada request: Authorization → <b>Inherit auth from parent</b>. Postman muestra de dónde lo hereda.',
+    set:{view:'request',tabs:[{name:'Mi perfil',m:'GET'}],req:{name:'Mi perfil',col:'Autenticación',url:'{{baseUrl}}/auth/me',rtab:'auth',auth:{type:'Inherit'}}}},
+   {t:'Excepción: el Login',hl:'auth-type',d:'El request <b>Login</b> no necesita token (lo está pidiendo): ponle <b>No Auth</b>. Los demás heredan.',
+    set:{tabs:[{name:'Login',m:'POST'}],req:{name:'Login',method:'POST',url:'{{baseUrl}}/auth/login',auth:{type:'No Auth'}}}},
+  ]
+});
+</script>
+</body></html>

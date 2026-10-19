@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Workspaces en Postman</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.wtypes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.wtypes .tile .who{display:inline-block;margin-top:8px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:var(--panel2)}
+.inside{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:1000px){.wtypes,.inside{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Workspaces: tu espacio de trabajo</h1>
+<div class="sub">Un <b>workspace</b> es como una carpeta de proyecto dentro de Postman: agrupa todo lo que usas para probar una o varias APIs. Lo recomendable es tener <b>un workspace por proyecto</b>; en este taller crearás uno propio.</div>
+
+<h2>¿Qué hay dentro de un workspace?</h2>
+<div class="inside">
+  <div class="tile"><b class="h">🗂 Colecciones</b>Los requests guardados y ordenados en carpetas.</div>
+  <div class="tile"><b class="h">▣ Environments</b>Conjuntos de variables por ambiente: DEV, QA…</div>
+  <div class="tile"><b class="h">↺ Historial</b>Todo lo que enviaste en ese workspace.</div>
+  <div class="tile"><b class="h">👥 Miembros</b>Quiénes pueden verlo o editarlo (según el tipo).</div>
+</div>
+
+<h2>Tipos de workspace</h2>
+<div class="wtypes">
+  <div class="tile"><b class="h">🔒 Personal / privado</b>Solo tú lo ves. Ideal para practicar y para tus pruebas.<span class="who" style="color:var(--green)">Solo tú</span></div>
+  <div class="tile"><b class="h">👥 De equipo</b>Lo comparten los miembros de tu equipo: todos ven las mismas colecciones. Las opciones dependen del plan de Postman.<span class="who" style="color:var(--blue)">Tu equipo</span></div>
+  <div class="tile"><b class="h">🌐 Público</b>Cualquier persona en internet lo puede ver. Lo usan empresas para publicar ejemplos de sus APIs.<span class="who" style="color:var(--red)">Todo el mundo</span></div>
+</div>
+<div class="note warn">⚠ <b>Cuidado con los workspaces públicos.</b> Se han filtrado tokens y contraseñas reales porque alguien los dejó guardados en una colección pública. Antes de compartir, revisa que no haya datos sensibles en variables, headers ni bodies.</div>
+
+<h2>Laboratorio: crea tu workspace</h2>
+<div id="lab"></div>
+
+<div class="key">
+  <strong>Idea clave:</strong> el workspace define <strong>quién ve tu trabajo</strong>. Para el taller usa uno <strong>personal</strong> llamado “Taller APIs - tu nombre”. Todo lo que hagas desde ahora (colecciones, variables, environments) quedará dentro de él.
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+const WS_MENU = (hl) => ({x:70,y:38,items:[['My Workspace','✓ actual'],['Team Workspace',''],'-',['Create Workspace','＋'],['View all workspaces','']]});
+PMLab.mount(document.getElementById('lab'),{
+  title:'Crear un workspace',
+  intro:'Al abrir Postman por primera vez estás en <b>My Workspace</b>. Presiona <b>Empezar</b> para crear uno propio para el taller.',
+  state:{ws:'My Workspace'},
+  steps:[
+   {t:'Abre el menú Workspaces',hl:'ws',d:'Haz clic en el nombre del workspace actual (arriba a la izquierda). Se despliega la lista de workspaces.',
+    set:{menu:WS_MENU()}},
+   {t:'Create Workspace',hl:'mi:Create Workspace',d:'Elige <b>Create Workspace</b>.',set:{menu:WS_MENU()}},
+   {t:'Elige “Blank workspace”',hl:'mo:Blank workspace',d:'Postman ofrece plantillas. Para empezar de cero elige <b>Blank workspace</b> y presiona <b>Next</b>.',
+    set:{menu:null,modal:{title:'Create your workspace',sub:'Start with a template or a blank workspace.',opts:[{name:'Blank workspace',d:'Empieza desde cero',on:true},{name:'API Testing',d:'Plantilla con ejemplos de pruebas'},{name:'API Development',d:'Plantilla para diseñar APIs'}],btns:['Cancel','Next']}}},
+   {t:'Escribe el nombre',hl:'mf:0',type:'modal.fields.0.value',d:'Ponle un nombre claro: <code>Taller APIs - Ana Rojas</code> (con tu nombre).',
+    set:{modal:{title:'Create your workspace',sub:'Blank workspace',opts:null,fields:[{label:'Name',value:'Taller APIs - Ana Rojas'},{label:'Summary (opcional)',value:''}],btns:['Back','Create']}}},
+   {t:'Agrega una descripción',hl:'mf:1',type:'modal.fields.1.value',d:'Opcional, pero útil: describe para qué es el workspace.',
+    set:{modal:{fields:[{label:'Name',value:'Taller APIs - Ana Rojas'},{label:'Summary (opcional)',value:'Prácticas del taller de APIs y Postman'}]}}},
+   {t:'Elige quién puede verlo',hl:'mo:Personal',d:'Selecciona <b>Personal</b> (solo tú). Las opciones de equipo y público dependen del plan y de las políticas de tu organización.',
+    fn:s=>{s.modal.opts=[{name:'Personal',d:'Solo tú puedes acceder',on:true},{name:'Team',d:'Todos los miembros de tu equipo'},{name:'Public',d:'Cualquier persona en internet'}]}},
+   {t:'Crear',hl:'mb:Create',d:'Presiona <b>Create</b>.'},
+   {t:'¡Listo! Ya estás dentro',hl:'ws',d:'Postman te cambia al workspace nuevo. Está <b>vacío</b>: todavía no tiene colecciones ni environments.',
+    set:{modal:null,ws:'Taller APIs - Ana Rojas',cols:[]}},
+   {t:'Cambiar de workspace',hl:'ws',d:'Para volver a otro workspace, usa el mismo menú. Tus colecciones de un workspace <b>no aparecen</b> en otro.',
+    set:{menu:{x:70,y:38,items:[['Taller APIs - Ana Rojas','✓ actual'],['My Workspace',''],['Team Workspace',''],'-',['Create Workspace','＋']]}}},
+   {t:'Resultado',hl:'side',d:'Tu workspace del taller está listo. En el siguiente tema enviarás tu <b>primer request</b> y lo guardarás aquí.',set:{menu:null}},
+  ]
+});
+</script>
+</body></html>

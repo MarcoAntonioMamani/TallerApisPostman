@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>De la API a la base de datos</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2;--teal:#7fd6c8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 16px;max-width:980px}
+h2{font-size:20px;margin:28px 0 12px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+button{padding:9px 13px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-weight:700;cursor:pointer;font-size:13px}
+button:hover{background:var(--panel2)}
+button:disabled{opacity:.45;cursor:default}
+.groups{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;margin-bottom:12px}
+.groups .gl{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns button[data-k]{font-size:12.5px}
+.good button.active{background:var(--green);color:#111;border-color:var(--green)}
+.bad button.active{background:var(--red);color:#111;border-color:var(--red)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.controls .sep{flex:1}
+.controls select{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px}
+#fix{border-color:var(--green);color:var(--green)}
+#fix.on{background:var(--green);color:#111}
+#play.on{background:var(--orange);color:#111;border-color:var(--orange)}
+
+svg{width:100%;height:auto;background:#141820;border-radius:12px;display:block}
+.node rect.box{fill:var(--panel2);stroke:#4a5263;stroke-width:2;transition:stroke .2s}
+.node.on rect.box{stroke:var(--orange)}
+.node .lbl{fill:var(--text);font-size:15px;font-weight:700}
+.node .cap{fill:var(--muted);font-size:11px}
+.layer{fill:#1b2029;stroke:#394252}
+.layer.on{stroke:var(--orange);fill:#2a2418}
+.layerT{fill:var(--muted);font-size:11px}
+.slot{fill:#1b2029;stroke:#4a5263;stroke-width:1.5;transition:fill .25s}
+.slot.busy{fill:var(--orange)}
+.slot.leak{fill:var(--red)}
+.slotT{fill:#10131a;font-size:10px;font-weight:800}
+.wire{stroke:#333b49;stroke-width:3}
+
+.status{margin-top:10px;background:var(--panel2);border-radius:10px;padding:11px 14px;line-height:1.55;min-height:46px;font-size:14px}
+.status b{color:var(--orange)}
+.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:14px;margin-top:14px}
+.log{background:#141820;border-radius:10px;padding:8px;height:250px;overflow:auto;font-family:Consolas,monospace;font-size:12px;line-height:1.45}
+.log .row{display:grid;grid-template-columns:34px 1fr 64px;gap:8px;padding:5px 6px;border-radius:6px;animation:in .4s}
+@keyframes in{from{background:rgba(243,164,59,.35)}to{background:transparent}}
+.log .row .c{color:var(--muted)}
+.log .row .ms{text-align:right;color:var(--muted)}
+.log .row.err{color:var(--red)}
+.log .row.err .ms{color:var(--red)}
+.log .row.sub{opacity:.75;padding-left:22px}
+.log .row.info{color:var(--teal);font-family:Segoe UI,Arial,sans-serif}
+.log .kw{color:var(--purple);font-weight:700}.log .p{color:var(--orange)}.log .s{color:var(--green)}
+.log .empty{color:var(--muted);padding:10px;font-family:Segoe UI,Arial,sans-serif}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric{background:var(--panel2);border-radius:10px;padding:10px;text-align:center}
+.metric b{display:block;font-size:22px}
+.metric span{font-size:11px;color:var(--muted)}
+.metric.warn b{color:var(--red)}
+.metric.okc b{color:var(--green)}
+.tbl{margin-top:10px}
+.tbl .tt{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{background:var(--panel2);color:var(--muted);font-size:11px;text-align:left;padding:6px 8px}
+td{padding:6px 8px;border-bottom:1px solid var(--border);font-family:Consolas,monospace;transition:background .4s}
+tr.hl td{background:rgba(87,199,133,.18)}
+tr.bad td{background:rgba(239,101,112,.22)}
+tr.new td{animation:newrow 1.2s}
+@keyframes newrow{from{background:rgba(243,164,59,.5)}}
+.tfoot{font-size:12px;margin-top:6px;color:var(--muted)}
+.tfoot b{color:var(--text)}
+
+.explain{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.explain .ex{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:13px 14px;font-size:13.5px;line-height:1.55;color:var(--muted)}
+.explain .ex b.h{display:block;color:var(--text);font-size:14px;margin-bottom:4px}
+.explain .ex code{color:var(--orange);font-family:Consolas,monospace;font-size:12.5px}
+.explain.one{grid-template-columns:1fr}
+
+.map{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.map div{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13px;line-height:1.5;color:var(--muted)}
+.map b{display:block;font-family:Consolas,monospace;font-size:16px;margin-bottom:4px}
+.map code{display:block;margin-top:6px;color:var(--text);font-family:Consolas,monospace;font-size:11.5px;background:#141820;border-radius:6px;padding:6px}
+.GET{color:var(--green)}.POST{color:var(--orange)}.PUT{color:var(--blue)}.PATCH{color:var(--purple)}.DELETE{color:var(--red)}
+.concepts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.concepts div{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13.5px;line-height:1.55;color:var(--muted)}
+.concepts b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+@media(max-width:900px){.grid,.explain,.concepts{grid-template-columns:1fr}.map{grid-template-columns:1fr 1fr}.groups{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>De la API a la base de datos</h1>
+<div class="sub">Cuando llega un request, la API no guarda ni busca datos “por arte de magia”: <b>pide una conexión</b> a la base de datos, <b>ejecuta una consulta</b> (un <code>SELECT</code>, un <code>INSERT</code>, un procedimiento almacenado…) y <b>devuelve la conexión</b>.
+Elige un escenario y observa qué se ejecuta en la base de datos. Todos los datos son ficticios.</div>
+
+<div class="groups">
+  <span class="gl">✅ Cómo debería funcionar</span><div class="btns good" id="goodBtns"></div>
+  <span class="gl">⚠️ Problemas comunes</span><div class="btns bad" id="badBtns"></div>
+</div>
+
+<div class="controls">
+  <button id="play">▶ Reproducir</button>
+  <button id="step">⏭ Paso a paso</button>
+  <button id="reset">↻ Reiniciar</button>
+  <button id="fix" style="display:none">🛠 Ver la forma correcta</button>
+  <span class="sep"></span>
+  <label class="small">Velocidad <select id="speed"><option value="0.6">Lenta</option><option value="1" selected>Normal</option><option value="1.8">Rápida</option></select></label>
+</div>
+
+<div class="card">
+  <svg viewBox="0 0 900 270" aria-label="Recorrido de un request desde la app hasta la base de datos">
+    <g id="scene"></g>
+    <g id="pkts"></g>
+  </svg>
+  <div class="status" id="status"></div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <b>🧾 Lo que se ejecuta en la base de datos</b> <span class="small">· log de consultas (conexión, SQL y tiempo)</span>
+    <div class="log" id="log" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <div class="metrics">
+      <div class="metric" id="mQ"><b>0</b><span>consultas ejecutadas</span></div>
+      <div class="metric" id="mT"><b>0 ms</b><span>tiempo en la BD</span></div>
+      <div class="metric" id="mC"><b>0 / 5</b><span>conexiones en uso</span></div>
+      <div class="metric" id="mR"><b>—</b><span>respuesta HTTP</span></div>
+    </div>
+    <div class="tbl" id="tbl"></div>
+  </div>
+</div>
+
+<div class="explain" id="explain"></div>
+
+<h2>Cada método, su consulta típica</h2>
+<div class="map">
+  <div><b class="GET">GET</b>Leer datos.<code>SELECT … WHERE id = @id</code></div>
+  <div><b class="POST">POST</b>Crear un registro, directo o con un procedimiento.<code>INSERT INTO …<br>EXEC sp_crear_…</code></div>
+  <div><b class="PUT">PUT</b>Reemplazar todos los campos.<code>UPDATE … SET a=@a, b=@b, c=@c</code></div>
+  <div><b class="PATCH">PATCH</b>Cambiar solo algunos campos.<code>UPDATE … SET estado=@e</code></div>
+  <div><b class="DELETE">DELETE</b>Eliminar, o marcar como eliminado.<code>DELETE FROM …<br>UPDATE … SET eliminado=1</code></div>
+</div>
+
+<h2>Conceptos que aparecen en la animación</h2>
+<div class="concepts">
+  <div><b>🧩 Capas de la API</b>El <b>controller</b> recibe el request, el <b>servicio</b> aplica las reglas de negocio y el <b>repositorio</b> es el único que habla con la base de datos.</div>
+  <div><b>🔌 Pool de conexiones</b>Abrir una conexión a la BD es costoso, así que la API mantiene unas pocas abiertas y las <b>presta</b> a cada request. Si una no se devuelve, el pool se agota.</div>
+  <div><b>📦 Procedimiento almacenado (SP)</b>Un conjunto de instrucciones SQL guardado <b>dentro</b> de la base de datos, con nombre y parámetros: <code>EXEC sp_registrar_pago @monto=450</code>. Muy común en sistemas bancarios.</div>
+  <div><b>🧷 Parámetros</b>Los valores del request viajan como parámetros (<code>@id</code>), separados del texto del SQL. Así la BD nunca confunde un dato con una instrucción.</div>
+  <div><b>🔒 Transacción</b>Agrupa varias instrucciones en una sola unidad: o se aplican <b>todas</b> (<code>COMMIT</code>) o <b>ninguna</b> (<code>ROLLBACK</code>).</div>
+  <div><b>🗑️ Borrado lógico</b>En lugar de borrar la fila, se marca como eliminada. Se conserva el historial para auditoría, algo habitual en entidades financieras.</div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> un <strong>200 OK</strong> no garantiza que los datos quedaron bien. Una API puede responder “éxito” y aun así haber guardado un pago dos veces, dejado una transferencia a medias o agotado sus conexiones.
+  Por eso, al probar, también se verifica el <strong>efecto en los datos</strong>: consultar de nuevo el recurso, contar registros, revisar saldos, y probar con <strong>varios usuarios y datos reales en volumen</strong>.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+
+/* ======================= ESCENA ======================= */
+const X={app:{x:20,w:130},api:{x:220,w:220},pool:{x:510,w:150},db:{x:730,w:150}};
+const Y0=40, H=150, YREQ=95, YRES=150;
+const edge=(n,side)=>side==='r'?X[n].x+X[n].w:X[n].x;
+function drawScene(){
+  const n=(id,ico,lbl,cap,extra='')=>`<g class="node" id="n-${id}"><rect class="box" x="${X[id].x}" y="${Y0}" width="${X[id].w}" height="${H}" rx="14"/>
+    <text x="${X[id].x+X[id].w/2}" y="${Y0+26}" text-anchor="middle" class="lbl">${ico} ${lbl}</text>
+    <text x="${X[id].x+X[id].w/2}" y="${Y0+43}" text-anchor="middle" class="cap">${cap}</text>${extra}</g>`;
+  const layers=['Controller','Servicio','Repositorio'].map((l,i)=>`<rect class="layer" id="ly${i}" x="${X.api.x+14+i*66}" y="${Y0+60}" width="60" height="26" rx="6"/>
+    <text x="${X.api.x+44+i*66}" y="${Y0+77}" text-anchor="middle" class="layerT">${l}</text>`).join('')
+    +`<text x="${X.api.x+X.api.w/2}" y="${Y0+112}" text-anchor="middle" class="cap">recibe → aplica reglas → consulta</text>`;
+  const slots=[0,1,2,3,4].map(i=>`<rect class="slot" id="s${i}" x="${X.pool.x+12+i*26}" y="${Y0+70}" width="22" height="40" rx="4"/>
+    <text x="${X.pool.x+23+i*26}" y="${Y0+95}" text-anchor="middle" class="slotT">${i+1}</text>`).join('')
+    +`<text x="${X.pool.x+X.pool.w/2}" y="${Y0+130}" text-anchor="middle" class="cap" id="poolCap">5 conexiones libres</text>`;
+  const db=`<text x="${X.db.x+X.db.w/2}" y="${Y0+90}" text-anchor="middle" style="font-size:38px">🛢️</text>
+    <text x="${X.db.x+X.db.w/2}" y="${Y0+128}" text-anchor="middle" class="cap" id="dbCap">SQL · tablas y SPs</text>`;
+  $('scene').innerHTML=
+    `<line class="wire" x1="${edge('app','r')}" y1="${YREQ}" x2="${edge('api','l')}" y2="${YREQ}"/>
+     <line class="wire" x1="${edge('api','r')}" y1="${YREQ}" x2="${edge('db','l')}" y2="${YREQ}"/>
+     <line class="wire" x1="${edge('app','r')}" y1="${YRES}" x2="${edge('api','l')}" y2="${YRES}" stroke-dasharray="5 6"/>
+     <line class="wire" x1="${edge('api','r')}" y1="${YRES}" x2="${edge('db','l')}" y2="${YRES}" stroke-dasharray="5 6"/>
+     <text x="180" y="${YREQ-8}" text-anchor="middle" class="cap">request →</text>
+     <text x="180" y="${YRES+18}" text-anchor="middle" class="cap">← response</text>`
+    +n('app','📱','App','web / móvil')+n('api','⚙️','API','backend',layers)+n('pool','🔌','Pool','conexiones a la BD',slots)+n('db','','Base de datos','',db);
+}
+
+/* ======================= DATOS ======================= */
+const T={
+ clientes:()=>({title:'Tabla clientes',cols:['id','nombre','ciudad','estado'],rows:[
+   {id:121,nombre:'Ana Rojas',ciudad:'La Paz',estado:'activo'},
+   {id:122,nombre:'Luis Mamani',ciudad:'El Alto',estado:'activo'},
+   {id:123,nombre:'Carla Vargas',ciudad:'Santa Cruz',estado:'activo'},
+   {id:124,nombre:'Diego Quispe',ciudad:'Oruro',estado:'activo'}]}),
+ solicitudes:()=>({title:'Tabla solicitudes',cols:['id','cliente','monto','estado'],rows:[
+   {id:'SOL-0040',cliente:121,monto:3000,estado:'aprobada'},
+   {id:'SOL-0041',cliente:122,monto:8000,estado:'registrada'}]}),
+ pagos:()=>({title:'Tabla pagos',cols:['id','solicitud','monto','fecha'],rows:[
+   {id:'PAG-0100',solicitud:'SOL-0040',monto:450,fecha:'05-10 09:12'}]}),
+ cuentas:()=>({title:'Tabla cuentas',cols:['cuenta','titular','saldo'],rows:[
+   {cuenta:'A-001',titular:'Ana Rojas',saldo:1000},
+   {cuenta:'B-002',titular:'Luis Mamani',saldo:500}],foot:'total'}),
+ movs:()=>({title:'Tabla movimientos',cols:['filas','tamaño'],rows:[{filas:'2.000.000',tamaño:'≈ 1,2 GB'}]}),
+};
+
+/* Pasos:
+   n   = nota en la barra de estado      m  = mensaje animado {f,t,l,k}
+   q   = consulta al log {c,sql,ms,cls}  take/rel/leak = conexión del pool
+   db  = cambia la tabla                 w  = espera {ms,n}
+   r   = respuesta final {code,ok}       ly = capa de la API resaltada            */
+const S={
+/* ------------------------- buenas prácticas ------------------------- */
+ get:{g:'good',btn:'GET · consultar',table:'clientes',
+  steps:[
+   {n:'La app pide los datos del cliente <b>123</b>.'},
+   {m:{f:'app',t:'api',l:'GET /clientes/123',k:'req'}},
+   {ly:0,n:'El <b>controller</b> recibe el request y valida el id.'},
+   {ly:2,n:'El <b>repositorio</b> arma la consulta usando un <b>parámetro</b> <code>@id</code>.'},
+   {take:0,n:'Pide prestada la <b>conexión 1</b> al pool.'},
+   {m:{f:'api',t:'db',l:'SELECT … WHERE id=@id',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">SELECT</span> id, nombre, estado <span class="kw">FROM</span> clientes <span class="kw">WHERE</span> id = <span class="p">@id</span>   <span class="c">-- @id = 123</span>',ms:4}},
+   {db:t=>{t.hl=[123]}},
+   {m:{f:'db',t:'api',l:'1 fila',k:'ok'}},
+   {rel:0,n:'La API <b>devuelve la conexión</b> al pool apenas termina.'},
+   {m:{f:'api',t:'app',l:'200 OK + JSON',k:'ok'}},
+   {r:{code:'200 OK',ok:true}},
+  ],
+  ex:{one:'Un <b>GET</b> se traduce en un <code>SELECT</code>. Fíjate en el ciclo de la conexión: se <b>toma</b>, se usa unos milisegundos y se <b>devuelve</b>. Ese ciclo corto es lo que permite que 5 conexiones atiendan a cientos de usuarios.'}},
+
+ post:{g:'good',btn:'POST · con SP',table:'solicitudes',
+  steps:[
+   {n:'La app registra una solicitud de crédito.'},
+   {m:{f:'app',t:'api',l:'POST /solicitudes',k:'req'}},
+   {ly:1,n:'El <b>servicio</b> valida las reglas: cliente activo, monto mayor a 0…'},
+   {ly:2},
+   {take:0},
+   {m:{f:'api',t:'db',l:'EXEC sp_crear_solicitud',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">EXEC</span> sp_crear_solicitud <span class="p">@cliente</span>=123, <span class="p">@monto</span>=5000, <span class="p">@plazo</span>=12',ms:12}},
+   {q:{c:1,sql:'↳ dentro del SP: <span class="kw">INSERT INTO</span> solicitudes (cliente, monto, plazo, estado) <span class="kw">VALUES</span> (…)',ms:0,cls:'sub'}},
+   {q:{c:1,sql:'↳ dentro del SP: <span class="kw">SELECT</span> el id generado → <span class="s">SOL-0042</span>',ms:0,cls:'sub'}},
+   {db:t=>{t.rows.push({id:'SOL-0042',cliente:123,monto:5000,estado:'registrada'});t.nw='SOL-0042'}},
+   {n:'El <b>procedimiento almacenado</b> ejecuta varias instrucciones dentro de la BD y devuelve el id creado.'},
+   {m:{f:'db',t:'api',l:'id = SOL-0042',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'201 Created',k:'ok'}},
+   {r:{code:'201 Created',ok:true}},
+  ],
+  ex:{one:'Un <b>POST</b> crea datos: puede ser un <code>INSERT</code> directo o un <b>procedimiento almacenado</b> (<code>EXEC sp_…</code>), que agrupa varias instrucciones dentro de la base de datos. Para la app es lo mismo: solo recibe el <b>201</b> con el id nuevo.'}},
+
+ put:{g:'good',btn:'PUT · reemplazar',table:'clientes',
+  steps:[
+   {m:{f:'app',t:'api',l:'PUT /clientes/123',k:'req'}},
+   {ly:2,n:'PUT envía el cliente <b>completo</b>: se actualizan todos los campos.'},
+   {take:0},
+   {m:{f:'api',t:'db',l:'UPDATE clientes SET …',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">UPDATE</span> clientes <span class="kw">SET</span> nombre=<span class="p">@nombre</span>, ciudad=<span class="p">@ciudad</span>, estado=<span class="p">@estado</span> <span class="kw">WHERE</span> id=<span class="p">@id</span>',ms:6}},
+   {db:t=>{const r=t.rows.find(x=>x.id===123);r.ciudad='Cochabamba';t.hl=[123]}},
+   {m:{f:'db',t:'api',l:'1 fila afectada',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'200 OK',k:'ok'}},
+   {r:{code:'200 OK',ok:true}},
+  ],
+  ex:{one:'<b>PUT</b> → <code>UPDATE</code> de todos los campos. La BD responde cuántas filas cambió: si responde <b>0 filas</b>, el cliente no existía y la API debería devolver <b>404</b>, no 200.'}},
+
+ patch:{g:'good',btn:'PATCH · un campo',table:'clientes',
+  steps:[
+   {m:{f:'app',t:'api',l:'PATCH /clientes/123',k:'req'}},
+   {ly:2,n:'PATCH envía <b>solo</b> el campo que cambia: <code>estado</code>.'},
+   {take:0},
+   {m:{f:'api',t:'db',l:'UPDATE … SET estado',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">UPDATE</span> clientes <span class="kw">SET</span> estado=<span class="p">@estado</span> <span class="kw">WHERE</span> id=<span class="p">@id</span>   <span class="c">-- @estado = inactivo</span>',ms:5}},
+   {db:t=>{t.rows.find(x=>x.id===123).estado='inactivo';t.hl=[123]}},
+   {m:{f:'db',t:'api',l:'1 fila afectada',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'200 OK',k:'ok'}},
+   {r:{code:'200 OK',ok:true}},
+  ],
+  ex:{one:'<b>PATCH</b> → <code>UPDATE</code> de una sola columna. Nombre y ciudad no se tocan.'}},
+
+ del:{g:'good',btn:'DELETE · borrado lógico',table:'solicitudes',
+  steps:[
+   {m:{f:'app',t:'api',l:'DELETE /solicitudes/SOL-0041',k:'req'}},
+   {ly:1,n:'Muchas aplicaciones <b>no borran la fila</b>: la marcan como eliminada para conservar el historial.'},
+   {take:0},
+   {m:{f:'api',t:'db',l:'UPDATE … estado=eliminada',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">UPDATE</span> solicitudes <span class="kw">SET</span> estado=<span class="s">\'eliminada\'</span>, eliminado_en=<span class="kw">GETDATE</span>() <span class="kw">WHERE</span> id=<span class="p">@id</span>',ms:5}},
+   {db:t=>{t.rows.find(x=>x.id==='SOL-0041').estado='eliminada';t.hl=['SOL-0041']}},
+   {m:{f:'db',t:'api',l:'1 fila afectada',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'204 No Content',k:'ok'}},
+   {r:{code:'204 No Content',ok:true}},
+  ],
+  ex:{one:'<b>DELETE</b> puede ser un <code>DELETE FROM</code> real o un <b>borrado lógico</b> (<code>UPDATE … SET eliminado</code>). Al probar: después del DELETE, un <code>GET</code> del mismo recurso debería responder <b>404</b>, aunque la fila siga en la tabla.'}},
+
+/* ------------------------- problemas ------------------------- */
+ double:{g:'bad',btn:'SP ejecutado dos veces',table:'pagos',
+  steps:[
+   {n:'La app registra un pago de <b>Bs 450</b>.'},
+   {m:{f:'app',t:'api',l:'POST /pagos',k:'req'}},
+   {ly:2},{take:0},
+   {m:{f:'api',t:'db',l:'EXEC sp_registrar_pago',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">EXEC</span> sp_registrar_pago <span class="p">@solicitud</span>=\'SOL-0042\', <span class="p">@monto</span>=450',ms:3400}},
+   {w:{ms:1600,n:'La base de datos está lenta (otra operación tiene la tabla bloqueada)… la API espera…'}},
+   {n:'⏱ La API se cansa de esperar (<b>timeout de 3 s</b>) y <b>vuelve a intentar</b> automáticamente.'},
+   {q:{c:'',sql:'⚠ API: timeout esperando respuesta → reintento automático',ms:'',cls:'info'}},
+   {db:t=>{t.rows.push({id:'PAG-0101',solicitud:'SOL-0042',monto:450,fecha:'05-10 10:30'});t.nw='PAG-0101'}},
+   {n:'Pero la primera ejecución <b>no se canceló</b>: terminó en la BD y el pago quedó guardado.'},
+   {take:1},
+   {m:{f:'api',t:'db',l:'EXEC sp_registrar_pago (otra vez)',k:'sql'}},
+   {q:{c:2,sql:'<span class="kw">EXEC</span> sp_registrar_pago <span class="p">@solicitud</span>=\'SOL-0042\', <span class="p">@monto</span>=450',ms:15}},
+   {db:t=>{t.rows.push({id:'PAG-0102',solicitud:'SOL-0042',monto:450,fecha:'05-10 10:30'});t.nw='PAG-0102';t.bad=['PAG-0101','PAG-0102']}},
+   {rel:0},{rel:1},
+   {m:{f:'db',t:'api',l:'OK',k:'ok'}},
+   {m:{f:'api',t:'app',l:'201 Created',k:'ok'}},
+   {r:{code:'201 Created',ok:true,warn:'201… pero hay 2 pagos'}},
+   {n:'La app ve un <b>201</b>, pero en la tabla hay <b>dos pagos</b> de Bs 450 para la misma solicitud.'},
+  ],
+  fix:[
+   {n:'Ahora la app envía un header <code>Idempotency-Key</code> único para este pago.'},
+   {m:{f:'app',t:'api',l:'POST /pagos + Idempotency-Key',k:'req'}},
+   {ly:2},{take:0},
+   {m:{f:'api',t:'db',l:'EXEC sp_registrar_pago @clave',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">EXEC</span> sp_registrar_pago <span class="p">@solicitud</span>=\'SOL-0042\', <span class="p">@monto</span>=450, <span class="p">@clave</span>=\'7f3c-91a2\'',ms:3400}},
+   {w:{ms:1600,n:'La BD está lenta… la API espera…'}},
+   {q:{c:'',sql:'⚠ API: timeout → reintento con la MISMA clave',ms:'',cls:'info'}},
+   {db:t=>{t.rows.push({id:'PAG-0101',solicitud:'SOL-0042',monto:450,fecha:'05-10 10:30'});t.nw='PAG-0101'}},
+   {take:1},
+   {m:{f:'api',t:'db',l:'EXEC … @clave (reintento)',k:'sql'}},
+   {q:{c:2,sql:'<span class="kw">EXEC</span> sp_registrar_pago … <span class="p">@clave</span>=\'7f3c-91a2\'',ms:3}},
+   {q:{c:2,sql:'↳ dentro del SP: <span class="kw">IF EXISTS</span> (pago con esa clave) → devolver el pago existente, <b>no insertar</b>',ms:0,cls:'sub'}},
+   {db:t=>{t.hl=['PAG-0101']}},
+   {rel:0},{rel:1},
+   {m:{f:'db',t:'api',l:'ya existía: PAG-0101',k:'ok'}},
+   {m:{f:'api',t:'app',l:'201 Created',k:'ok'}},
+   {r:{code:'201 Created',ok:true}},
+   {n:'Con la clave de idempotencia, el reintento <b>reconoce</b> el pago y no lo duplica.'},
+  ],
+  ex:{que:'La API reintenta un <b>POST</b> (que no es idempotente) cuando la BD tarda. La primera ejecución del SP sí terminó, así que el pago se registra <b>dos veces</b>. Lo mismo pasa con un <b>doble clic</b> en el botón “Pagar”.',
+      det:'Enviar el mismo POST dos veces seguidas, o simular lentitud. Después, <b>consultar los pagos</b> de la solicitud y verificar que hay <b>uno solo</b>. No basta con mirar el 201.',
+      fix:'Usar una <b>clave de idempotencia</b> (<code>Idempotency-Key</code>) o validar duplicados dentro del SP; no reintentar automáticamente operaciones que crean datos.'}},
+
+ nplus1:{g:'bad',btn:'Una consulta por cada fila (N+1)',table:'clientes',
+  steps:[
+   {n:'La app pide la lista de clientes con su saldo.'},
+   {m:{f:'app',t:'api',l:'GET /clientes?pagina=1',k:'req'}},
+   {ly:2},{take:0},
+   {m:{f:'api',t:'db',l:'SELECT clientes',k:'sql',d:.6}},
+   {q:{c:1,sql:'<span class="kw">SELECT</span> id, nombre <span class="kw">FROM</span> clientes <span class="kw">ORDER BY</span> id <span class="kw">OFFSET</span> 0 <span class="kw">ROWS FETCH NEXT</span> 4 <span class="kw">ROWS ONLY</span>',ms:5}},
+   {n:'Ahora el código recorre los clientes y hace <b>una consulta más por cada uno</b>…'},
+   ...[121,122,123,124].flatMap(id=>[
+     {m:{f:'api',t:'db',l:`SELECT saldo … ${id}`,k:'sql',d:.35}},
+     {q:{c:1,sql:`<span class="kw">SELECT</span> saldo <span class="kw">FROM</span> cuentas <span class="kw">WHERE</span> cliente_id = <span class="p">@id</span>   <span class="c">-- @id = ${id}</span>`,ms:9}},
+     {db:t=>{t.hl=[...(t.hl||[]),id]}}]),
+   {m:{f:'db',t:'api',l:'datos',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'200 OK',k:'ok'}},
+   {r:{code:'200 OK',ok:true,warn:'5 consultas para 4 clientes'}},
+   {n:'Con 4 clientes fueron <b>5 consultas</b>. Con 100 clientes serían <b>101</b>: la respuesta se vuelve lenta a medida que crecen los datos.'},
+  ],
+  fix:[
+   {m:{f:'app',t:'api',l:'GET /clientes?pagina=1',k:'req'}},
+   {ly:2,n:'El repositorio trae todo en <b>una sola consulta</b> uniendo las tablas con <code>JOIN</code>.'},
+   {take:0},
+   {m:{f:'api',t:'db',l:'SELECT … JOIN cuentas',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">SELECT</span> c.id, c.nombre, a.saldo <span class="kw">FROM</span> clientes c <span class="kw">JOIN</span> cuentas a <span class="kw">ON</span> a.cliente_id = c.id <span class="kw">ORDER BY</span> c.id <span class="kw">OFFSET</span> 0 <span class="kw">ROWS FETCH NEXT</span> 4 <span class="kw">ROWS ONLY</span>',ms:7}},
+   {db:t=>{t.hl=[121,122,123,124]}},
+   {m:{f:'db',t:'api',l:'4 filas',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'200 OK',k:'ok'}},
+   {r:{code:'200 OK',ok:true}},
+   {n:'<b>1 consulta</b>, sin importar cuántos clientes haya en la página.'},
+  ],
+  ex:{que:'Se trae una lista y luego se hace <b>una consulta extra por cada elemento</b>. Con pocos datos no se nota; con muchos, la API se vuelve lenta y satura la base de datos.',
+      det:'Probar con <b>listas grandes</b> y comparar tiempos: si el tiempo de respuesta crece casi en línea recta con el tamaño de la página, es una señal. En performance se ve claramente en el número de consultas.',
+      fix:'Traer los datos relacionados en <b>una sola consulta</b> (<code>JOIN</code>) o en lote (<code>WHERE id IN (…)</code>).'}},
+
+ leak:{g:'bad',btn:'Conexiones que no se devuelven',table:null,
+  steps:[
+   {n:'Llegan varios usuarios consultando su saldo. El código tiene un error: <b>no devuelve la conexión</b> al pool.'},
+   ...[0,1,2,3,4].flatMap(i=>[
+     {m:{f:'app',t:'api',l:`GET /saldo · usuario ${i+1}`,k:'req',d:.45}},
+     {take:i},
+     {m:{f:'api',t:'db',l:'SELECT saldo',k:'sql',d:.35}},
+     {q:{c:i+1,sql:'<span class="kw">SELECT</span> saldo <span class="kw">FROM</span> cuentas <span class="kw">WHERE</span> cuenta = <span class="p">@cuenta</span>',ms:6}},
+     {m:{f:'api',t:'app',l:'200 OK',k:'ok',d:.4}},
+     {leak:i},
+   ]),
+   {n:'Los 5 usuarios recibieron <b>200 OK</b>… pero las 5 conexiones siguen <b>ocupadas</b> aunque nadie las usa.'},
+   {m:{f:'app',t:'api',l:'GET /saldo · usuario 6',k:'req'}},
+   {n:'El usuario 6 necesita una conexión y <b>no hay ninguna libre</b>. Espera…'},
+   {q:{c:'',sql:'⏳ esperando una conexión libre del pool…',ms:'',cls:'info'}},
+   {w:{ms:2200,n:'Esperando una conexión libre… (en un sistema real, hasta 30 segundos)'}},
+   {q:{c:'',sql:'✖ Timeout obteniendo conexión: el pool está agotado (5/5 en uso)',ms:'30000',cls:'err'}},
+   {m:{f:'api',t:'app',l:'500 Internal Server Error',k:'err'}},
+   {r:{code:'500',ok:false}},
+   {n:'Desde ahora <b>todos</b> los requests fallarán hasta que se reinicie la API.'},
+  ],
+  fix:[
+   {n:'Ahora el código <b>siempre</b> devuelve la conexión, incluso si ocurre un error.'},
+   ...[0,1,2,3,4,5].flatMap(i=>[
+     {m:{f:'app',t:'api',l:`GET /saldo · usuario ${i+1}`,k:'req',d:.45}},
+     {take:i%5},
+     {m:{f:'api',t:'db',l:'SELECT saldo',k:'sql',d:.35}},
+     {q:{c:i%5+1,sql:'<span class="kw">SELECT</span> saldo <span class="kw">FROM</span> cuentas <span class="kw">WHERE</span> cuenta = <span class="p">@cuenta</span>',ms:6}},
+     {rel:i%5},
+     {m:{f:'api',t:'app',l:'200 OK',k:'ok',d:.4}},
+   ]),
+   {r:{code:'200 OK',ok:true}},
+   {n:'Cada request devuelve su conexión: con solo 5 conexiones se atiende a cualquier cantidad de usuarios.'},
+  ],
+  ex:{que:'El código toma una conexión y, en algún camino (por ejemplo cuando ocurre una excepción), <b>olvida devolverla</b>. Con un usuario todo funciona; con varios, el pool se agota y la API empieza a fallar.',
+      det:'Este error <b>casi nunca aparece en pruebas funcionales</b> con un solo usuario. Se detecta con <b>pruebas de carga</b> (Parte 3): después de N requests aparecen errores 500/503 y no se recupera solo.',
+      fix:'Liberar la conexión siempre: <code>using</code> / <code>try-with-resources</code> / <code>finally</code>. Monitorear las conexiones en uso del pool.'}},
+
+ notx:{g:'bad',btn:'Transferencia sin transacción',table:'cuentas',
+  steps:[
+   {n:'Transferencia de <b>Bs 100</b> de la cuenta A-001 a la B-002.'},
+   {m:{f:'app',t:'api',l:'POST /transferencias',k:'req'}},
+   {ly:2},{take:0},
+   {m:{f:'api',t:'db',l:'UPDATE A: −100',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">UPDATE</span> cuentas <span class="kw">SET</span> saldo = saldo − 100 <span class="kw">WHERE</span> cuenta = \'A-001\'',ms:4}},
+   {db:t=>{t.rows[0].saldo=900;t.hl=['A-001']}},
+   {n:'Se descontaron los Bs 100 de la cuenta A…'},
+   {m:{f:'api',t:'db',l:'UPDATE B: +100',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">UPDATE</span> cuentas <span class="kw">SET</span> saldo = saldo + 100 <span class="kw">WHERE</span> cuenta = \'B-002\'   ✖ error: cuenta bloqueada',ms:3,cls:'err'}},
+   {db:t=>{t.bad=['A-001']}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'500 Internal Server Error',k:'err'}},
+   {r:{code:'500',ok:false,warn:'Bs 100 desaparecieron'}},
+   {n:'La segunda instrucción falló, pero la primera <b>ya se aplicó</b>: A perdió Bs 100 y B no los recibió.'},
+  ],
+  fix:[
+   {m:{f:'app',t:'api',l:'POST /transferencias',k:'req'}},
+   {ly:2,n:'Ahora las dos instrucciones van dentro de una <b>transacción</b>.'},
+   {take:0},
+   {m:{f:'api',t:'db',l:'BEGIN TRANSACTION',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">BEGIN TRANSACTION</span>',ms:0}},
+   {q:{c:1,sql:'<span class="kw">UPDATE</span> cuentas <span class="kw">SET</span> saldo = saldo − 100 <span class="kw">WHERE</span> cuenta = \'A-001\'',ms:4}},
+   {db:t=>{t.rows[0].saldo=900;t.hl=['A-001']}},
+   {m:{f:'api',t:'db',l:'UPDATE B: +100',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">UPDATE</span> cuentas <span class="kw">SET</span> saldo = saldo + 100 <span class="kw">WHERE</span> cuenta = \'B-002\'   ✖ error: cuenta bloqueada',ms:3,cls:'err'}},
+   {m:{f:'api',t:'db',l:'ROLLBACK',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">ROLLBACK</span>   <span class="c">-- se deshace todo lo de la transacción</span>',ms:2}},
+   {db:t=>{t.rows[0].saldo=1000;t.hl=['A-001']}},
+   {n:'El <code>ROLLBACK</code> devolvió la cuenta A a <b>Bs 1.000</b>: o se hace todo, o no se hace nada.'},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'422 · cuenta destino bloqueada',k:'err'}},
+   {r:{code:'422',ok:false,good:true}},
+  ],
+  ex:{que:'Una operación necesita <b>varias instrucciones</b> (descontar y acreditar). Si no están en una transacción y una falla a la mitad, los datos quedan <b>inconsistentes</b>.',
+      det:'Provocar el error a mitad del proceso (cuenta destino bloqueada, inexistente…) y luego <b>revisar ambos saldos</b>. La suma total debe ser la misma antes y después.',
+      fix:'Usar <code>BEGIN TRANSACTION</code> … <code>COMMIT</code>, con <code>ROLLBACK</code> si algo falla. Y devolver un error claro (4xx) en lugar de un 500 genérico.'}},
+
+ nopage:{g:'bad',btn:'Consulta sin filtro ni paginación',table:'movs',
+  steps:[
+   {n:'La app pide los movimientos de <b>una</b> cuenta…'},
+   {m:{f:'app',t:'api',l:'GET /movimientos',k:'req'}},
+   {ly:2},{take:0},
+   {m:{f:'api',t:'db',l:'SELECT * FROM movimientos',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">SELECT</span> * <span class="kw">FROM</span> movimientos   <span class="c">-- sin WHERE, sin paginación</span>',ms:9800,cls:'err'}},
+   {db:t=>{t.bad=['2.000.000']}},
+   {w:{ms:2200,n:'La BD lee <b>2 millones de filas</b> y la API las convierte a JSON…'}},
+   {m:{f:'db',t:'api',l:'2.000.000 filas',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'200 OK · 180 MB · 12 s',k:'ok'}},
+   {r:{code:'200 OK',ok:true,warn:'12 s y 180 MB'}},
+   {n:'Responde <b>200 OK</b>, pero tarda 12 segundos y envía 180 MB: la app se congela y la BD queda ocupada para los demás.'},
+  ],
+  fix:[
+   {m:{f:'app',t:'api',l:'GET /movimientos?cuenta=A-001&pagina=1',k:'req'}},
+   {ly:2,n:'Se filtra por cuenta y se trae solo una página, con las columnas necesarias.'},
+   {take:0},
+   {m:{f:'api',t:'db',l:'SELECT … WHERE cuenta … FETCH 50',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">SELECT</span> fecha, detalle, monto <span class="kw">FROM</span> movimientos <span class="kw">WHERE</span> cuenta=<span class="p">@cuenta</span> <span class="kw">ORDER BY</span> fecha <span class="kw">DESC OFFSET</span> 0 <span class="kw">ROWS FETCH NEXT</span> 50 <span class="kw">ROWS ONLY</span>',ms:14}},
+   {db:t=>{t.rows=[{filas:'50 (de una cuenta)',tamaño:'≈ 6 KB'}];t.hl=['50 (de una cuenta)']}},
+   {m:{f:'db',t:'api',l:'50 filas',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'200 OK · 6 KB · 0,1 s',k:'ok'}},
+   {r:{code:'200 OK',ok:true}},
+  ],
+  ex:{que:'La consulta no filtra ni pagina: trae <b>toda la tabla</b>. En el ambiente de pruebas, con 20 filas, responde rápido; en producción, con millones, colapsa.',
+      det:'Probar con <b>volumen de datos parecido al real</b>, revisar el <b>tamaño</b> de la respuesta y verificar que los endpoints de listas aceptan filtros y paginación.',
+      fix:'Filtrar siempre (<code>WHERE</code>), paginar (<code>OFFSET/FETCH</code>, <code>?pagina=</code>) y pedir solo las columnas necesarias, no <code>SELECT *</code>.'}},
+
+ concat:{g:'bad',btn:'SQL armado con texto',table:'clientes',
+  steps:[
+   {n:'Una búsqueda por nombre. Alguien escribe en el buscador: <code>x\' OR \'1\'=\'1</code>'},
+   {m:{f:'app',t:'api',l:"GET /clientes?nombre=x' OR '1'='1",k:'req'}},
+   {ly:2,n:'El repositorio <b>pega el texto</b> del usuario dentro del SQL, en lugar de usar un parámetro.'},
+   {take:0},
+   {m:{f:'api',t:'db',l:'SELECT … texto pegado',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">SELECT</span> * <span class="kw">FROM</span> clientes <span class="kw">WHERE</span> nombre = \'x\' <span class="kw">OR</span> \'1\'=\'1\'   <span class="c">-- la condición siempre es verdadera</span>',ms:6,cls:'err'}},
+   {db:t=>{t.bad=[121,122,123,124]}},
+   {m:{f:'db',t:'api',l:'4 filas (todas)',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'200 OK + todos los clientes',k:'ok'}},
+   {r:{code:'200 OK',ok:true,warn:'expuso todos los datos'}},
+   {n:'El texto del usuario se convirtió en <b>parte de la instrucción</b>: la API devolvió <b>todos</b> los clientes.'},
+  ],
+  fix:[
+   {m:{f:'app',t:'api',l:"GET /clientes?nombre=x' OR '1'='1",k:'req'}},
+   {ly:2,n:'Ahora el valor viaja como <b>parámetro</b>: la BD lo trata como un dato, nunca como instrucción.'},
+   {take:0},
+   {m:{f:'api',t:'db',l:'SELECT … WHERE nombre=@nombre',k:'sql'}},
+   {q:{c:1,sql:'<span class="kw">SELECT</span> id, nombre <span class="kw">FROM</span> clientes <span class="kw">WHERE</span> nombre = <span class="p">@nombre</span>   <span class="c">-- @nombre = "x\' OR \'1\'=\'1"</span>',ms:4}},
+   {m:{f:'db',t:'api',l:'0 filas',k:'ok'}},
+   {rel:0},
+   {m:{f:'api',t:'app',l:'200 OK · []',k:'ok'}},
+   {r:{code:'200 OK',ok:true}},
+   {n:'Nadie se llama literalmente así, así que la respuesta es una <b>lista vacía</b>.'},
+  ],
+  ex:{que:'El valor que envía el usuario se <b>concatena</b> dentro del SQL. Un texto con comillas puede cambiar el sentido de la consulta y exponer o modificar datos.',
+      det:'Probar los campos de búsqueda y los parámetros con <b>comillas, apóstrofes y caracteres especiales</b>: la API debe responder normal (sin resultados o 400), nunca un 500 ni datos de más.',
+      fix:'Usar siempre <b>consultas parametrizadas</b> (<code>@nombre</code>) o SPs con parámetros. Nunca armar SQL pegando texto.'}},
+};
+const ORDER_GOOD=['get','post','put','patch','del'], ORDER_BAD=['double','nplus1','leak','notx','nopage','concat'];
+
+/* ======================= MOTOR ======================= */
+let cur='get', fixMode=false, runId=0, mode=null, stepResolve=null, running=false;
+let tbl=null, met;
+const speed=()=>+$('speed').value;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms/speed()));
+const COL={req:'#f3a43b',sql:'#a982e2',ok:'#57c785',err:'#ef6570'};
+
+function resetMetrics(){met={q:0,t:0,busy:new Set(),leak:new Set()};renderMetrics();$('mR').querySelector('b').textContent='—';$('mR').className='metric'}
+function renderMetrics(){
+  $('mQ').querySelector('b').textContent=met.q;
+  $('mT').querySelector('b').textContent=met.t>=1000?(met.t/1000).toFixed(1).replace('.',',')+' s':met.t+' ms';
+  const used=met.busy.size+met.leak.size;
+  $('mC').querySelector('b').textContent=`${used} / 5`;
+  $('mC').className='metric'+(used>=5?' warn':'');
+  for(let i=0;i<5;i++){const s=$('s'+i);s.classList.toggle('busy',met.busy.has(i));s.classList.toggle('leak',met.leak.has(i))}
+  const libres=5-used;
+  $('poolCap').textContent=libres?`${libres} conexion${libres===1?'':'es'} libre${libres===1?'':'s'}`:'⚠ pool agotado';
+}
+function renderTable(){
+  if(!tbl){$('tbl').innerHTML='<div class="tt">Pool de conexiones</div><div class="small">En este escenario lo importante no es la tabla, sino las <b>conexiones</b>: mira los 5 casilleros del pool. <span style="color:var(--orange)">Naranja</span> = en uso · <span style="color:var(--red)">rojo</span> = ocupada y nunca devuelta.</div>';return}
+  const key=tbl.cols[0];
+  let foot='';
+  if(tbl.foot==='total'){const s=tbl.rows.reduce((a,r)=>a+r.saldo,0);foot=`<div class="tfoot">Suma de saldos: <b style="color:${s===1500?'var(--green)':'var(--red)'}">Bs ${s.toLocaleString('es-BO')}</b> ${s===1500?'(correcta)':'(debería ser Bs 1.500)'}</div>`}
+  $('tbl').innerHTML=`<div class="tt">🛢️ ${tbl.title}</div><table><tr>${tbl.cols.map(c=>`<th>${c}</th>`).join('')}</tr>
+    ${tbl.rows.map(r=>`<tr class="${(tbl.bad||[]).includes(r[key])?'bad':(tbl.hl||[]).includes(r[key])?'hl':''} ${tbl.nw===r[key]?'new':''}">${tbl.cols.map(c=>`<td>${typeof r[c]==='number'&&c==='saldo'?'Bs '+r[c].toLocaleString('es-BO'):r[c]}</td>`).join('')}</tr>`).join('')}</table>${foot}`;
+  tbl.nw=null;
+}
+function log(q){
+  const L=$('log'); L.querySelector('.empty')?.remove();
+  const d=document.createElement('div'); d.className='row '+(q.cls||'');
+  const ms=q.ms===''?'':(q.ms>=1000?(q.ms/1000).toFixed(1).replace('.',',')+' s':q.ms+' ms');
+  d.innerHTML=`<span class="c">${q.c?'#'+q.c:''}</span><span>${q.sql}</span><span class="ms">${q.cls==='sub'?'':ms}</span>`;
+  L.appendChild(d); L.scrollTop=L.scrollHeight;
+  if(q.cls!=='sub'&&q.cls!=='info'&&typeof q.ms==='number'){met.q++;met.t+=q.ms;renderMetrics()}
+}
+function hiNode(ids){document.querySelectorAll('.node').forEach(n=>n.classList.toggle('on',ids.includes(n.id.slice(2))))}
+function hiLayer(i){[0,1,2].forEach(k=>$('ly'+k).classList.toggle('on',k===i))}
+
+function anim(m,id){
+  const fromR=X[m.f].x<X[m.t].x, y=fromR?YREQ:YRES;
+  const x0=fromR?edge(m.f,'r'):edge(m.f,'l'), x1=fromR?edge(m.t,'l'):edge(m.t,'r');
+  const dur=Math.max(450,Math.abs(x1-x0)*2.6)*(m.d||1);
+  hiNode([m.f,m.t]);
+  return new Promise(res=>{
+    const t0=performance.now();
+    const tick=now=>{
+      if(id!==runId){$('pkts').innerHTML='';return res()}
+      const p=Math.min(1,(now-t0)*speed()/dur), e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2, x=x0+(x1-x0)*e, c=COL[m.k];
+      const w=Math.min(300,m.l.length*6.6+20), lx=Math.max(w/2+4,Math.min(896-w/2,x));
+      $('pkts').innerHTML=`<circle cx="${x}" cy="${y}" r="8" fill="${c}"/>
+        <rect x="${lx-w/2}" y="${y-34}" width="${w}" height="21" rx="6" fill="#10131a" stroke="${c}"/>
+        <text x="${lx}" y="${y-19}" text-anchor="middle" fill="${c}" font-size="11" font-weight="700" font-family="Consolas,monospace">${m.l}</text>`;
+      if(p<1)requestAnimationFrame(tick);else res();
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+async function gate(id){
+  if(mode==='step'){ await new Promise(r=>stepResolve=r); stepResolve=null; }
+  if(id!==runId) throw 'stop';
+}
+async function run(){
+  const id=++runId; running=true; $('play').classList.toggle('on',mode==='auto');
+  const steps=fixMode?S[cur].fix:S[cur].steps;
+  try{
+    for(const st of steps){
+      const needsGate=st.m||st.q||st.w||st.r||st.n;
+      if(needsGate) await gate(id);
+      if(st.ly!==undefined) hiLayer(st.ly);
+      if(st.n) $('status').innerHTML=st.n;
+      if(st.take!==undefined){met.busy.add(st.take);renderMetrics();await sleep(250)}
+      if(st.rel!==undefined){met.busy.delete(st.rel);renderMetrics();await sleep(200)}
+      if(st.leak!==undefined){met.busy.delete(st.leak);met.leak.add(st.leak);renderMetrics();await sleep(250)}
+      if(st.m) await anim(st.m,id);
+      if(st.q){log(st.q);await sleep(st.q.cls==='sub'?350:550)}
+      if(st.db&&tbl){st.db(tbl);renderTable();await sleep(300)}
+      if(st.w){$('status').innerHTML=st.w.n;$('dbCap').textContent='⏳ procesando…';await sleep(st.w.ms);$('dbCap').textContent='SQL · tablas y SPs'}
+      if(st.r){const b=$('mR');b.querySelector('b').innerHTML=st.r.code+(st.r.warn?`<br><span style="font-size:11px;font-weight:700">⚠ ${st.r.warn}</span>`:'');
+        b.className='metric '+((st.r.ok&&!st.r.warn)||st.r.good?'okc':'warn')}
+      if(id!==runId) return;
+    }
+    hiNode([]);hiLayer(-1);$('pkts').innerHTML='';
+  }catch(e){ if(e!=='stop') throw e; }
+  if(id===runId){running=false;mode=null;$('play').classList.remove('on');$('play').textContent='▶ Reproducir';$('step').textContent='⏭ Paso a paso'}
+}
+
+function setup(k,fix=false){
+  runId++; running=false; mode=null; if(stepResolve){stepResolve();stepResolve=null}
+  cur=k; fixMode=fix;
+  document.querySelectorAll('.btns button').forEach(b=>b.classList.toggle('active',b.dataset.k===k));
+  const sc=S[k];
+  tbl=sc.table?T[sc.table]():null;
+  $('pkts').innerHTML=''; hiNode([]); hiLayer(-1);
+  $('log').innerHTML='<div class="empty">Presiona Reproducir o Paso a paso.</div>';
+  resetMetrics(); renderTable();
+  $('fix').style.display=sc.fix?'':'none';
+  $('fix').classList.toggle('on',fix);
+  $('fix').textContent=fix?'⚠ Ver el problema':'🛠 Ver la forma correcta';
+  $('status').innerHTML=fix?'<b>Forma correcta.</b> Presiona Reproducir para comparar con el problema.':(sc.g==='bad'?'<b>Problema común.</b> Presiona Reproducir y observa la tabla, el log y el pool.':'Presiona <b>Reproducir</b> o avanza <b>Paso a paso</b>.');
+  $('play').textContent='▶ Reproducir'; $('play').classList.remove('on'); $('step').textContent='⏭ Paso a paso';
+  const ex=sc.ex;
+  $('explain').className='explain'+(ex.one?' one':'');
+  $('explain').innerHTML=ex.one?`<div class="ex"><b class="h">💡 Concepto</b>${ex.one}</div>`:
+    `<div class="ex"><b class="h">⚠️ Qué pasa</b>${ex.que}</div><div class="ex"><b class="h">🔍 Cómo detectarlo al probar</b>${ex.det}</div><div class="ex"><b class="h">🛠 Forma correcta</b>${ex.fix}</div>`;
+}
+
+$('goodBtns').innerHTML=ORDER_GOOD.map(k=>`<button data-k="${k}">${S[k].btn}</button>`).join('');
+$('badBtns').innerHTML=ORDER_BAD.map(k=>`<button data-k="${k}">${S[k].btn}</button>`).join('');
+document.querySelectorAll('.btns').forEach(g=>g.onclick=e=>{const b=e.target.closest('button[data-k]');if(b)setup(b.dataset.k)});
+$('play').onclick=()=>{
+  if(running&&mode==='auto'){mode='step';$('play').textContent='▶ Continuar';$('play').classList.remove('on');$('step').textContent='⏭ Siguiente paso';return}
+  if(running&&mode==='step'){mode='auto';$('play').textContent='Ⅱ Pausar';$('play').classList.add('on');if(stepResolve)stepResolve();return}
+  setup(cur,fixMode); mode='auto'; $('play').textContent='Ⅱ Pausar'; run();
+};
+$('step').onclick=()=>{
+  if(running){mode='step';$('play').textContent='▶ Continuar';$('play').classList.remove('on');if(stepResolve)stepResolve();return}
+  setup(cur,fixMode); mode='step'; $('step').textContent='⏭ Siguiente paso'; $('play').textContent='▶ Continuar'; run().then(()=>{}); setTimeout(()=>stepResolve&&stepResolve(),0);
+};
+$('reset').onclick=()=>setup(cur,fixMode);
+$('fix').onclick=()=>setup(cur,!fixMode);
+
+drawScene(); setup('get');
+})();
+</script>
+</body></html>

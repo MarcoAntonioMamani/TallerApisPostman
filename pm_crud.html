@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRUD con datos en tiempo de ejecución</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+/* ---------- flujo animado ---------- */
+.flow{display:grid;grid-template-columns:1fr 260px;gap:14px}
+.chain{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:stretch}
+.rc{background:var(--panel2);border:2px solid var(--border);border-radius:12px;padding:10px;position:relative;transition:border-color .25s,transform .25s;min-height:150px}
+.rc.run{border-color:var(--orange);transform:translateY(-3px)}
+.rc.ok{border-color:var(--green)}
+.rc .n{font-size:11px;color:var(--muted);font-weight:800}
+.rc .m{font-family:Consolas,monospace;font-weight:900;font-size:13px;margin-top:2px}
+.rc .u{font-family:Consolas,monospace;font-size:11px;color:var(--text);margin:4px 0 6px;word-break:break-all;line-height:1.35}
+.rc .u .v{color:var(--orange);font-weight:700}
+.rc .res{font-family:Consolas,monospace;font-size:11.5px;min-height:18px}
+.rc .tests{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
+.rc .tests .p{color:var(--green)}
+.rc .uses{font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px dashed var(--border);padding-top:5px;line-height:1.4}
+.rc .uses b{color:var(--orange)}
+.rc:not(:last-child)::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:900}
+.vars{background:#141820;border-radius:12px;padding:12px;border:1px solid var(--border)}
+.vars h4{margin:0 0 8px;font-size:13px;color:var(--muted)}
+.vars .vr{display:grid;grid-template-columns:80px 1fr;gap:6px;font-family:Consolas,monospace;font-size:12.5px;padding:6px 8px;border-radius:7px;margin-bottom:5px;background:var(--panel2);transition:background .4s}
+.vars .vr span:first-child{color:var(--orange)}
+.vars .vr.flash{background:rgba(87,199,133,.3)}
+.vars .vr .empty{color:var(--muted);font-style:italic}
+.flowctl{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.flowmsg{flex:1;font-size:13px;color:var(--muted);min-width:240px}
+.flowmsg b{color:var(--text)}
+.mGET{color:#6bdd9a}.mPOST{color:#ffe47e}.mPUT{color:#74aef6}.mDELETE{color:#f79a8e}
+/* ---------- referencia ---------- */
+.ref{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.ref .card h4{margin:0 0 6px;font-size:15px;display:flex;gap:8px;align-items:center}
+.ref pre{margin:6px 0 0;background:#141820;border-radius:8px;padding:10px;font-family:Consolas,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.ref .lbl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:10px}
+.c{color:#6a9955}.s{color:#ce9178}.k{color:#dcdcaa}.v{color:var(--orange)}
+@media(max-width:1000px){.flow,.ref{grid-template-columns:1fr}.chain{grid-template-columns:1fr 1fr}.rc::after{display:none}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>CRUD completo con datos en tiempo de ejecución</h1>
+<div class="sub">Vamos a <b>crear, consultar, actualizar y eliminar</b> una mascota en Petstore. La clave profesional: <b>nada se escribe a mano entre un request y otro</b>.
+El primer request genera los datos, un script <b>guarda el id</b> en una variable, y los siguientes requests la usan. Así la colección se puede ejecutar mil veces, siempre con datos nuevos.</div>
+
+<h2>El flujo: cómo viajan los datos entre requests</h2>
+<div class="flow">
+  <div class="card">
+    <div class="chain" id="chain"></div>
+    <div class="flowctl"><button class="btn pri" id="runFlow">▶ Ejecutar el flujo</button><span class="flowmsg" id="flowMsg">Presiona <b>Ejecutar</b> y observa cómo se llenan las variables y cómo las usan los requests siguientes.</span></div>
+  </div>
+  <div class="vars"><h4>▣ Environment: Petstore - QA</h4><div id="vars"></div>
+    <div class="small" style="margin-top:8px">Ejecuta el flujo <b>dos veces</b>: cada ejecución crea una mascota distinta con los mismos requests.</div></div>
+</div>
+
+<h2>Laboratorio: arma la colección paso a paso</h2>
+<div id="lab"></div>
+
+<h2>Cómo debe quedar cada request</h2>
+<div class="ref">
+  <div class="card"><h4><span class="mPOST">POST</span> 01 Crear mascota</h4>
+    <div class="lbl">URL</div><pre><span class="v">{{baseUrl}}</span>/pet</pre>
+    <div class="lbl">Scripts → Pre-request</div><pre><span class="c">// Datos nuevos en cada ejecución</span>
+<span class="k">pm.environment.set</span>(<span class="s">"petId"</span>, Date.now());
+<span class="k">pm.environment.set</span>(<span class="s">"petName"</span>, <span class="k">pm.variables.replaceIn</span>(<span class="s">"{{$randomFirstName}}"</span>));</pre>
+    <div class="lbl">Body → raw → JSON</div><pre>{
+  "id": <span class="v">{{petId}}</span>,
+  "category": { "id": 1, "name": "Perros" },
+  "name": "<span class="v">{{petName}}</span>",
+  "photoUrls": [],
+  "tags": [],
+  "status": "available"
+}</pre>
+    <div class="lbl">Scripts → Post-response</div><pre><span class="k">pm.test</span>(<span class="s">"Status 200"</span>, () => <span class="k">pm.response.to.have.status</span>(200));
+<span class="k">const</span> json = <span class="k">pm.response.json</span>();
+<span class="k">pm.test</span>(<span class="s">"Se creó con el nombre enviado"</span>, () =>
+  <span class="k">pm.expect</span>(json.name).to.eql(<span class="k">pm.environment.get</span>(<span class="s">"petName"</span>)));
+<span class="c">// Guardar el id que confirmó la API</span>
+<span class="k">pm.environment.set</span>(<span class="s">"petId"</span>, json.id);</pre></div>
+
+  <div class="card"><h4><span class="mGET">GET</span> 02 Consultar mascota</h4>
+    <div class="lbl">URL</div><pre><span class="v">{{baseUrl}}</span>/pet/<span class="v">{{petId}}</span></pre>
+    <div class="lbl">Scripts → Post-response</div><pre><span class="k">pm.test</span>(<span class="s">"Status 200"</span>, () => <span class="k">pm.response.to.have.status</span>(200));
+<span class="k">const</span> json = <span class="k">pm.response.json</span>();
+<span class="k">pm.test</span>(<span class="s">"Es la mascota creada"</span>, () => {
+  <span class="k">pm.expect</span>(String(json.id)).to.eql(String(<span class="k">pm.environment.get</span>(<span class="s">"petId"</span>)));
+  <span class="k">pm.expect</span>(json.name).to.eql(<span class="k">pm.environment.get</span>(<span class="s">"petName"</span>));
+});
+<span class="k">console.log</span>(<span class="s">"Estado actual:"</span>, json.status);</pre>
+    <div class="small" style="margin-top:8px">No valida el <code>status</code> a propósito: así sirve para consultar <b>antes y después</b> de actualizar. Es el mismo request, reutilizado.</div></div>
+
+  <div class="card"><h4><span class="mPUT">PUT</span> 03 Actualizar mascota</h4>
+    <div class="lbl">URL</div><pre><span class="v">{{baseUrl}}</span>/pet</pre>
+    <div class="lbl">Body → raw → JSON</div><pre>{
+  "id": <span class="v">{{petId}}</span>,
+  "category": { "id": 1, "name": "Perros" },
+  "name": "<span class="v">{{petName}}</span>",
+  "photoUrls": [],
+  "tags": [],
+  "status": "sold"
+}</pre>
+    <div class="lbl">Scripts → Post-response</div><pre><span class="k">pm.test</span>(<span class="s">"Status 200"</span>, () => <span class="k">pm.response.to.have.status</span>(200));
+<span class="k">pm.test</span>(<span class="s">"Quedó vendida"</span>, () =>
+  <span class="k">pm.expect</span>(<span class="k">pm.response.json</span>().status).to.eql(<span class="s">"sold"</span>));</pre></div>
+
+  <div class="card"><h4><span class="mDELETE">DELETE</span> 04 Eliminar mascota</h4>
+    <div class="lbl">URL</div><pre><span class="v">{{baseUrl}}</span>/pet/<span class="v">{{petId}}</span></pre>
+    <div class="lbl">Headers</div><pre>api_key : <span class="v">{{apiKey}}</span></pre>
+    <div class="lbl">Scripts → Post-response</div><pre><span class="k">pm.test</span>(<span class="s">"Status 200"</span>, () => <span class="k">pm.response.to.have.status</span>(200));</pre>
+    <h4 style="margin-top:16px"><span class="mGET">GET</span> 05 Verificar eliminación</h4>
+    <div class="lbl">URL</div><pre><span class="v">{{baseUrl}}</span>/pet/<span class="v">{{petId}}</span></pre>
+    <div class="lbl">Scripts → Post-response</div><pre><span class="k">pm.test</span>(<span class="s">"Ya no existe: 404"</span>, () => <span class="k">pm.response.to.have.status</span>(404));</pre></div>
+</div>
+
+<div class="note">💡 <b>¿Y PATCH?</b> Petstore no tiene un endpoint PATCH: para cambiar datos usa <b>PUT</b> con el objeto completo. Ese es justamente un dato que se aprende leyendo la documentación.</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> cada request <strong>deja preparado</strong> lo que necesita el siguiente. El POST genera y guarda <code>petId</code>; GET, PUT y DELETE lo leen con <code>{{petId}}</code>.
+  Por eso la colección se ejecuta completa, en orden, sin tocar nada: la base para el <strong>Collection Runner</strong> y la automatización.
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+/* =================== FLUJO ANIMADO =================== */
+(()=>{
+const $=id=>document.getElementById(id);
+const NAMES=['Lucía','Mateo','Firulais','Toby','Luna','Rocky','Kira','Simba'];
+const REQ=[
+ {n:'01 Crear',m:'POST',u:'{{baseUrl}}/pet',uses:'<b>genera</b> petId y petName (pre-request)'},
+ {n:'02 Consultar',m:'GET',u:'{{baseUrl}}/pet/{{petId}}',uses:'usa <b>petId</b>'},
+ {n:'03 Actualizar',m:'PUT',u:'{{baseUrl}}/pet',uses:'usa <b>petId</b> y <b>petName</b>'},
+ {n:'04 Eliminar',m:'DELETE',u:'{{baseUrl}}/pet/{{petId}}',uses:'usa <b>petId</b> y <b>apiKey</b>'},
+ {n:'05 Verificar',m:'GET',u:'{{baseUrl}}/pet/{{petId}}',uses:'usa <b>petId</b>, espera 404'},
+];
+let V={petId:'',petName:''}, running=false, runs=0;
+const hlU=u=>u.replace(/\{\{(\w+)\}\}/g,'<span class="v">{{$1}}</span>');
+function drawChain(){ $('chain').innerHTML=REQ.map((r,i)=>`<div class="rc" id="rc${i}"><div class="n">${r.n}</div><div class="m m${r.m}">${r.m}</div><div class="u">${hlU(r.u)}</div><div class="res"></div><div class="tests"></div><div class="uses">${r.uses}</div></div>`).join('') }
+function drawVars(flash){ $('vars').innerHTML=[['baseUrl','https://petstore.swagger.io/v2'],['apiKey','••••••'],['petId',V.petId],['petName',V.petName]].map(([k,v])=>`<div class="vr ${flash&&flash.includes(k)?'flash':''}"><span>${k}</span><span>${v===''?'<span class="empty">(vacía)</span>':v}</span></div>`).join('') }
+drawChain(); drawVars();
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function step(i,res,tests,msg,flash){
+  const el=$('rc'+i); el.classList.add('run'); $('flowMsg').innerHTML=msg;
+  el.querySelector('.u').innerHTML=hlU(REQ[i].u).replace(/<span class="v">\{\{petId\}\}<\/span>/g,`<span class="v">${V.petId}</span>`).replace('<span class="v">{{baseUrl}}</span>','<span class="v" title="https://petstore.swagger.io/v2">{{baseUrl}}</span>');
+  await wait(900);
+  el.querySelector('.res').innerHTML=res; el.querySelector('.tests').innerHTML=tests.map(t=>`<span class="p">✓</span> ${t}`).join('<br>');
+  if(flash) drawVars(flash);
+  el.classList.remove('run'); el.classList.add('ok'); await wait(900);
+}
+$('runFlow').onclick=async()=>{
+  if(running) return; running=true; $('runFlow').disabled=true; runs++; drawChain();
+  V.petId=String(Date.now()); V.petName=NAMES[(runs*3+Math.floor(Math.random()*5))%NAMES.length];
+  $('flowMsg').innerHTML='<b>Pre-request de 01:</b> genera un <b>petId</b> único y un <b>nombre</b> aleatorio y los guarda en el environment.'; drawVars(['petId','petName']); await wait(1300);
+  await step(0,`<span style="color:#6bdd9a">200 OK</span>`,['Status 200','Nombre correcto'],`<b>01 Crear:</b> el body usa {{petId}} y {{petName}}. El post-response confirma y guarda el id devuelto.`,['petId']);
+  await step(1,`<span style="color:#6bdd9a">200 OK</span> · ${V.petName} · available`,['Status 200','Es la mascota creada'],`<b>02 Consultar:</b> la URL se resolvió con el petId guardado: <code>/pet/${V.petId}</code>.`);
+  await step(2,`<span style="color:#6bdd9a">200 OK</span> · status: sold`,['Status 200','Quedó vendida'],`<b>03 Actualizar:</b> PUT envía el objeto completo con el mismo id y status "sold".`);
+  await step(3,`<span style="color:#6bdd9a">200 OK</span>`,['Status 200'],`<b>04 Eliminar:</b> DELETE usa el petId y la apiKey (secret) en el header.`);
+  await step(4,`<span style="color:#f79a8e">404 Not Found</span>`,['Ya no existe: 404'],`<b>05 Verificar:</b> la mascota ya no existe. Un 404 <b>esperado</b> también es una prueba que pasa.`);
+  $('flowMsg').innerHTML=`✅ <b>5 de 5 requests</b> y todas sus pruebas pasaron, sin escribir ningún dato a mano. Ejecuta otra vez: será otra mascota.`;
+  $('runFlow').disabled=false; $('runFlow').textContent='▶ Ejecutar otra vez'; running=false;
+};
+})();
+
+/* =================== LABORATORIO =================== */
+const PID='1791322494976', PNAME='Lucía';
+const ENVQA=(id='',name='')=>[{name:'Petstore - QA',vars:[['baseUrl','https://petstore.swagger.io/v2','https://petstore.swagger.io/v2'],['status','available','available'],['apiKey','','special-key',true],['petId','',id],['petName','',name]]}];
+const BODY_POST=`{
+  "id": {{petId}},
+  "category": { "id": 1, "name": "Perros" },
+  "name": "{{petName}}",
+  "photoUrls": [],
+  "tags": [],
+  "status": "available"
+}`;
+const PRE_POST=`// Datos nuevos en cada ejecución
+pm.environment.set("petId", Date.now());
+pm.environment.set("petName", pm.variables.replaceIn("{{$randomFirstName}}"));`;
+const POST_POST=`pm.test("Status 200", () => pm.response.to.have.status(200));
+const json = pm.response.json();
+pm.test("Se creó con el nombre enviado", () =>
+  pm.expect(json.name).to.eql(pm.environment.get("petName")));
+// Guardar el id que confirmó la API
+pm.environment.set("petId", json.id);`;
+const RES_PET=(status)=>`{
+  "id": ${PID},
+  "category": { "id": 1, "name": "Perros" },
+  "name": "${PNAME}",
+  "photoUrls": [],
+  "tags": [],
+  "status": "${status}"
+}`;
+const GET_POST=`pm.test("Status 200", () => pm.response.to.have.status(200));
+const json = pm.response.json();
+pm.test("Es la mascota creada", () => {
+  pm.expect(String(json.id)).to.eql(String(pm.environment.get("petId")));
+  pm.expect(json.name).to.eql(pm.environment.get("petName"));
+});
+console.log("Estado actual:", json.status);`;
+const BODY_PUT=BODY_POST.replace('"available"','"sold"');
+const PUT_POST=`pm.test("Status 200", () => pm.response.to.have.status(200));
+pm.test("Quedó vendida", () =>
+  pm.expect(pm.response.json().status).to.eql("sold"));`;
+const folder=(items)=>[{name:'Taller Petstore',items:[{name:'Buscar mascotas por estado',m:'GET'},{name:'CRUD Mascota',items}]}];
+const NEWREQ=(name,m)=>({name,col:'Taller Petstore / CRUD Mascota',method:m,url:'',rtab:'params',headers:[],auth:{type:'Inherit'},body:{mode:'none',raw:''},pre:'',post:'',stab:'post'});
+const I1={name:'01 Crear mascota',m:'POST'},I2={name:'02 Consultar mascota',m:'GET'},I3={name:'03 Actualizar mascota',m:'PUT'},I4={name:'04 Eliminar mascota',m:'DELETE'},I5={name:'05 Verificar eliminación',m:'GET'};
+const sel=(arr,n)=>arr.map(x=>({...x,sel:x.name===n}));
+
+PMLab.mount(document.getElementById('lab'),{
+  title:'CRUD Mascota',
+  intro:'Partimos con el environment <b>Petstore - QA</b> activo y la colección <b>Taller Petstore</b>. Presiona <b>Empezar</b>.',
+  state:{ws:'Taller APIs - Ana Rojas',env:'Petstore - QA',envs:ENVQA(),cols:[{name:'Taller Petstore',items:[{name:'Buscar mascotas por estado',m:'GET'}]}],tabs:[],req:{name:'',url:''}},
+  steps:[
+   /* ---- carpeta ---- */
+   {t:'Crea una carpeta',hl:'mi:Add folder',d:'Clic en <b>⋯</b> junto a la colección → <b>Add folder</b>. Las carpetas agrupan los requests de un mismo flujo.',
+    set:{menu:{x:140,y:96,items:[['Add request',''],['Add folder',''],'-',['Run collection',''],['Duplicate','Ctrl+D'],['Export',''],['Rename','Ctrl+E']]}}},
+   {t:'Nómbrala CRUD Mascota',hl:'item:CRUD Mascota',d:'Escribe <code>CRUD Mascota</code> y presiona <kbd>Enter</kbd>. Queda dentro de la colección, vacía por ahora.',
+    set:{menu:null,cols:folder([])}},
+   /* ---- 01 POST ---- */
+   {t:'01 · Nuevo request en la carpeta',hl:'item:01 Crear mascota',d:'Clic en <b>⋯</b> de la carpeta → <b>Add request</b>. Nómbralo <code>01 Crear mascota</code>. El número al inicio deja claro el orden.',
+    set:{menu:null,cols:folder(sel([I1],'01 Crear mascota')),tabs:[{name:'01 Crear mascota',m:'GET'}],req:NEWREQ('01 Crear mascota','GET')}},
+   {t:'01 · Método POST',hl:'method',d:'Cambia el método a <b>POST</b>: vamos a <b>crear</b>.',set:{req:{method:'POST'},tabs:[{name:'01 Crear mascota',m:'POST'}]}},
+   {t:'01 · URL con variable',hl:'url',type:'req.url',d:'URL: <code>{{baseUrl}}/pet</code>. Nada de servidores escritos a mano.',set:{req:{url:'{{baseUrl}}/pet'}}},
+   {t:'01 · Body en JSON',hl:'body-mode',d:'Pestaña <b>Body</b> → <b>raw</b> → formato <b>JSON</b>. Postman agrega solo el header <code>Content-Type: application/json</code>.',set:{req:{rtab:'body',body:{mode:'raw',raw:''}}}},
+   {t:'01 · Escribe el body',hl:'body-raw',type:'req.body.raw',d:'El body usa <b>variables</b> en vez de valores fijos: <code>{{petId}}</code> (número, sin comillas) y <code>"{{petName}}"</code> (texto, con comillas).',set:{req:{body:{raw:BODY_POST}}}},
+   {t:'01 · Pre-request: genera los datos',hl:'scr-code',type:'req.pre',d:'Pestaña <b>Scripts → Pre-request</b>. Este código corre <b>antes</b> de enviar: crea un id único con <code>Date.now()</code> y un nombre aleatorio, y los guarda en el environment.',
+    set:{req:{rtab:'scripts',stab:'pre',pre:PRE_POST}}},
+   {t:'01 · Post-response: prueba y guarda',hl:'scr-code',type:'req.post',d:'Ahora <b>Post-response</b>: corre <b>después</b> de recibir la respuesta. Valida el status y el nombre, y <b>guarda el id</b> que confirmó la API para los siguientes requests.',
+    set:{req:{stab:'post',post:POST_POST}}},
+   {t:'01 · Send',hl:'rt-tests',d:'Presiona <b>Send</b>. Respuesta <b>200</b> con la mascota creada. En <b>Test Results</b> ves <b>2/2 PASS</b>.',
+    set:{res:{status:'200 OK',code:200,time:'801 ms',size:'312 B',body:RES_PET('available'),rtab:'tests',tests:[['Status 200',true],['Se creó con el nombre enviado',true]]},envs:ENVQA(PID,PNAME)}},
+   {t:'01 · Mira el environment',hl:'var:petId',d:'Abre el environment: <code>petId</code> y <code>petName</code> ahora tienen valor en <b>Current value</b>. Los llenó el script, no tú.',
+    set:{view:'env',envEdit:'Petstore - QA'}},
+   {t:'01 · Guarda',hl:'save',d:'Vuelve al request y guárdalo (<kbd>Ctrl</kbd>+<kbd>S</kbd>).',set:{view:'request'}},
+   /* ---- 02 GET ---- */
+   {t:'02 · Consultar mascota',hl:'item:02 Consultar mascota',d:'Nuevo request en la carpeta: <code>02 Consultar mascota</code>, método <b>GET</b>.',
+    set:{cols:folder(sel([I1,I2],'02 Consultar mascota')),tabs:[{name:'01 Crear mascota',m:'POST'},{name:'02 Consultar mascota',m:'GET'}],active:1,req:NEWREQ('02 Consultar mascota','GET'),res:null}},
+   {t:'02 · URL con {{petId}}',hl:'url',type:'req.url',d:'URL: <code>{{baseUrl}}/pet/{{petId}}</code>. El id viene de la variable que guardó el POST.',set:{req:{url:'{{baseUrl}}/pet/{{petId}}'}}},
+   {t:'02 · Verifica el valor',hl:'tip',d:'Pasa el mouse sobre <code>{{petId}}</code>: muestra el id de la mascota que acabas de crear.',set:{tip:`<b>petId</b> = ${PID}<small>Environment: Petstore - QA · lo guardó “01 Crear mascota”</small>`}},
+   {t:'02 · Tests',hl:'scr-code',type:'req.post',d:'En <b>Post-response</b>: valida que sea <b>la misma mascota</b> (id y nombre). No validamos el estado para poder reutilizar este request antes y después de actualizar.',
+    set:{tip:null,req:{rtab:'scripts',stab:'post',post:GET_POST}}},
+   {t:'02 · Send',hl:'rt-tests',d:'<b>200 OK</b>, 2/2 PASS. La mascota existe con el nombre generado.',
+    set:{res:{status:'200 OK',code:200,time:'645 ms',size:'312 B',body:RES_PET('available'),rtab:'tests',tests:[['Status 200',true],['Es la mascota creada',true]]}}},
+   /* ---- 03 PUT ---- */
+   {t:'03 · Actualizar mascota',hl:'item:03 Actualizar mascota',d:'Nuevo request: <code>03 Actualizar mascota</code>, método <b>PUT</b>, URL <code>{{baseUrl}}/pet</code>.',
+    set:{cols:folder(sel([I1,I2,I3],'03 Actualizar mascota')),tabs:[{name:'02 Consultar mascota',m:'GET'},{name:'03 Actualizar mascota',m:'PUT'}],active:1,req:Object.assign(NEWREQ('03 Actualizar mascota','PUT'),{url:'{{baseUrl}}/pet'}),res:null}},
+   {t:'03 · Body completo',hl:'body-raw',d:'PUT <b>reemplaza</b> el objeto: envía <b>todos</b> los campos, con el mismo <code>{{petId}}</code> y <code>"status": "sold"</code>. Tip: copia el body del POST y cambia solo el status.',
+    set:{req:{rtab:'body',body:{mode:'raw',raw:BODY_PUT}}}},
+   {t:'03 · Tests y Send',hl:'rt-tests',d:'Post-response: status 200 y que quedó <code>"sold"</code>. Send → <b>2/2 PASS</b>.',
+    set:{req:{post:PUT_POST},res:{status:'200 OK',code:200,time:'712 ms',size:'307 B',body:RES_PET('sold'),rtab:'tests',tests:[['Status 200',true],['Quedó vendida',true]]}}},
+   {t:'Reutiliza 02 Consultar',hl:'rbody',d:'Vuelve a la pestaña <b>02 Consultar mascota</b> y presiona <b>Send</b> otra vez. <b>Mismo request</b>, sin editar nada: ahora el body muestra <code>"status": "sold"</code>.',
+    set:{active:0,req:Object.assign(NEWREQ('02 Consultar mascota','GET'),{url:'{{baseUrl}}/pet/{{petId}}',post:GET_POST}),res:{status:'200 OK',code:200,time:'633 ms',size:'307 B',body:RES_PET('sold'),rtab:'body'}}},
+   /* ---- 04 DELETE ---- */
+   {t:'04 · Eliminar mascota',hl:'url',d:'Nuevo request: <code>04 Eliminar mascota</code>, método <b>DELETE</b>, URL <code>{{baseUrl}}/pet/{{petId}}</code>.',
+    set:{cols:folder(sel([I1,I2,I3,I4],'04 Eliminar mascota')),tabs:[{name:'02 Consultar mascota',m:'GET'},{name:'04 Eliminar mascota',m:'DELETE'}],active:1,req:Object.assign(NEWREQ('04 Eliminar mascota','DELETE'),{url:'{{baseUrl}}/pet/{{petId}}'}),res:null}},
+   {t:'04 · Header api_key',hl:'ed',d:'Pestaña <b>Headers</b>: agrega <code>api_key</code> = <code>{{apiKey}}</code>. La clave es <b>secret</b>: nunca la escribas en el request.',
+    set:{req:{rtab:'headers',headers:[['api_key','{{apiKey}}']]}}},
+   {t:'04 · Test y Send',hl:'rt-tests',d:'Post-response: <code>pm.test("Status 200", …)</code>. Send → <b>200</b>, mascota eliminada.',
+    set:{req:{post:'pm.test("Status 200", () => pm.response.to.have.status(200));'},res:{status:'200 OK',code:200,time:'690 ms',size:'78 B',body:`{\n  "code": 200,\n  "type": "unknown",\n  "message": "${PID}"\n}`,rtab:'tests',tests:[['Status 200',true]]}}},
+   /* ---- 05 verificar ---- */
+   {t:'05 · Verificar eliminación',hl:'rt-tests',d:'Último request: <code>05 Verificar eliminación</code>, GET a <code>{{baseUrl}}/pet/{{petId}}</code> con un test que <b>espera 404</b>. Send → 404 y el test <b>PASA</b>: era lo esperado.',
+    set:{cols:folder(sel([I1,I2,I3,I4,I5],'05 Verificar eliminación')),tabs:[{name:'04 Eliminar mascota',m:'DELETE'},{name:'05 Verificar eliminación',m:'GET'}],active:1,
+      req:Object.assign(NEWREQ('05 Verificar eliminación','GET'),{url:'{{baseUrl}}/pet/{{petId}}',rtab:'scripts',stab:'post',post:'pm.test("Ya no existe: 404", () => pm.response.to.have.status(404));'}),
+      res:{status:'404 Not Found',code:404,time:'602 ms',size:'64 B',body:'{\n  "code": 1,\n  "type": "error",\n  "message": "Pet not found"\n}',rtab:'tests',tests:[['Ya no existe: 404',true]]}}},
+   {t:'Resultado final',hl:'item:CRUD Mascota',d:'La carpeta <b>CRUD Mascota</b> tiene los 5 requests en orden. Ejecútala completa cuantas veces quieras: cada vez crea una mascota nueva. En el tema del <b>Collection Runner</b> la correremos de un solo clic.',
+    set:{side:'collections'}},
+  ]
+});
+</script>
+</body></html>

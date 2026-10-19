@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>¿Qué es Jenkins?</title>
+<link rel="stylesheet" href="pm/pm.css">
+<link rel="stylesheet" href="ci/ci.css">
+<style>
+.pipe{display:grid;grid-template-columns:150px 30px 150px 30px 1fr 30px 160px;align-items:center;gap:0;margin-top:8px}
+.nd{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;text-align:center;transition:all .3s;min-height:120px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.nd .ic{font-size:30px}
+.nd b{font-size:14px}
+.nd small{color:var(--muted);font-size:11.5px;line-height:1.4}
+.nd.hot{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
+.ar{height:3px;background:var(--border);position:relative;margin:0 4px;border-radius:2px;overflow:visible}
+.ar::after{content:'';position:absolute;right:-2px;top:-4px;border:5px solid transparent;border-left:7px solid var(--border)}
+.ar.go{background:var(--acc)}.ar.go::after{border-left-color:var(--acc)}
+.ar i{position:absolute;top:-5px;left:0;width:13px;height:13px;border-radius:50%;background:var(--acc);opacity:0}
+.ar.go i{animation:run .6s linear forwards}
+@keyframes run{0%{left:0;opacity:1}100%{left:calc(100% - 13px);opacity:1}}
+.jkbox{background:var(--panel);border:2px solid var(--jk);border-radius:16px;padding:12px}
+.jkbox .hd{display:flex;align-items:center;gap:8px;font-weight:800;margin-bottom:8px}
+.jkbox .hd span{width:26px;height:26px;border-radius:50%;background:var(--jk);display:grid;place-items:center}
+.jkbox .hd small{font-weight:400;color:var(--muted);margin-left:auto;font-size:12px}
+.stg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stg div{background:var(--panel2);border-radius:9px;padding:8px 6px;text-align:center;font-size:12px;line-height:1.35;border:1px solid transparent;transition:all .25s}
+.stg div b{display:block;font-size:12.5px;color:var(--text)}
+.stg div small{color:var(--muted);font-size:11px}
+.stg div.run{border-color:#3b82f6;background:repeating-linear-gradient(45deg,#1d2b44,#1d2b44 8px,#22324e 8px,#22324e 16px)}
+.stg div.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--panel2))}
+.stg div.un{border-color:var(--unst);background:color-mix(in srgb,var(--unst) 15%,var(--panel2))}
+.ws{margin-top:8px;font-family:Consolas,monospace;font-size:11.5px;color:var(--muted);background:#141820;border-radius:8px;padding:6px 9px;min-height:28px}
+.res .big{font-size:36px}
+.ctl{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.ctl label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+.explain2{margin-top:10px;background:var(--panel2);border-radius:10px;padding:11px 13px;font-size:14px;line-height:1.6;min-height:48px;color:var(--muted)}
+.explain2 b{color:var(--text)}
+.colors{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.colors div{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13px;color:var(--muted);line-height:1.5}
+.colors b{display:flex;gap:8px;align-items:center;color:var(--text);font-size:14.5px;margin-bottom:4px}
+.colors i{width:14px;height:14px;border-radius:50%;display:inline-block}
+@media(max-width:1000px){.pipe{grid-template-columns:1fr;gap:8px}.ar{display:none}.colors{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>¿Qué es Jenkins y para qué sirve?</h1>
+<div class="sub"><b>Jenkins</b> es un servidor de automatización <b>open source</b>. Lo usamos para <b>integración continua (CI)</b>: cada vez que el código o las pruebas cambian, o a una hora programada, Jenkins descarga el repositorio, ejecuta las pruebas y publica el resultado, <b>sin que nadie lo haga a mano</b>.</div>
+
+<div class="pipe">
+  <div class="nd" id="n0"><div class="ic">👩‍💻</div><b>Tú</b><small>Cambias las pruebas y haces <code>git push</code></small></div>
+  <div class="ar" id="a0"><i></i></div>
+  <div class="nd" id="n1"><div class="ic">🐙</div><b>GitHub</b><small>Guarda el nuevo commit</small></div>
+  <div class="ar" id="a1"><i></i></div>
+  <div class="jkbox" id="n2"><div class="hd"><span>🤵</span>Jenkins · build <b id="bn">#14</b><small id="trig">Disparador: —</small></div>
+    <div class="stg" id="stg">
+      <div><b>Checkout</b><small>git clone</small></div>
+      <div><b>Preparar</b><small>npm install</small></div>
+      <div><b>Pruebas de API</b><small>newman run</small></div>
+      <div><b>Reportes</b><small>JUnit + Allure</small></div>
+    </div>
+    <div class="ws" id="ws">workspace vacío</div>
+  </div>
+  <div class="ar" id="a2"><i></i></div>
+  <div class="nd res" id="n3"><div class="big" id="rIc">⏳</div><b id="rTx">Resultado</b><small id="rSm">Estado del build y reporte de Allure</small></div>
+</div>
+<div class="ctl">
+  <button class="btn pri" id="go" style="background:var(--acc);border-color:var(--acc)">▶ Simular un build</button>
+  <label><input type="radio" name="tr" value="push" checked> Disparado por un push</label>
+  <label><input type="radio" name="tr" value="cron"> Programado (07:00)</label>
+  <label><input type="checkbox" id="bad"> Con un test que falla</label>
+</div>
+<div class="explain2" id="exp">Presiona <b>Simular un build</b> para ver el recorrido completo.</div>
+
+<h2>Vocabulario de Jenkins</h2>
+<div class="glos">
+  <div><b><i>🏛️</i>Controller</b>El servidor de Jenkins: la interfaz web, la configuración y el historial de builds.</div>
+  <div><b><i>🖥️</i>Agente (nodo)</b>La máquina que <b>ejecuta</b> el trabajo. En el taller, controller y agente son tu misma PC.</div>
+  <div><b><i>🗂️</i>Job (item)</b>Una tarea configurada en Jenkins, por ejemplo “pruebas-api-petstore”.</div>
+  <div><b><i>🔁</i>Pipeline</b>Tipo de job que describe todos los pasos como <b>código</b>.</div>
+  <div><b><i>📜</i>Jenkinsfile</b>El archivo con el pipeline. Vive en el repositorio, junto a las pruebas.</div>
+  <div><b><i>🧱</i>Stage</b>Una etapa del pipeline (Preparar, Pruebas, Reportes). Se ve como columna en la vista.</div>
+  <div><b><i>👣</i>Step</b>Una instrucción dentro de un stage: <code>bat</code>, <code>sh</code>, <code>junit</code>, <code>allure</code>…</div>
+  <div><b><i>#️⃣</i>Build</b>Una ejecución del job, numerada: #1, #2, #3… Cada una guarda su log y sus reportes.</div>
+  <div><b><i>📂</i>Workspace</b>La carpeta del agente donde Jenkins descarga el repositorio y trabaja.</div>
+  <div><b><i>🧩</i>Plugin</b>Extensión que agrega funciones: Git, NodeJS, Allure, JUnit… Jenkins casi todo lo hace con plugins.</div>
+  <div><b><i>🔐</i>Credencial</b>Secreto guardado y cifrado en Jenkins (token, clave). El pipeline lo usa sin mostrarlo.</div>
+  <div><b><i>⏰</i>Trigger</b>Lo que inicia un build: manual, por horario (cron), por cambios en el repositorio o por webhook.</div>
+</div>
+
+<h2>Los colores de un build</h2>
+<div class="colors">
+  <div><b><i style="background:#1ea64b"></i>SUCCESS</b>Todo terminó bien y todos los tests pasaron.</div>
+  <div><b><i style="background:#e8a100"></i>UNSTABLE</b>El pipeline terminó, pero <b>hay tests que fallaron</b>. Los reportes se publican.</div>
+  <div><b><i style="background:#d24939"></i>FAILURE</b>El pipeline <b>se rompió</b>: no se pudo instalar, un comando no existe, error de sintaxis…</div>
+  <div><b><i style="background:#999"></i>ABORTED</b>Alguien lo canceló o se cumplió el tiempo máximo (timeout).</div>
+</div>
+
+<h2>Dos formas de crear un job</h2>
+<div class="card"><table class="tbl">
+  <tr><th></th><th>Freestyle</th><th>Pipeline (lo que usaremos)</th></tr>
+  <tr><td>Cómo se configura</td><td>Con formularios en la web de Jenkins</td><td>Con código en un <code>Jenkinsfile</code></td></tr>
+  <tr><td>Dónde queda guardado</td><td>Solo dentro de Jenkins</td><td>En el repositorio, con historial de cambios</td></tr>
+  <tr><td>Etapas visibles</td><td>No</td><td>Sí: cada stage con su tiempo y su estado</td></tr>
+  <tr><td>Parámetros, credenciales, reportes</td><td>Sí, con clics</td><td>Sí, en el mismo archivo</td></tr>
+  <tr><td>Si se pierde el servidor</td><td>Hay que reconfigurar todo a mano</td><td>Se crea el job, se apunta al repositorio y listo</td></tr>
+</table></div>
+
+<div class="key"><strong>Idea clave:</strong> Jenkins no “sabe” probar APIs: solo ejecuta los mismos comandos que tú escribirías en la terminal (<strong>npm install</strong>, <strong>newman run</strong>), en orden, a la hora indicada y guardando la evidencia de cada ejecución.</div>
+</div>
+
+<script src="ci/ci.js"></script>
+<script>
+(()=>{
+const {$}=CI;
+const stg=[...$('stg').children];let busy=false,bn=14;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const hot=id=>document.querySelectorAll('.nd,.jkbox').forEach(n=>n.classList.toggle('hot',n.id===id));
+function arrow(i){const a=$('a'+i);a.classList.remove('go');void a.offsetWidth;a.classList.add('go')}
+$('go').onclick=async()=>{
+  if(busy)return;busy=true;$('go').disabled=true;
+  const cron=document.querySelector('[name=tr]:checked').value==='cron', bad=$('bad').checked;
+  bn++;$('bn').textContent='#'+bn;
+  stg.forEach(s=>s.className='');document.querySelectorAll('.ar').forEach(a=>a.classList.remove('go'));
+  $('rIc').textContent='⏳';$('rTx').textContent='Resultado';$('rSm').textContent='Estado del build y reporte de Allure';$('ws').textContent='workspace vacío';
+  if(cron){
+    hot('n2');$('trig').textContent='Disparador: horario H 7 * * 1-5';
+    $('exp').innerHTML='Son las <b>07:00</b> de un día hábil: el <b>trigger cron</b> inicia el build solo, aunque nadie haya cambiado nada. Así detectas si <b>la API</b> cambió o se cayó.';
+    await wait(1600);
+  }else{
+    hot('n0');$('trig').textContent='Disparador: —';
+    $('exp').innerHTML='Agregaste un test y ejecutaste <b>git push</b>.';await wait(1000);
+    arrow(0);await wait(650);hot('n1');$('exp').innerHTML='<b>GitHub</b> guarda el commit <code>7be20d4</code>. Jenkins revisa el repositorio cada 5 minutos (<b>pollSCM</b>) y encuentra el cambio.';await wait(1600);
+    arrow(1);await wait(650);hot('n2');$('trig').textContent='Disparador: cambio en GitHub (7be20d4)';
+  }
+  const steps=[
+    ['Checkout: Jenkins <b>clona</b> el repositorio en su workspace, con el Jenkinsfile, la colección y los datos.','C:\\ProgramData\\Jenkins\\workspace\\pruebas-api-petstore\\ ← postman/ datos/ Jenkinsfile'],
+    ['Preparar: <b>npm install</b> descarga Newman y los reporteros que indica el <code>package.json</code>.','… + node_modules/ (newman, newman-reporter-allure)'],
+    [bad?'Pruebas de API: <b>newman run</b> ejecuta la colección… y <b>un test falla</b>. El stage queda amarillo, pero el pipeline sigue para publicar los reportes.':'Pruebas de API: <b>newman run</b> ejecuta la colección. Todos los tests pasan.','… + reports/junit.xml  allure-results/*.json'],
+    ['Reportes: el plugin <b>JUnit</b> registra los resultados y el plugin <b>Allure</b> genera el reporte con su historial.','… + allure-report/ (publicado en el build #'+bn+')'],
+  ];
+  for(let i=0;i<4;i++){
+    stg[i].className='run';$('exp').innerHTML=steps[i][0];$('ws').textContent=steps[i][1];
+    await wait(1500);stg[i].className=(bad&&i===2)?'un':'ok';
+  }
+  arrow(2);await wait(650);hot('n3');
+  if(bad){$('rIc').textContent='🟡';$('rTx').textContent='UNSTABLE';$('rSm').textContent='1 de 8 tests falló · ver Allure';
+    $('exp').innerHTML='Build <b>#'+bn+' UNSTABLE</b>: el pipeline funcionó, pero hay un test fallido. El reporte de <b>Allure</b> muestra cuál, con el request y la respuesta.';}
+  else{$('rIc').textContent='🟢';$('rTx').textContent='SUCCESS';$('rSm').textContent='8 de 8 tests pasaron · ver Allure';
+    $('exp').innerHTML='Build <b>#'+bn+' SUCCESS</b>: la evidencia queda guardada en Jenkins. Nadie tuvo que abrir Postman.';}
+  busy=false;$('go').disabled=false;
+};
+})();
+</script>
+</body></html>

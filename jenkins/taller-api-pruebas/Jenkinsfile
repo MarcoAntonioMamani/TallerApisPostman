@@ -1,0 +1,96 @@
+// =====================================================================
+//  Pipeline del taller: pruebas de API con Newman + reporte Allure
+//  Funciona en agentes Windows y Linux.
+//  Requiere en Jenkins: plugins Pipeline, Git, NodeJS, JUnit, Allure
+//  y en "Tools": NodeJS con el nombre 'node-lts' y Allure Commandline con el nombre 'allure'.
+// =====================================================================
+
+// Ejecuta un comando en el sistema del agente (bat en Windows, sh en Linux)
+def ejecutar(String comando) {
+    if (isUnix()) { sh comando } else { bat comando }
+}
+
+pipeline {
+    agent any
+
+    tools { nodejs 'node-lts' }
+
+    // Lo que la persona elige al presionar "Build with Parameters"
+    parameters {
+        choice(name: 'CARPETA', choices: ['CRUD Mascota', 'Datos desde archivo', 'Todas'],
+               description: 'Qué parte de la colección ejecutar')
+        choice(name: 'ESTADO', choices: ['available', 'pending', 'sold'],
+               description: 'Valor de la variable {{status}} para "Buscar mascotas por estado"')
+        choice(name: 'DATOS', choices: ['mascotas.csv', 'mascotas.json'],
+               description: 'Archivo de datos para la carpeta "Datos desde archivo"')
+        string(name: 'ITERACIONES', defaultValue: '1', trim: true,
+               description: 'Repeticiones de "CRUD Mascota" (cuando no se usa archivo de datos)')
+        booleanParam(name: 'DETENER_EN_FALLO', defaultValue: false,
+                     description: 'Cortar la ejecución en el primer test que falle (--bail)')
+    }
+
+    options {
+        timeout(time: 15, unit: 'MINUTES')               // nunca queda colgado
+        buildDiscarder(logRotator(numToKeepStr: '20'))   // guarda los últimos 20 builds
+    }
+
+    triggers {
+        cron('H 7 * * 1-5')       // de lunes a viernes, alrededor de las 07:00 (con valores por defecto)
+        pollSCM('H/5 * * * *')    // cada ~5 min revisa GitHub y ejecuta si hay commits nuevos
+    }
+
+    stages {
+        stage('Preparar') {
+            steps {
+                // Limpia resultados de builds anteriores (el historial de Allure lo guarda el plugin)
+                dir('allure-results') { deleteDir() }
+                dir('reports') { deleteDir() }
+                ejecutar 'node -v'
+                ejecutar 'npm install --no-audit --no-fund'
+            }
+        }
+
+        stage('Pruebas de API') {
+            steps {
+                script {
+                    // Arma el comando de Newman según los parámetros elegidos
+                    def args = "--env-var \"status=${params.ESTADO}\""
+                    if (params.CARPETA == 'Datos desde archivo') {
+                        args += " --folder \"Datos desde archivo\" -d \"datos/${params.DATOS}\""
+                    } else if (params.CARPETA == 'Todas') {
+                        args += " -d \"datos/${params.DATOS}\""
+                    } else {
+                        if (!(params.ITERACIONES ==~ /\d+/)) { error "ITERACIONES debe ser un número: '${params.ITERACIONES}'" }
+                        args += " --folder \"CRUD Mascota\" -n ${params.ITERACIONES}"
+                    }
+                    if (params.DETENER_EN_FALLO) { args += ' --bail' }
+
+                    // La apiKey sale de las credenciales de Jenkins: no está en el repositorio
+                    // y Jenkins la oculta (****) en el log.
+                    def clave = isUnix() ? '"apiKey=$API_KEY"' : '"apiKey=%API_KEY%"'
+                    withCredentials([string(credentialsId: 'petstore-api-key', variable: 'API_KEY')]) {
+                        // Si fallan tests, el build queda INESTABLE (amarillo) y se publican igual los reportes
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                            ejecutar "npx newman run \"postman/Taller Petstore.postman_collection.json\" " +
+                                     "-e \"postman/Petstore - QA.postman_environment.json\" " +
+                                     "--env-var ${clave} ${args} " +
+                                     "-r cli,junit,allure " +
+                                     "--reporter-junit-export reports/junit.xml " +
+                                     "--reporter-allure-export allure-results"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            junit allowEmptyResults: true, testResults: 'reports/junit.xml'
+            allure includeProperties: false, results: [[path: 'allure-results']]
+        }
+        success  { echo 'Todas las pruebas pasaron.' }
+        unstable { echo 'Hay pruebas que fallaron: revisa el reporte de Allure.' }
+        failure  { echo 'El pipeline no pudo completarse: revisa la consola.' }
+    }
+}

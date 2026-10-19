@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi primer pipeline</title>
+<link rel="stylesheet" href="pm/pm.css">
+<link rel="stylesheet" href="ci/ci.css">
+<style>
+.jf{display:grid;grid-template-columns:1.25fr .75fr;gap:14px;align-items:start}
+.code2{background:#141820;border:1px solid var(--border);border-radius:12px;padding:8px 0;font-family:Consolas,monospace;font-size:12.5px;line-height:1.55;color:#d4d4d4;max-height:640px;overflow:auto}
+.blk{padding:4px 14px 4px 11px;border-left:3px solid transparent;cursor:pointer;white-space:pre;transition:background .15s}
+.blk:hover{background:#1b2130}
+.blk.on{background:color-mix(in srgb,var(--acc) 11%,#141820);border-left-color:var(--acc)}
+.blk .tagn{float:right;font-family:Segoe UI,Arial,sans-serif;font-size:10.5px;font-weight:800;color:#111;background:var(--acc);border-radius:999px;padding:1px 7px;opacity:.85}
+.side{position:sticky;top:10px;display:grid;gap:10px}
+.side .card h3{margin:0 0 6px;font-size:17px;color:var(--acc)}
+.side .card p{margin:0;font-size:14px;line-height:1.65;color:var(--muted)}
+.side .card p b{color:var(--text)}
+.side .card ul{margin:6px 0 0;padding-left:18px;font-size:13.5px;line-height:1.6;color:var(--muted)}
+.nav{display:flex;gap:6px}
+.nav .btn{flex:1}
+.scr{position:sticky;top:10px}
+.jk .hl{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
+.jk .types{display:grid;gap:6px}
+.jk .types div{border:1px solid #e3e3e3;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#555}
+.jk .types b{display:block;color:#1c1c1c;font-size:13.5px}
+.jk .sec{font-weight:800;font-size:15px;margin:4px 0 10px;border-bottom:1px solid #eee;padding-bottom:6px}
+@media(max-width:1000px){.jf{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Mi primer pipeline: el Jenkinsfile</h1>
+<div class="sub">El <b>Jenkinsfile</b> es la receta que Jenkins sigue en cada build. Se escribe en un lenguaje declarativo, se guarda en el repositorio y lo lee Jenkins al iniciar. Este es el del taller, completo: haz clic en cada bloque para entender qué hace.
+<a class="btn" href="jenkins/taller-api-pruebas/Jenkinsfile" download style="text-decoration:none;margin-left:6px">⬇ Jenkinsfile</a></div>
+
+<div class="tabs" id="tabs">
+  <button class="btn on" data-t="jf">1 · El Jenkinsfile, bloque por bloque</button>
+  <button class="btn" data-t="job">2 · Crear el job en Jenkins</button>
+</div>
+
+<section class="pane on" id="p-jf">
+  <div class="jf">
+    <div class="code2" id="code"></div>
+    <div class="side">
+      <div class="card"><h3 id="eT"></h3><p id="eP"></p></div>
+      <div class="nav"><button class="btn" id="prev">◀ Anterior</button><button class="btn" id="next" style="background:var(--acc);color:#111;border-color:var(--acc)">Siguiente ▶</button></div>
+      <div class="note">💡 <b>Declarativo</b> quiere decir que describes <b>qué</b> quieres (etapas, parámetros, reportes) y Jenkins se encarga del <b>cómo</b>. Las llaves <code>{ }</code> deben cerrar siempre: un error de sintaxis hace fallar el build antes de empezar.</div>
+    </div>
+  </div>
+</section>
+
+<section class="pane" id="p-job">
+  <div class="two"><div class="steps2" id="jobSteps">
+    <div class="st" data-s="0"><b class="h"><span class="n">1</span>New Item</b>En el panel, <b>＋ New Item</b>. Nombre: <code>pruebas-api-petstore</code> (sin espacios). Tipo: <b>Pipeline</b> → OK.</div>
+    <div class="st" data-s="1"><b class="h"><span class="n">2</span>Apuntar al repositorio</b>En la sección <b>Pipeline</b>: Definition <b>Pipeline script from SCM</b> → SCM <b>Git</b> → la URL de tu repositorio de GitHub. Si es privado, elige la credencial del token.</div>
+    <div class="st" data-s="2"><b class="h"><span class="n">3</span>Rama y archivo</b>Branch Specifier <code>*/main</code> y Script Path <code>Jenkinsfile</code> (la ruta del archivo dentro del repositorio). <b>Save</b>.</div>
+    <div class="st" data-s="3"><b class="h"><span class="n">4</span>El primer build: Build Now</b>La primera vez Jenkins todavía no conoce los parámetros: los <b>lee del Jenkinsfile</b> en este build, que corre con los valores por defecto. También registra los triggers.</div>
+    <div class="st" data-s="4"><b class="h"><span class="n">5</span>Desde ahora: Build with Parameters</b>El botón cambia de nombre y muestra el formulario con los parámetros. Lo vemos en acción en el siguiente tema.</div>
+  </div><div class="scr" id="jobScr"></div></div>
+  <div class="note warn">⚠ <b>Script Path</b> distingue mayúsculas: <code>Jenkinsfile</code> no es lo mismo que <code>jenkinsfile</code>. Si Jenkins dice <i>Unable to find Jenkinsfile</i>, revisa el nombre y que el archivo esté subido a la rama <code>main</code>.</div>
+</section>
+
+<div class="key"><strong>Idea clave:</strong> el pipeline es <strong>código</strong>. Si lo cambias, haces commit y push como con cualquier archivo, y queda historial de quién cambió qué. Jenkins solo necesita saber <strong>dónde está el repositorio</strong>.</div>
+</div>
+
+<script src="ci/ci.js"></script>
+<script>
+(()=>{
+const {$,esc}=CI; CI.tabs();
+const B=[
+ {t:'Una función de ayuda',c:`// Ejecuta un comando en el sistema del agente (bat en Windows, sh en Linux)
+def ejecutar(String comando) {
+    if (isUnix()) { sh comando } else { bat comando }
+}`,p:`Jenkins ejecuta comandos con <b>bat</b> en Windows y con <b>sh</b> en Linux. Esta pequeña función elige el correcto según el agente, así el <b>mismo Jenkinsfile</b> sirve en tu PC con Windows y en un servidor o contenedor Linux.`},
+ {t:'pipeline y agent',c:`pipeline {
+    agent any`,p:`Todo va dentro de <code>pipeline { }</code>. <b>agent any</b> significa “ejecútalo en cualquier agente disponible”. En el taller hay uno solo: tu PC. En una empresa se puede pedir un agente con una etiqueta, por ejemplo <code>agent { label 'windows' }</code>.`},
+ {t:'tools',c:`    tools { nodejs 'node-lts' }`,p:`Pide la herramienta configurada en <b>Manage Jenkins → Tools</b> con el nombre <code>node-lts</code>. Jenkins la instala si hace falta y pone <b>node</b> y <b>npm</b> en el PATH del build. El nombre debe coincidir <b>exactamente</b>.`},
+ {t:'parameters: lo que eliges al ejecutar',c:`    parameters {
+        choice(name: 'CARPETA', choices: ['CRUD Mascota', 'Datos desde archivo', 'Todas'],
+               description: 'Qué parte de la colección ejecutar')
+        choice(name: 'ESTADO', choices: ['available', 'pending', 'sold'],
+               description: 'Valor de la variable {{status}} para "Buscar mascotas por estado"')
+        choice(name: 'DATOS', choices: ['mascotas.csv', 'mascotas.json'],
+               description: 'Archivo de datos para la carpeta "Datos desde archivo"')
+        string(name: 'ITERACIONES', defaultValue: '1', trim: true,
+               description: 'Repeticiones de "CRUD Mascota" (cuando no se usa archivo de datos)')
+        booleanParam(name: 'DETENER_EN_FALLO', defaultValue: false,
+                     description: 'Cortar la ejecución en el primer test que falle (--bail)')
+    }`,p:`Cada parámetro se convierte en un campo del formulario <b>Build with Parameters</b>:<ul><li><b>choice</b>: lista desplegable (el primero es el valor por defecto).</li><li><b>string</b>: texto libre.</li><li><b>booleanParam</b>: casilla de verificación.</li></ul>En el pipeline se leen como <code>params.CARPETA</code>, <code>params.ESTADO</code>…`},
+ {t:'options: reglas del job',c:`    options {
+        timeout(time: 15, unit: 'MINUTES')               // nunca queda colgado
+        buildDiscarder(logRotator(numToKeepStr: '20'))   // guarda los últimos 20 builds
+    }`,p:`<b>timeout</b>: si algo se queda esperando (una API que no responde), Jenkins aborta el build a los 15 minutos.<br><b>buildDiscarder</b>: borra los builds viejos para no llenar el disco.`},
+ {t:'triggers: cuándo se ejecuta solo',c:`    triggers {
+        cron('H 7 * * 1-5')       // de lunes a viernes, alrededor de las 07:00 (con valores por defecto)
+        pollSCM('H/5 * * * *')    // cada ~5 min revisa GitHub y ejecuta si hay commits nuevos
+    }`,p:`El formato es el de <b>cron</b>: <code>minuto hora día-del-mes mes día-de-la-semana</code>.<ul><li><code>H 7 * * 1-5</code>: lunes a viernes a las 7. La <b>H</b> elige un minuto fijo al azar para que no arranquen todos los jobs a la vez.</li><li><b>pollSCM</b>: revisa GitHub cada ~5 min y solo ejecuta si hay cambios. Es la opción para un Jenkins que GitHub no puede alcanzar (tu PC o la red interna). Con un Jenkins público se usaría un <b>webhook</b>.</li></ul>`},
+ {t:'stage Preparar',c:`    stages {
+        stage('Preparar') {
+            steps {
+                // Limpia resultados de builds anteriores (el historial de Allure lo guarda el plugin)
+                dir('allure-results') { deleteDir() }
+                dir('reports') { deleteDir() }
+                ejecutar 'node -v'
+                ejecutar 'npm install --no-audit --no-fund'
+            }
+        }`,p:`Antes de este stage Jenkins ya hizo el <b>checkout</b>: descargó el repositorio en el workspace.<br>Aquí se <b>borran los resultados anteriores</b> (si no, Allure mezclaría ejecuciones) y <b>npm install</b> instala Newman y los reporteros que lista el <code>package.json</code>. Por eso no hace falta instalar Newman a mano en el agente.`},
+ {t:'stage Pruebas: armar el comando',c:`        stage('Pruebas de API') {
+            steps {
+                script {
+                    // Arma el comando de Newman según los parámetros elegidos
+                    def args = "--env-var \\"status=\${params.ESTADO}\\""
+                    if (params.CARPETA == 'Datos desde archivo') {
+                        args += " --folder \\"Datos desde archivo\\" -d \\"datos/\${params.DATOS}\\""
+                    } else if (params.CARPETA == 'Todas') {
+                        args += " -d \\"datos/\${params.DATOS}\\""
+                    } else {
+                        if (!(params.ITERACIONES ==~ /\\d+/)) { error "ITERACIONES debe ser un número: '\${params.ITERACIONES}'" }
+                        args += " --folder \\"CRUD Mascota\\" -n \${params.ITERACIONES}"
+                    }
+                    if (params.DETENER_EN_FALLO) { args += ' --bail' }`,p:`Aquí los <b>parámetros se convierten en opciones de Newman</b>, las mismas que usaste en la terminal:<ul><li>ESTADO → <code>--env-var "status=…"</code></li><li>CARPETA → <code>--folder</code></li><li>DATOS → <code>-d datos/…</code></li><li>ITERACIONES → <code>-n</code> (y se valida que sea un número)</li><li>DETENER_EN_FALLO → <code>--bail</code></li></ul>El bloque <b>script { }</b> permite usar <code>if</code> y variables dentro del pipeline declarativo.`},
+ {t:'Credenciales y ejecución',c:`                    // La apiKey sale de las credenciales de Jenkins: no está en el repositorio
+                    // y Jenkins la oculta (****) en el log.
+                    def clave = isUnix() ? '"apiKey=$API_KEY"' : '"apiKey=%API_KEY%"'
+                    withCredentials([string(credentialsId: 'petstore-api-key', variable: 'API_KEY')]) {
+                        // Si fallan tests, el build queda INESTABLE (amarillo) y se publican igual los reportes
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                            ejecutar "npx newman run \\"postman/Taller Petstore.postman_collection.json\\" " +
+                                     "-e \\"postman/Petstore - QA.postman_environment.json\\" " +
+                                     "--env-var \${clave} \${args} " +
+                                     "-r cli,junit,allure " +
+                                     "--reporter-junit-export reports/junit.xml " +
+                                     "--reporter-allure-export allure-results"
+                        }
+                    }
+                }
+            }
+        }
+    }`,p:`<ul style="margin:0"><li><b>withCredentials</b> pone la credencial <code>petstore-api-key</code> en la variable de entorno <code>API_KEY</code> solo durante este bloque, y la enmascara en el log.</li><li>Se pasa a Newman con <code>--env-var</code>: en el archivo del environment la apiKey está <b>vacía</b>.</li><li><b>catchError</b>: si fallan tests, Newman termina con error; en vez de cortar todo, el build queda <b>UNSTABLE</b> y continúa hacia los reportes.</li><li><b>npx</b> usa el Newman instalado en el proyecto. Los reporteros <b>junit</b> y <b>allure</b> dejan sus archivos para el paso siguiente.</li></ul>`},
+ {t:'post: reportes siempre',c:`    post {
+        always {
+            junit allowEmptyResults: true, testResults: 'reports/junit.xml'
+            allure includeProperties: false, results: [[path: 'allure-results']]
+        }
+        success  { echo 'Todas las pruebas pasaron.' }
+        unstable { echo 'Hay pruebas que fallaron: revisa el reporte de Allure.' }
+        failure  { echo 'El pipeline no pudo completarse: revisa la consola.' }
+    }
+}`,p:`<b>post</b> se ejecuta al final, según cómo terminó el build:<ul><li><b>always</b>: pase lo que pase, publica los resultados en <b>JUnit</b> (tendencia de tests) y genera el reporte de <b>Allure</b> con su historial.</li><li><b>success / unstable / failure</b>: acciones según el resultado. Aquí solo un mensaje, pero podría ser un correo o un aviso al chat del equipo.</li></ul>`},
+];
+const hi=s=>esc(s).replace(/(\/\/.*)$/gm,'\u0001$1\u0002')
+  .replace(/('[^'\n]*'|"(?:[^"\\\n]|\\.)*")/g,m=>m.includes('\u0001')?m:`<span class="s">${m}</span>`)
+  .replace(/\b(pipeline|agent|any|tools|parameters|options|triggers|stages|stage|steps|script|post|always|success|unstable|failure|def|if|else|true|false)\b/g,'<span class="k">$1</span>')
+  .replace(/\b(choice|string|booleanParam|timeout|buildDiscarder|logRotator|cron|pollSCM|dir|deleteDir|ejecutar|withCredentials|catchError|junit|allure|echo|error|isUnix|sh|bat|nodejs)\b(?=\s*[\('{ ])/g,'<span class="f">$1</span>')
+  .replace(/\u0001(.*?)\u0002/g,(_, c)=>`<span class="c">${c.replace(/<[^>]+>/g,'')}</span>`);
+$('code').innerHTML=B.map((b,i)=>`<div class="blk" data-i="${i}"><span class="tagn">${i+1}</span>${hi(b.c)}</div>`).join('')+'<div class="blk" style="cursor:default;color:#555">&nbsp;</div>';
+let cur=0;
+function show(i){cur=Math.max(0,Math.min(B.length-1,i));
+  document.querySelectorAll('.blk[data-i]').forEach(b=>b.classList.toggle('on',+b.dataset.i===cur));
+  $('eT').textContent=(cur+1)+' · '+B[cur].t;$('eP').innerHTML=B[cur].p;
+  const el=document.querySelector(`.blk[data-i="${cur}"]`),box=$('code');box.scrollTo({top:el.offsetTop-box.offsetTop-20,behavior:'smooth'});
+  $('prev').disabled=cur===0;$('next').disabled=cur===B.length-1;}
+$('code').onclick=e=>{const b=e.target.closest('.blk[data-i]');if(b)show(+b.dataset.i)};
+$('prev').onclick=()=>show(cur-1);$('next').onclick=()=>show(cur+1);
+show(0);
+
+/* ---------- crear el job ---------- */
+const shell=(crumb,side,main)=>`<div class="jk"><div class="jk-top"><div class="lg"><span>🤵</span>Jenkins</div><div class="r">👤 ana</div></div><div class="jk-crumb">${crumb}</div><div class="jk-body"><div class="jk-side">${side}</div><div class="jk-main">${main}</div></div></div>`;
+const JOBSIDE=(b,hl)=>`<div class="on">📋 Status</div><div>✏️ Changes</div><div class="${hl?'hl':''}">▶️ ${b}</div><div>⚙️ Configure</div><div>🗑️ Delete Pipeline</div>`;
+const SCR=[
+ shell('Dashboard › <b>New Item</b>','<div class="on hl">＋ New Item</div><div>📊 Build History</div><div>⚙️ Manage Jenkins</div>',`<div class="fld"><label>Enter an item name</label><input type="text" value="pruebas-api-petstore" class="hl" style="width:300px"></div>
+  <div class="types"><div><b>Freestyle project</b>Classic, general-purpose job type…</div><div class="hl" style="background:#eef6ff"><b>Pipeline</b>Orchestrates long-running activities that can span multiple build agents…</div><div><b>Multibranch Pipeline</b>Creates a set of Pipeline projects according to detected branches…</div></div><div style="margin-top:10px"><button class="jbtn">OK</button></div>`),
+ shell('Dashboard › pruebas-api-petstore › <b>Configuration</b>','<div>General</div><div>Triggers</div><div class="on">Pipeline</div><div>Advanced</div>',`<div class="sec">Pipeline</div>
+  <div class="fld"><label>Definition</label><select class="hl"><option>Pipeline script from SCM</option></select><small>La otra opción, “Pipeline script”, pega el código en Jenkins: no queda en el repositorio.</small></div>
+  <div class="fld"><label>SCM</label><select><option>Git</option></select></div>
+  <div class="fld"><label>Repository URL</label><input type="text" value="https://github.com/ana-quispe/taller-api-pruebas.git" class="hl" style="width:100%"></div>
+  <div class="fld"><label>Credentials</label><select><option>- none -  (repositorio público)</option></select></div>`),
+ shell('Dashboard › pruebas-api-petstore › <b>Configuration</b>','<div>General</div><div>Triggers</div><div class="on">Pipeline</div><div>Advanced</div>',`<div class="sec">Pipeline · Branches to build</div>
+  <div class="fld"><label>Branch Specifier (blank for 'any')</label><input type="text" value="*/main" class="hl"></div>
+  <div class="fld"><label>Script Path</label><input type="text" value="Jenkinsfile" class="hl"></div>
+  <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><input type="checkbox" checked> Lightweight checkout</label>
+  <button class="jbtn">Save</button> <button class="jbtn sec">Apply</button>`),
+ shell('Dashboard › <b>pruebas-api-petstore</b>',JOBSIDE('Build Now',1),`<h3><span class="dot ok"></span> pruebas-api-petstore</h3>
+  <div class="sv"><table><tr><th></th><th>Declarative: Tool Install</th><th>Preparar</th><th>Pruebas de API</th><th>Declarative: Post Actions</th></tr>
+  <tr><td><b>#1</b> 3 min ago<br><small>Started by user ana</small></td><td class="c-ok">1s</td><td class="c-ok">18s</td><td class="c-ok">6s</td><td class="c-ok">9s</td></tr></table></div>
+  <p style="color:#555;font-size:12.5px;margin-top:10px">El build #1 usó los valores por defecto y, al leer el Jenkinsfile, Jenkins registró los <b>parámetros</b> y los <b>triggers</b>.</p>`),
+ shell('Dashboard › <b>pruebas-api-petstore</b>',JOBSIDE('Build with Parameters',1),`<h3><span class="dot ok"></span> pruebas-api-petstore</h3>
+  <div style="display:flex;gap:16px;align-items:center;color:#555;font-size:12.5px;margin-bottom:8px"><span>🔗 <b>Allure Report</b></span><span>📈 Latest Test Result (no failures)</span></div>
+  <div class="sv"><table><tr><th></th><th>Declarative: Tool Install</th><th>Preparar</th><th>Pruebas de API</th><th>Declarative: Post Actions</th></tr>
+  <tr><td><b>#1</b> 5 min ago</td><td class="c-ok">1s</td><td class="c-ok">18s</td><td class="c-ok">6s</td><td class="c-ok">9s</td></tr></table></div>
+  <p style="color:#555;font-size:12.5px;margin-top:10px">Ahora el menú dice <b>Build with Parameters</b>. 👉 Siguiente tema: ejecutarlo eligiendo los parámetros.</p>`),
+];
+const box=$('jobSteps'),sh=i=>{box.querySelectorAll('.st').forEach(s=>s.classList.toggle('on',+s.dataset.s===i));$('jobScr').innerHTML=SCR[i]};
+box.onclick=e=>{const s=e.target.closest('.st');if(s)sh(+s.dataset.s)};sh(0);
+})();
+</script>
+</body></html>

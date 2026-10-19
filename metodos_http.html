@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Métodos HTTP</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px;max-width:950px}
+h2{font-size:20px;margin:26px 0 12px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+.methods{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.methods button{padding:10px 14px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);font-weight:800;cursor:pointer;font-size:13px;font-family:Consolas,monospace}
+.methods button:hover{background:var(--panel2)}
+.methods button.active{color:#111}
+.methods button.reset{font-family:Segoe UI,Arial,sans-serif;font-weight:700;margin-left:auto}
+.GET{--c:var(--green)}.POST{--c:var(--orange)}.PUT{--c:var(--blue)}.PATCH{--c:var(--purple)}.DELETE{--c:var(--red)}
+.methods button[data-m]{border-color:var(--c);color:var(--c)}
+.methods button[data-m].active{background:var(--c);color:#111}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-size:12px;background:var(--panel2)}
+tr{transition:background .4s,opacity .4s}
+tr.read{background:rgba(87,199,133,.16)}
+tr.new{animation:newrow 1.2s}
+@keyframes newrow{0%{background:rgba(243,164,59,.55);transform:translateX(-12px)}100%{background:transparent}}
+td.changed{animation:changed 1.4s}
+@keyframes changed{0%{background:rgba(89,169,230,.6)}100%{background:transparent}}
+tr.gone{opacity:0;background:rgba(239,101,112,.4)}
+.empty td{color:var(--muted);text-align:center}
+.flow{display:grid;grid-template-columns:1fr;gap:10px}
+pre{margin:0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.5;white-space:pre-wrap;min-height:120px}
+.m{font-weight:800}.ok{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}.h{color:var(--muted)}.a{color:var(--blue)}.s{color:var(--green)}
+.info{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.info div{background:var(--panel2);border-radius:9px;padding:9px;text-align:center;font-size:11px;color:var(--muted)}
+.info b{display:block;font-size:15px;color:var(--text);margin-bottom:2px}
+.what{margin-top:12px;background:var(--panel2);border-radius:10px;padding:12px 14px;line-height:1.55;font-size:14px;min-height:64px}
+.what b{color:var(--orange)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cmp pre{min-height:0}
+.sum th,.sum td{font-size:13px}
+.sum td:first-child{font-family:Consolas,monospace;font-weight:800}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+@media(max-width:900px){.grid,.cmp{grid-template-columns:1fr}.info{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Métodos HTTP</h1>
+<div class="sub">El método indica <b>qué acción</b> se quiere hacer sobre un recurso. Abajo hay una tabla de <b>clientes</b> guardada en el servidor:
+usa cada método y observa qué le pasa a los datos. Prueba también a <b>repetir</b> el mismo método dos veces.</div>
+
+<div class="methods" id="methods">
+  <button data-m="GET" data-a="list" class="GET">GET /clientes</button>
+  <button data-m="GET" data-a="one" class="GET">GET /clientes/2</button>
+  <button data-m="POST" class="POST">POST /clientes</button>
+  <button data-m="PUT" class="PUT">PUT /clientes/2</button>
+  <button data-m="PATCH" class="PATCH">PATCH /clientes/2</button>
+  <button data-m="DELETE" class="DELETE">DELETE /clientes/3</button>
+  <button class="reset" id="reset">↻ Restaurar datos</button>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <b>🛢️ Datos en el servidor</b> <span class="small">· tabla <code>clientes</code> (ficticia)</span>
+    <table style="margin-top:10px"><thead><tr><th>id</th><th>nombre</th><th>ciudad</th><th>estado</th></tr></thead><tbody id="rows"></tbody></table>
+    <div class="info" id="info"></div>
+    <div class="what" id="what">Elige un método para empezar.</div>
+  </div>
+  <div class="flow">
+    <div class="card"><b>Request</b><pre id="req" style="margin-top:8px"><span class="h">—</span></pre></div>
+    <div class="card"><b>Response</b><pre id="res" style="margin-top:8px"><span class="h">—</span></pre></div>
+  </div>
+</div>
+
+<h2>PUT vs PATCH</h2>
+<div class="cmp">
+  <div class="card"><b style="color:var(--blue)">PUT — reemplaza todo</b>
+    <p class="small" style="font-size:13px">Se envía el recurso <b>completo</b>. Lo que no se envía puede quedar vacío o con su valor por defecto.</p>
+    <pre>PUT /clientes/2
+{ "nombre": "Luis Mamani",
+  "ciudad": "Cochabamba",
+  "estado": "activo" }</pre></div>
+  <div class="card"><b style="color:var(--purple)">PATCH — modifica una parte</b>
+    <p class="small" style="font-size:13px">Se envían <b>solo los campos que cambian</b>. El resto se mantiene igual.</p>
+    <pre>PATCH /clientes/2
+{ "estado": "inactivo" }</pre></div>
+</div>
+
+<h2>Resumen</h2>
+<table class="sum card" style="padding:0;overflow:hidden">
+  <tr><th>Método</th><th>Acción</th><th>¿Lleva body?</th><th>¿Idempotente?</th><th>Respuesta típica</th></tr>
+  <tr class="GET"><td style="color:var(--c)">GET</td><td>Leer / consultar</td><td>No</td><td>Sí</td><td>200 OK</td></tr>
+  <tr class="POST"><td style="color:var(--c)">POST</td><td>Crear</td><td>Sí</td><td><b>No</b> — cada envío crea uno nuevo</td><td>201 Created</td></tr>
+  <tr class="PUT"><td style="color:var(--c)">PUT</td><td>Reemplazar completo</td><td>Sí</td><td>Sí</td><td>200 OK</td></tr>
+  <tr class="PATCH"><td style="color:var(--c)">PATCH</td><td>Modificar parcialmente</td><td>Sí</td><td>Depende de la implementación</td><td>200 OK</td></tr>
+  <tr class="DELETE"><td style="color:var(--c)">DELETE</td><td>Eliminar</td><td>No</td><td>Sí — el resultado final es el mismo</td><td>204 No Content</td></tr>
+</table>
+
+<div class="key">
+  <strong>¿Qué es idempotente?</strong> Que repetir la misma petición varias veces deja el servidor <strong>en el mismo estado</strong> que hacerla una vez.
+  Si se envía <code>DELETE /clientes/3</code> dos veces, el cliente 3 sigue eliminado (la segunda vez responde 404, pero nada más cambió).
+  En cambio, enviar <code>POST /clientes</code> dos veces crea <strong>dos clientes</strong>. Por eso, al probar, un POST repetido es un caso que siempre vale la pena revisar: ¿se permiten duplicados?
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const INITIAL=[
+  {id:1,nombre:'Ana Rojas',ciudad:'La Paz',estado:'activo'},
+  {id:2,nombre:'Luis Mamani',ciudad:'El Alto',estado:'activo'},
+  {id:3,nombre:'Carla Vargas',ciudad:'Santa Cruz',estado:'activo'},
+];
+const NEW_NAMES=['Diego Quispe','María Flores','Jorge Choque','Sofía Gutiérrez'];
+let data, nextId, newIdx, counts;
+const COLORS={GET:'#57c785',POST:'#f3a43b',PUT:'#59a9e6',PATCH:'#a982e2',DELETE:'#ef6570'};
+const INFO={
+  GET:{accion:'Leer',body:'No',idem:'Sí',seguro:'Sí'},
+  POST:{accion:'Crear',body:'Sí',idem:'No',seguro:'No'},
+  PUT:{accion:'Reemplazar',body:'Sí',idem:'Sí',seguro:'No'},
+  PATCH:{accion:'Modificar',body:'Sí',idem:'Depende',seguro:'No'},
+  DELETE:{accion:'Eliminar',body:'No',idem:'Sí',seguro:'No'},
+};
+const json=o=>JSON.stringify(o,null,2).replace(/("[\w]+")(:)/g,'<span class="a">$1</span>$2').replace(/: ("[^"]*")/g,': <span class="s">$1</span>');
+
+function reset(){
+  data=INITIAL.map(r=>({...r})); nextId=4; newIdx=0; counts={};
+  render(); $('req').innerHTML=$('res').innerHTML='<span class="h">—</span>';
+  $('info').innerHTML=''; $('what').innerHTML='Elige un método para empezar.';
+  document.querySelectorAll('#methods button').forEach(b=>b.classList.remove('active'));
+}
+function render(mark={}){
+  $('rows').innerHTML=data.length?data.map(r=>`<tr data-id="${r.id}" class="${mark.read?.includes(r.id)?'read':''} ${mark.new===r.id?'new':''}">
+    ${['id','nombre','ciudad','estado'].map(k=>`<td class="${mark.changed?.id===r.id&&mark.changed.fields.includes(k)?'changed':''}">${r[k]}</td>`).join('')}</tr>`).join('')
+   :'<tr class="empty"><td colspan="4">(sin datos)</td></tr>';
+}
+function show(m,path,body,status,resBody,what){
+  const c=COLORS[m];
+  $('req').innerHTML=`<span class="m" style="color:${c}">${m}</span> ${path} HTTP/1.1\n<span class="h">Accept: application/json</span>${body?'\n<span class="h">Content-Type: application/json</span>\n\n'+json(body):''}`;
+  const ok=status<400;
+  const txt={200:'200 OK',201:'201 Created',204:'204 No Content',404:'404 Not Found'}[status];
+  $('res').innerHTML=`HTTP/1.1 <span class="${ok?'ok':'bad'}">${txt}</span>${resBody!==undefined?'\n\n'+json(resBody):'\n\n<span class="h">(sin body)</span>'}`;
+  const i=INFO[m];
+  $('info').innerHTML=`<div><b>${i.accion}</b>acción</div><div><b>${i.body}</b>lleva body</div><div><b>${i.idem}</b>idempotente</div><div><b>${i.seguro}</b>no modifica datos</div>`;
+  $('what').innerHTML=what;
+}
+
+function run(btn){
+  const m=btn.dataset.m, a=btn.dataset.a; counts[m+(a||'')]=(counts[m+(a||'')]||0)+1;
+  const n=counts[m+(a||'')];
+  document.querySelectorAll('#methods button').forEach(b=>b.classList.toggle('active',b===btn));
+  const find=id=>data.find(r=>r.id===id);
+
+  if(m==='GET'&&a==='list'){
+    render({read:data.map(r=>r.id)});
+    show(m,'/api/v1/clientes',null,200,data,`<b>GET</b> solo <b>lee</b>: la tabla no cambia. ${n>1?'Lo repetiste '+n+' veces y los datos siguen iguales: es <b>seguro e idempotente</b>.':'Devuelve la lista completa.'}`);
+  }
+  else if(m==='GET'){
+    const r=find(2);
+    if(!r){render();return show(m,'/api/v1/clientes/2',null,404,{mensaje:'Cliente 2 no encontrado'},'El cliente 2 ya no existe, así que la API responde <b>404</b>.');}
+    render({read:[2]});
+    show(m,'/api/v1/clientes/2',null,200,r,'Con un <b>path param</b> (<code>/2</code>) se lee <b>un solo</b> cliente. Nada cambia en el servidor.');
+  }
+  else if(m==='POST'){
+    const body={nombre:NEW_NAMES[newIdx%NEW_NAMES.length],ciudad:'Oruro',estado:'activo'}; newIdx++;
+    const r={id:nextId++,...body}; data.push(r); render({new:r.id});
+    show(m,'/api/v1/clientes',body,201,r,`<b>POST</b> crea un registro nuevo y el <b>servidor asigna el id</b> (${r.id}). ${n>1?'¡Ya van <b>'+n+'</b> registros creados! POST <b>no es idempotente</b>: cada envío crea uno más.':'Envíalo otra vez y observa qué pasa.'}`);
+  }
+  else if(m==='PUT'){
+    const body={nombre:'Luis Mamani',ciudad:'Cochabamba',estado:'activo'};
+    const r=find(2);
+    if(!r){render();return show(m,'/api/v1/clientes/2',body,404,{mensaje:'Cliente 2 no encontrado'},'No se puede reemplazar algo que no existe: <b>404</b>.');}
+    const before={...r}; Object.assign(r,body);
+    const fields=Object.keys(body).filter(k=>before[k]!==r[k]);
+    render({changed:{id:2,fields}, read:fields.length?[]:[2]});
+    show(m,'/api/v1/clientes/2',body,200,r,`<b>PUT</b> envía el cliente <b>completo</b> y lo reemplaza. ${n>1?'Lo enviaste de nuevo y el resultado es <b>idéntico</b>: PUT es idempotente.':'Cambió la ciudad a Cochabamba.'}`);
+  }
+  else if(m==='PATCH'){
+    const r=find(2);
+    const nuevo=r&&r.estado==='activo'?'inactivo':'activo';
+    const body={estado:nuevo};
+    if(!r){render();return show(m,'/api/v1/clientes/2',body,404,{mensaje:'Cliente 2 no encontrado'},'El cliente 2 no existe: <b>404</b>.');}
+    r.estado=nuevo; render({changed:{id:2,fields:['estado']}});
+    show(m,'/api/v1/clientes/2',body,200,r,'<b>PATCH</b> envía <b>solo el campo que cambia</b> (<code>estado</code>). El nombre y la ciudad se mantienen.');
+  }
+  else if(m==='DELETE'){
+    const r=find(3);
+    if(!r){render();return show(m,'/api/v1/clientes/3',null,404,{mensaje:'Cliente 3 no encontrado'},'El cliente 3 ya fue eliminado. Responde <b>404</b>, pero el estado final es el mismo: <b>DELETE es idempotente</b>.');}
+    const tr=document.querySelector('tr[data-id="3"]'); tr.classList.add('gone');
+    setTimeout(()=>{data=data.filter(x=>x.id!==3);render()},450);
+    show(m,'/api/v1/clientes/3',null,204,undefined,'<b>DELETE</b> elimina el cliente 3. Responde <b>204 No Content</b>: todo salió bien y no hay nada que devolver. Prueba enviarlo otra vez.');
+  }
+}
+
+$('methods').onclick=e=>{const b=e.target.closest('button[data-m]');if(b)run(b)};
+$('reset').onclick=reset;
+reset();
+})();
+</script>
+</body></html>

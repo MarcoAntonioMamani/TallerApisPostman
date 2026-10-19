@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Postman Monitors</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.dash{background:#1c1c1c;border:1px solid #444;border-radius:10px;padding:14px;color:#e6e6e6}
+.dash .dh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dash .dh b{font-size:15px}
+.dash .pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:#2b2b2b;color:#9a9a9a}
+.dash .pill.ok{background:#1f5f3a;color:#9be3b6}.dash .pill.ko{background:#6b2525;color:#f7b1a8}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.kpis div{background:#212121;border:1px solid #3a3a3a;border-radius:8px;padding:9px;text-align:center}
+.kpis b{display:block;font-size:20px}.kpis span{font-size:11px;color:#9a9a9a}
+svg{width:100%;height:auto;display:block;background:#171717;border-radius:8px}
+.ctl{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.mail{margin-top:12px;background:#fff;color:#222;border-radius:10px;padding:12px 14px;font-family:Arial,sans-serif;font-size:13px;line-height:1.5;display:none;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.mail.on{display:block;animation:drop .4s}
+@keyframes drop{from{opacity:0;transform:translateY(-8px)}}
+.mail .from{color:#666;font-size:12px}
+.mail b.t{display:block;font-size:14px;margin:4px 0}
+.vs{width:100%;border-collapse:collapse;font-size:13px}
+.vs th,.vs td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.vs th{background:var(--panel2);color:var(--muted);font-size:12px}
+.vs td:first-child{font-weight:700;width:190px}
+@media(max-width:1000px){.kpis{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Postman Monitors: vigilar la API las 24 horas</h1>
+<div class="sub">Un <b>monitor</b> ejecuta una colección automáticamente cada cierto tiempo (por ejemplo, cada 15 minutos), desde los servidores de Postman, y lleva un <b>historial</b>: cuántas ejecuciones pasaron, cuánto tardó la API y cuándo falló.
+Si algo se rompe, <b>avisa</b> por correo u otros canales. Es la diferencia entre enterarse de una caída por un usuario o por una alerta.</div>
+
+<h2>El tablero de un monitor</h2>
+<div class="dash">
+  <div class="dh"><b>📈 Monitor · Salud Petstore</b><span class="pill">cada 15 min</span><span class="pill">Petstore - QA</span><span class="pill ok" id="state">● Healthy</span></div>
+  <div class="kpis"><div><b id="kRuns">0</b><span>ejecuciones</span></div><div><b id="kOk" style="color:#6bdd9a">–</b><span>tests que pasaron</span></div><div><b id="kAvg">–</b><span>tiempo promedio</span></div><div><b id="kFail" style="color:#f79a8e">0</b><span>ejecuciones con fallas</span></div></div>
+  <svg id="chart" viewBox="0 0 760 220"></svg>
+  <div class="ctl"><button class="btn pri" id="sim">▶ Simular un día</button><span class="small" id="simMsg">Cada barra es una ejecución: verde si todos los tests pasaron, roja si alguno falló. La línea azul es el tiempo de respuesta.</span></div>
+  <div class="mail" id="mail"><div class="from">De: Postman Monitors · Para: qa-equipo@ejemplo.com</div><b class="t">🔴 Monitor “Salud Petstore” falló</b>3 de 4 tests fallaron en la ejecución de las 14:15.<br><b>02 Consultar mascota</b>: expected response to have status code 200 but got 503.<br><span style="color:#0265d2">Ver resultados del monitor →</span></div>
+</div>
+
+<h2>Laboratorio: crea el monitor</h2>
+<div id="lab"></div>
+
+<h2>Monitor, ejecución programada y CLI</h2>
+<div class="card"><table class="vs">
+  <tr><th></th><th>Monitor</th><th>Scheduled run (Runner)</th><th>CLI + Jenkins</th></tr>
+  <tr><td>Objetivo</td><td>Vigilar disponibilidad y tiempos de forma continua</td><td>Ejecutar la suite de pruebas cada cierto tiempo</td><td>Ejecutar las pruebas en cada despliegue</td></tr>
+  <tr><td>Frecuencia típica</td><td>Cada 5–60 minutos</td><td>Diaria o semanal</td><td>Cada vez que cambia el código</td></tr>
+  <tr><td>Dónde corre</td><td>Nube de Postman, elegible por región</td><td>Nube de Postman</td><td>En tus servidores</td></tr>
+  <tr><td>Historial y gráficos</td><td>✓ Tablero con tendencias</td><td>Lista de ejecuciones</td><td>Reportes JUnit / HTML</td></tr>
+  <tr><td>APIs internas</td><td>✗ Solo APIs públicas</td><td>✗ Solo APIs públicas</td><td>✓</td></tr>
+</table></div>
+
+<h2>Buenas prácticas</h2>
+<div class="cols3">
+  <div class="tile"><b class="h">🎯 Colección pequeña y rápida</b>El monitor no es la regresión completa: usa los requests <b>clave</b> (¿responde?, ¿responde a tiempo?) para que cada ejecución sea liviana.</div>
+  <div class="tile"><b class="h">🧹 Sin dejar basura</b>Si crea datos, que también los elimine (como nuestro CRUD). Un monitor cada 15 minutos crea 96 registros por día si no limpia.</div>
+  <div class="tile"><b class="h">🔔 Alertas que se atienden</b>Envía los avisos a quien puede actuar. Un monitor que falla todos los días sin que nadie lo revise solo genera ruido.</div>
+</div>
+<div class="note warn">⚠ Como los monitors corren en la nube de Postman, <b>no alcanzan APIs internas</b> y usan los valores <b>compartidos</b> del environment. La cantidad de ejecuciones por mes depende del plan. Para APIs dentro de la red de la empresa, el equivalente es <b>Newman + una tarea programada</b> en un servidor interno, con los resultados en una herramienta de monitoreo.</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> las pruebas responden “<strong>¿funciona después de este cambio?</strong>”; el monitor responde “<strong>¿sigue funcionando ahora mismo?</strong>”. Con la misma colección, una API pasa de probarse cuando alguien se acuerda a estar <strong>vigilada todo el tiempo</strong>.
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const N=48, W=760, H=220, PL=40, PB=24, PT=12, cw=W-PL-14, ch=H-PB-PT;
+let runs=[], tmr=null;
+function draw(){
+  const bw=cw/N;
+  let g='';
+  for(let i=0;i<=3;i++){const y=PT+ch*i/3;g+=`<line x1="${PL}" x2="${W-14}" y1="${y}" y2="${y}" stroke="#262626"/><text x="${PL-6}" y="${y+4}" text-anchor="end" fill="#777" font-size="10">${(3-i)} s</text>`}
+  ['00:00','06:00','12:00','18:00','24:00'].forEach((t,i)=>g+=`<text x="${PL+cw*i/4}" y="${H-6}" text-anchor="middle" fill="#777" font-size="10">${t}</text>`);
+  runs.forEach((r,i)=>{g+=`<rect x="${PL+i*bw+1}" y="${H-PB-14}" width="${bw-2}" height="12" rx="2" fill="${r.ok?'#3d9a68':'#d0505a'}"/>`});
+  if(runs.length>1) g+=`<polyline fill="none" stroke="#74aef6" stroke-width="2" points="${runs.map((r,i)=>`${(PL+i*bw+bw/2).toFixed(1)},${(PT+ch-(Math.min(r.ms,3000)/3000)*ch).toFixed(1)}`).join(' ')}"/>`;
+  $('chart').innerHTML=g;
+  const ok=runs.filter(r=>r.ok).length, fails=runs.length-ok;
+  $('kRuns').textContent=runs.length; $('kFail').textContent=fails;
+  $('kOk').textContent=runs.length?Math.round(ok/runs.length*100)+' %':'–';
+  $('kAvg').textContent=runs.length?Math.round(runs.reduce((a,r)=>a+r.ms,0)/runs.length)+' ms':'–';
+  const last=runs.at(-1);
+  $('state').className='pill '+(last&&!last.ok?'ko':'ok'); $('state').textContent=last&&!last.ok?'● Failing':'● Healthy';
+}
+$('sim').onclick=()=>{
+  clearInterval(tmr); runs=[]; $('mail').classList.remove('on'); $('sim').disabled=true;
+  let i=0;
+  tmr=setInterval(()=>{
+    const bad=i>=28&&i<=30, slow=i>=24&&i<28;    // ~14:00: la API se degrada y luego cae
+    runs.push({ok:!bad,ms:bad?2900:slow?1500+(i-24)*250:620+Math.round(Math.random()*160)});
+    draw();
+    if(i===24) $('simMsg').innerHTML='🟠 <b>12:00:</b> el tiempo de respuesta empieza a subir. Todavía pasa, pero es una señal.';
+    if(i===28){ $('simMsg').innerHTML='🔴 <b>14:00:</b> la API empieza a responder <b>503</b>. El monitor falla y envía la alerta.'; $('mail').classList.add('on'); }
+    if(i===31) $('simMsg').innerHTML='🟢 <b>15:30:</b> el equipo corrigió el problema: el monitor vuelve a verde. El historial queda como evidencia de cuánto duró la caída.';
+    if(++i>=N){ clearInterval(tmr); $('sim').disabled=false; }
+  },120);
+};
+draw();
+})();
+
+const COLS=[{name:'Taller Petstore',items:[{name:'Buscar mascotas por estado',m:'GET'},{name:'CRUD Mascota',items:[{name:'01 Crear mascota',m:'POST'},{name:'02 Consultar mascota',m:'GET'},{name:'03 Actualizar mascota',m:'PUT'},{name:'04 Eliminar mascota',m:'DELETE'},{name:'05 Verificar eliminación',m:'GET'}]}]}];
+const FORM=(o)=>`<h3>📈 Create a monitor</h3><div class="muted">Ejecuta una colección automáticamente y te avisa si falla.</div>
+ <div class="pm-card">${[['Monitor name',o.name],['Collection',o.col],['Environment',o.env],['Run this monitor',o.freq],['Regions',o.reg],['Receive email notifications',o.mail]].map(([k,v],i)=>`<div class="pm-rf" data-t="mf:${i}"><span>${k}</span><div>${v||'<span style=\"color:#666\">—</span>'}</div></div>`).join('')}
+ <div class="pm-rlab">Additional preferences</div><div class="pm-radv"><div>${o.retry?'☑':'☐'} Retry if run fails</div><div>☐ Request timeout</div><div>☐ Delay between requests</div></div>
+ <div class="pm-runbtn" data-t="mb:Create" style="max-width:220px">Create Monitor</div></div>`;
+let f={name:'',col:'',env:'',freq:'',reg:'',mail:'',retry:false};
+const step=(patch)=>{f={...f,...patch};return {view:'html',viewHtml:FORM(f)}};
+PMLab.mount(document.getElementById('lab'),{
+  title:'Crear un monitor',
+  intro:'Crearemos un monitor que vigile la colección del taller cada 15 minutos. Presiona <b>Empezar</b>.',
+  state:{ws:'Taller APIs - Ana Rojas',env:'Petstore - QA',envs:[{name:'Petstore - QA',vars:[]}],cols:COLS,tabs:[]},
+  steps:[
+   {t:'Nuevo monitor',hl:'mi:Monitor collection',d:'Sobre la colección <b>Taller Petstore</b> → <b>⋯</b> → <b>Monitor collection</b>. (También desde <b>New → Monitor</b>.) Según tu versión de Postman, puede estar dentro de <b>More</b>.',
+    set:{menu:{x:140,y:96,items:[['Add request',''],['Add folder',''],'-',['Run collection',''],['Monitor collection',''],['Mock collection',''],'-',['Export','']]}}},
+   {t:'Nombre',hl:'mf:0',d:'<b>Monitor name</b>: <code>Salud Petstore</code>.',fn:s=>{s.menu=null;Object.assign(s,step({name:'Salud Petstore'}));s.tabs=[{name:'New Monitor',m:''}]}},
+   {t:'Colección y environment',hl:'mf:2',d:'<b>Collection</b>: Taller Petstore · <b>Environment</b>: Petstore - QA. El monitor usará sus valores <b>compartidos</b>.',fn:s=>Object.assign(s,step({col:'Taller Petstore',env:'Petstore - QA'}))},
+   {t:'Frecuencia',hl:'mf:3',d:'<b>Run this monitor</b>: <b>Every 15 minutes</b>. Más seguido detecta antes, pero consume más ejecuciones del plan.',fn:s=>Object.assign(s,step({freq:'Every 15 minutes'}))},
+   {t:'Región',hl:'mf:4',d:'<b>Regions</b>: desde dónde se ejecuta. Elige la más cercana a los usuarios, por ejemplo <b>US East</b>.',fn:s=>Object.assign(s,step({reg:'US East'}))},
+   {t:'Notificaciones',hl:'mf:5',d:'Correo de quien debe enterarse <b>cuando falle</b>.',fn:s=>Object.assign(s,step({mail:'qa-equipo@ejemplo.com'}))},
+   {t:'Reintentar si falla',hl:'view',d:'Marca <b>Retry if run fails</b>: si una ejecución falla, la repite antes de alertar. Evita falsas alarmas por un corte de red de un segundo.',fn:s=>Object.assign(s,step({retry:true}))},
+   {t:'Create Monitor',hl:'mb:Create',d:'Presiona <b>Create Monitor</b>. Desde ahora corre solo cada 15 minutos, y su tablero (como el de arriba) se llena con cada ejecución.'},
+  ]
+});
+</script>
+</body></html>

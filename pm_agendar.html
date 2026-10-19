@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agendar ejecuciones</title>
+<link rel="stylesheet" href="pm/pm.css">
+<style>
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+.cal div{background:var(--panel2);border-radius:8px;padding:8px 6px;font-size:11.5px;text-align:center;min-height:68px}
+.cal div b{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}
+.cal .run{display:block;margin:3px auto;width:80%;border-radius:4px;padding:2px 0;font-size:10px;font-weight:800;color:#111;background:var(--green);opacity:0;transform:scale(.6);transition:opacity .3s,transform .3s}
+.cal .run.on{opacity:1;transform:scale(1)}
+.cal .run.f{background:var(--red)}
+.vs{width:100%;border-collapse:collapse;font-size:13px}
+.vs th,.vs td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.vs th{background:var(--panel2);color:var(--muted);font-size:12px}
+.vs td:first-child{font-weight:700;width:200px}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Agendar ejecuciones (Scheduled runs)</h1>
+<div class="sub">En lugar de presionar <b>Run</b> cada vez, el Runner puede ejecutar la colección <b>automáticamente</b> con la frecuencia que elijas: cada hora, cada día a cierta hora o ciertos días de la semana.
+Así, si la API se rompe de madrugada, el reporte ya está esperando a primera hora.</div>
+
+<div class="card">
+  <b>Ejemplo: “Regresión diaria” · todos los días a las 07:00</b> <button class="btn pri" id="simWeek" style="margin-left:10px">▶ Simular una semana</button>
+  <div class="cal" id="cal"></div>
+  <div class="small" id="calMsg" style="margin-top:8px">Cada cuadro es una ejecución automática con su resultado.</div>
+</div>
+
+<h2>Laboratorio: programa la regresión diaria</h2>
+<div id="lab"></div>
+
+<h2>⚠ Lo que hay que saber antes de agendar</h2>
+<div class="cols2">
+  <div class="tile"><b class="h">☁ Se ejecuta en la nube de Postman</b>No corre en tu computadora: corre en servidores de Postman en internet. Por eso <b>solo puede llamar APIs públicas</b>. Las APIs internas de una empresa (que solo existen dentro de su red) <b>no son alcanzables</b> desde ahí.</div>
+  <div class="tile"><b class="h">🔑 Usa los valores compartidos</b>Como corre en la nube, no ve los <b>Current value</b> que solo están en tu máquina: usa los valores sincronizados del environment. Si un secreto solo existe en tu current value, la ejecución programada fallará.</div>
+  <div class="tile"><b class="h">📊 Tiene límites según el plan</b>La cantidad de ejecuciones programadas por mes depende del plan de Postman. Para pruebas frecuentes o muchas colecciones, revisa el límite de tu cuenta.</div>
+  <div class="tile"><b class="h">🏢 Para APIs internas: CLI</b>Si la API está dentro de la red de la empresa, la colección se ejecuta con <b>Newman o Postman CLI</b> desde un servidor interno (Jenkins, Programador de tareas…). Lo vemos en el siguiente tema.</div>
+</div>
+
+<h2>¿Ejecutar a mano o agendar?</h2>
+<div class="card"><table class="vs">
+  <tr><th></th><th>Run manually</th><th>Schedule runs</th><th>CLI (Newman / Postman CLI)</th></tr>
+  <tr><td>¿Dónde corre?</td><td>Tu Postman</td><td>Nube de Postman</td><td>Donde lo ejecutes: tu PC, un servidor, Jenkins</td></tr>
+  <tr><td>¿Cuándo?</td><td>Cuando presionas Run</td><td>Automáticamente, con la frecuencia elegida</td><td>Cuando lo dispare un comando, un pipeline o una tarea programada</td></tr>
+  <tr><td>¿APIs internas?</td><td>✓ Sí</td><td>✗ No</td><td>✓ Sí, si el equipo está dentro de la red</td></tr>
+  <tr><td>Ideal para</td><td>Probar mientras desarrollas</td><td>Vigilar APIs públicas a diario</td><td>Integración continua (CI/CD)</td></tr>
+</table></div>
+
+<div class="key">
+  <strong>Idea clave:</strong> agendar convierte la colección en un <strong>vigilante automático</strong>. Antes de usarlo, pregúntate <strong>desde dónde se ejecutará</strong>: si la API no es accesible desde internet, la opción correcta es la CLI dentro de tu red.
+</div>
+</div>
+
+<script src="pm/pm.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const D=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+$('cal').innerHTML=D.map((d,i)=>`<div><b>${d}</b>07:00<span class="run" id="r${i}"></span></div>`).join('');
+$('simWeek').onclick=async()=>{
+  $('simWeek').disabled=true; document.querySelectorAll('.cal .run').forEach(r=>{r.classList.remove('on','f');r.textContent=''});
+  for(let i=0;i<7;i++){ await new Promise(r=>setTimeout(r,500)); const f=i===3; const r=$('r'+i); r.textContent=f?'✗ 6/8':'✓ 8/8'; r.classList.toggle('f',f); r.classList.add('on');
+    $('calMsg').innerHTML=f?'⚠ <b>Jueves 07:00:</b> 2 tests fallaron. Postman envía un <b>correo</b> al equipo: el problema se detecta antes de que lo note un usuario.':'Cada cuadro es una ejecución automática con su resultado.'; if(f) await new Promise(r=>setTimeout(r,1800)); }
+  $('simWeek').disabled=false;
+};
+})();
+const ITEMS=[{name:'01 Crear mascota',m:'POST'},{name:'02 Consultar mascota',m:'GET'},{name:'03 Actualizar mascota',m:'PUT'},{name:'04 Eliminar mascota',m:'DELETE'},{name:'05 Verificar eliminación',m:'GET'}];
+const COLS=[{name:'Taller Petstore',items:[{name:'Buscar mascotas por estado',m:'GET'},{name:'CRUD Mascota',items:ITEMS}]}];
+PMLab.mount(document.getElementById('lab'),{
+  title:'Schedule runs',
+  intro:'Abriremos el Runner sobre la carpeta <b>CRUD Mascota</b> y, en lugar de ejecutarla, la programaremos. Presiona <b>Empezar</b>.',
+  state:{ws:'Taller APIs - Ana Rojas',env:'Petstore - QA',envs:[{name:'Petstore - QA',vars:[]}],cols:COLS,tabs:[{name:'Runner',m:''}],view:'runner',
+    runner:{col:'CRUD Mascota',items:ITEMS.map(i=>({...i,on:true})),mode:'manual',iter:1,delay:0}},
+  steps:[
+   {t:'Elige “Schedule runs”',hl:'run-mode:schedule',d:'En <b>Choose how to run</b>, elige <b>Schedule runs</b>. Cambia el formulario de la derecha.',set:{runner:{mode:'schedule',sched:{name:'',freq:'Hourly',env:'No environment',notify:''}}}},
+   {t:'Nombre',hl:'run-sname',type:'runner.sched.name',d:'Ponle un nombre que diga qué y cuándo: <code>Regresión diaria - CRUD Mascota</code>.',set:{runner:{sched:{name:'Regresión diaria - CRUD Mascota'}}}},
+   {t:'Frecuencia',hl:'run-freq',d:'<b>Run frequency</b>: elige <b>Every day at 7:00 AM</b>. Puede ser por hora, por día o días específicos de la semana.',set:{runner:{sched:{freq:'Every day at 7:00 AM'}}}},
+   {t:'Environment',hl:'run-senv',d:'Elige <b>Petstore - QA</b>. Recuerda: se usarán los valores <b>compartidos</b> (initial), no tus current values locales.',set:{runner:{sched:{env:'Petstore - QA'}}}},
+   {t:'Notificaciones',hl:'run-notify',type:'runner.sched.notify',d:'Agrega los correos que deben recibir un aviso <b>cuando algo falle</b>.',set:{runner:{sched:{notify:'qa-equipo@ejemplo.com'}}}},
+   {t:'Schedule Run',hl:'run-btn',d:'Presiona <b>Schedule Run</b>. Desde ahora, Postman la ejecuta solo, todos los días a las 7:00.'},
+   {t:'Ver las ejecuciones',hl:'view',d:'En la colección → pestaña <b>Runs</b> → <b>Scheduled</b> verás cada ejecución con su resultado. Desde ahí puedes pausarla, editarla o eliminarla.',
+    set:{view:'html',viewHtml:`<h3>🗂 Taller Petstore</h3><div class="muted">Overview · Authorization · Scripts · Variables · <b style="color:#e6e6e6;box-shadow:inset 0 -2px 0 #ff6c37">Runs</b></div>
+     <div class="pm-card"><b>⏰ Regresión diaria - CRUD Mascota</b> <span class="muted">· Every day at 7:00 AM · Petstore - QA · Active</span>
+      <table class="pm-kv" style="margin-top:8px"><tr><th>Fecha</th><th>Resultado</th><th>Duración</th></tr>
+      <tr><td>Lun 07:00</td><td style="color:#6bdd9a">✓ 8/8 passed</td><td>4.1 s</td></tr><tr><td>Mar 07:00</td><td style="color:#6bdd9a">✓ 8/8 passed</td><td>3.9 s</td></tr>
+      <tr><td>Mié 07:00</td><td style="color:#6bdd9a">✓ 8/8 passed</td><td>4.3 s</td></tr><tr><td>Jue 07:00</td><td style="color:#f79a8e">✗ 6/8 passed</td><td>9.8 s</td></tr></table></div>`}},
+  ]
+});
+</script>
+</body></html>

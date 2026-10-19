@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anatomía de un endpoint</title>
+<style>
+:root{--bg:#10131a;--panel:#191e28;--panel2:#222936;--text:#f5f7fb;--muted:#aab3c2;--border:#394252;--green:#57c785;--orange:#f3a43b;--red:#ef6570;--blue:#59a9e6;--purple:#a982e2;--pink:#e57fb5;--yellow:#e8d36a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1250px;margin:auto;padding:24px}
+h1{margin:0;font-size:30px}.sub{color:var(--muted);line-height:1.5;margin:7px 0 18px;max-width:950px}
+h2{font-size:20px;margin:26px 0 12px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+.builder{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:14px}
+.builder label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);font-weight:700}
+select,input{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit}
+.chk{display:flex;gap:8px;align-items:center;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;color:var(--text);font-weight:400;cursor:pointer}
+.chk input{margin:0}
+.url{font-family:Consolas,monospace;font-size:clamp(14px,1.9vw,22px);background:#141820;border-radius:12px;padding:22px 18px 70px;display:flex;flex-wrap:wrap;row-gap:56px;overflow-x:auto}
+.seg{position:relative;padding:2px 1px;border-bottom:3px solid currentColor;cursor:help;white-space:pre}
+.seg .tip{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);font-family:Segoe UI,Arial,sans-serif;font-size:11px;font-weight:700;white-space:nowrap;text-align:center;line-height:1.3}
+.seg .tip small{display:block;font-weight:400;color:var(--muted)}
+.seg.flash{animation:flash .8s}
+@keyframes flash{0%{background:rgba(243,164,59,.45)}100%{background:transparent}}
+.c-proto{color:var(--muted)}.c-port{color:#7fd6c8}.c-host{color:var(--blue)}.c-base{color:var(--purple)}.c-ver{color:var(--pink)}.c-res{color:var(--orange)}.c-path{color:var(--green)}.c-query{color:var(--yellow)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+pre{margin:8px 0 0;background:#141820;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:13px;line-height:1.55;white-space:pre-wrap;min-height:230px}
+.m{color:var(--orange);font-weight:700}.h{color:var(--muted)}.s{color:var(--green)}.a{color:var(--blue)}
+.parts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.part{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:13px;line-height:1.5;color:var(--muted)}
+.part b{display:block;font-size:15px;color:var(--text);margin-bottom:3px}
+.part code{color:var(--orange);font-family:Consolas,monospace}
+/* mini Postman */
+.pm{background:#1c1f26;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:8px}
+.pm-bar{display:flex;gap:6px;padding:10px;background:#23262e}
+.pm-method{background:#2c3039;border-radius:6px;padding:8px 10px;font-weight:800;font-size:13px;min-width:78px;text-align:center}
+.pm-url{flex:1;background:#2c3039;border-radius:6px;padding:8px 10px;font-family:Consolas,monospace;font-size:13px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.pm-url .v{color:var(--orange)}
+.pm-send{background:#2e7bd6;border-radius:6px;padding:8px 16px;font-weight:700;font-size:13px}
+.pm-tabs{display:flex;gap:16px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)}
+.pm-tabs span.on{color:var(--text);border-bottom:2px solid var(--orange);padding-bottom:6px}
+.pm table{width:100%;border-collapse:collapse;font-size:12px}
+.pm th,.pm td{padding:7px 12px;border-bottom:1px solid #2c3039;text-align:left;font-family:Consolas,monospace}
+.pm th{color:var(--muted);font-family:Segoe UI,Arial,sans-serif;font-weight:700}
+.pm .grp{font-family:Segoe UI,Arial,sans-serif;color:var(--muted);font-size:11px;font-weight:700;padding:8px 12px 2px}
+.key{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;line-height:1.65}
+.key strong{color:var(--orange)}
+.method-GET{color:var(--green)}.method-POST{color:var(--orange)}.method-PUT{color:var(--blue)}.method-PATCH{color:var(--purple)}.method-DELETE{color:var(--red)}
+@media(max-width:900px){.builder{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.parts{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Anatomía de un endpoint</h1>
+<div class="sub">Un <b>endpoint</b> es una dirección concreta de la API donde se puede pedir algo. Se define por dos cosas: el <b>método HTTP</b> y la <b>ruta</b>.
+<code>GET /clientes/{id}</code> y <code>DELETE /clientes/{id}</code> usan la misma ruta, pero son <b>dos endpoints distintos</b>. Cambia los valores y observa cómo se arma la petición.</div>
+
+<div class="card">
+  <div class="builder">
+    <label>Método<select id="method"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select></label>
+    <label>Ambiente<select id="env"><option value="dev">DEV</option><option value="qa" selected>QA</option><option value="ip">Servidor por IP</option></select></label>
+    <label>Puerto<select id="port"><option value="">Por defecto</option><option>8443</option><option>8080</option></select></label>
+    <label>Recurso<select id="res"><option>clientes</option><option>solicitudes</option><option>pagos</option></select></label>
+    <label>ID (path param)<input id="id" value="123" maxlength="12"></label>
+    <label>Query params<span class="chk"><input type="checkbox" id="q1"> estado=activo</span></label>
+    <label>&nbsp;<span class="chk"><input type="checkbox" id="q2"> pagina=1</span></label>
+  </div>
+  <div class="url" id="url"></div>
+  <div class="small" id="portNote" style="margin-top:10px;font-size:13px"></div>
+</div>
+
+<div class="two">
+  <div class="card">
+    <b>La petición completa</b>
+    <div class="small">Lo que realmente viaja hacia el servidor (datos ficticios)</div>
+    <pre id="raw"></pre>
+  </div>
+  <div class="card">
+    <b>La misma petición en Postman</b>
+    <div class="small">Cada parte tiene su lugar en la pantalla</div>
+    <div class="pm">
+      <div class="pm-bar"><span class="pm-method" id="pmMethod"></span><span class="pm-url" id="pmUrl"></span><span class="pm-send">Send</span></div>
+      <div class="pm-tabs"><span class="on">Params</span><span>Authorization</span><span>Headers</span><span>Body</span><span>Scripts</span></div>
+      <div id="pmParams"></div>
+    </div>
+  </div>
+</div>
+
+<h2>Las partes de una petición</h2>
+<div class="parts">
+  <div class="part"><b>1 · Método</b>Indica la <b>acción</b>: leer, crear, modificar o eliminar. <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>.</div>
+  <div class="part"><b>2 · URL</b>Indica <b>dónde</b> está el recurso: host, ruta, path params y query params.</div>
+  <div class="part"><b>3 · Headers</b>Datos <b>sobre</b> la petición: formato (<code>Content-Type</code>), autenticación (<code>Authorization</code>), idioma…</div>
+  <div class="part"><b>4 · Body</b>Los <b>datos</b> que se envían, normalmente en JSON. Lo usan POST, PUT y PATCH. GET y DELETE normalmente no llevan body.</div>
+</div>
+
+<h2>Path param vs query param</h2>
+<div class="two" style="margin-top:0">
+  <div class="card"><b class="c-path">Path param — identifica</b>
+    <p class="small" style="font-size:13px">Es parte de la ruta y apunta a <b>un recurso específico</b>. Si falta, la ruta cambia de significado.</p>
+    <pre style="min-height:0">/clientes/<span class="s">123</span>     → el cliente 123
+/clientes           → la lista de clientes</pre></div>
+  <div class="card"><b class="c-query">Query param — filtra o ajusta</b>
+    <p class="small" style="font-size:13px">Va después del <code>?</code>, en pares <code>clave=valor</code> unidos con <code>&amp;</code>. Es <b>opcional</b>: filtra, ordena o pagina.</p>
+    <pre style="min-height:0">/clientes?<span style="color:var(--yellow)">estado=activo</span>&amp;<span style="color:var(--yellow)">pagina=2</span>
+→ solo activos, segunda página</pre></div>
+</div>
+
+<div class="key">
+  <strong>Idea clave:</strong> en Postman nunca se escribe el host a mano en cada request. Se guarda en una <strong>variable</strong> como <code>{{baseUrl}}</code>, y cambiar de ambiente (DEV → QA) es cambiar el valor de esa variable, no editar cada petición.
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const HOST={dev:'api-dev.demo.local',qa:'api-qa.demo.local',ip:'192.168.10.25'};
+const BODY={
+  clientes:{nombre:'Ana Rojas',estado:'activo'},
+  solicitudes:{clienteId:123,monto:5000,plazoMeses:12},
+  pagos:{solicitudId:'SOL-0001',monto:450},
+};
+const NEEDS_ID={GET:false,POST:false,PUT:true,PATCH:true,DELETE:true};
+let prev={};
+
+function seg(cls,txt,tip,sub){return {cls,txt,tip,sub}}
+
+function build(){
+  const m=$('method').value, env=$('env').value, res=$('res').value;
+  let id=$('id').value.trim().replace(/[^\w-]/g,'');
+  // POST crea: la ruta no lleva id. PUT/PATCH/DELETE lo necesitan.
+  const useId = m==='POST' ? '' : (id || (NEEDS_ID[m]?'123':''));
+  const qs=[]; if($('q1').checked)qs.push('estado=activo'); if($('q2').checked)qs.push('pagina=1');
+  const query = (m==='GET' && qs.length) ? qs.join('&') : '';
+  const port=$('port').value;
+  const host=HOST[env]+(port?':'+port:'');
+
+  const segs=[
+    seg('c-proto','https://','Protocolo','cómo viaja'),
+    seg('c-host',HOST[env],'Host',env==='ip'?'dirección IP del servidor':'nombre de dominio'),
+  ];
+  if(port) segs.push(seg('c-port',':'+port,'Puerto','puerta de entrada'));
+  segs.push(
+    seg('c-base','/api','Base path','raíz de la API'),
+    seg('c-ver','/v1','Versión','v1, v2…'),
+    seg('c-res','/'+res,'Recurso','sobre qué se actúa'),
+  );
+  if(useId) segs.push(seg('c-path','/'+useId,'Path param','qué elemento'));
+  if(query) segs.push(seg('c-query','?'+query,'Query params','filtros opcionales'));
+
+  $('url').innerHTML=segs.map(s=>{
+    const changed=prev[s.cls]!==undefined&&prev[s.cls]!==s.txt;
+    return `<span class="seg ${s.cls} ${changed?'flash':''}">${s.txt}<span class="tip">${s.tip}<small>${s.sub}</small></span></span>`;
+  }).join('');
+  prev=Object.fromEntries(segs.map(s=>[s.cls,s.txt]));
+
+  const path=`/api/v1/${res}${useId?'/'+useId:''}${query?'?'+query:''}`;
+  const hasBody=['POST','PUT','PATCH'].includes(m);
+  let body=hasBody?{...BODY[res]}:null;
+  if(m==='PATCH') body={[Object.keys(BODY[res]).at(-1)]:Object.values(BODY[res]).at(-1)};
+  const jsonTxt=body?JSON.stringify(body,null,2):'';
+  const hl=jsonTxt.replace(/("[\w]+")(:)/g,'<span class="a">$1</span>$2').replace(/: ("[^"]*")/g,': <span class="s">$1</span>');
+
+  $('raw').innerHTML=
+`<span class="m">${m}</span> ${path} HTTP/1.1
+<span class="h">Host:</span> ${host}
+<span class="h">Authorization:</span> Bearer &lt;token&gt;
+<span class="h">Accept:</span> application/json${hasBody?'\n<span class="h">Content-Type:</span> application/json':''}
+${hasBody?'\n'+hl:'\n<span class="h">(sin body: '+m+' normalmente no envía datos)</span>'}`;
+
+  $('pmMethod').textContent=m; $('pmMethod').className='pm-method method-'+m;
+  $('pmUrl').innerHTML=`<span class="v">{{baseUrl}}</span>/${res}${useId?'/<span class="v">:id</span>':''}${query?'?'+query:''}`;
+  let rows='';
+  if(useId) rows+=`<div class="grp">Path Variables</div><table><tr><th>Key</th><th>Value</th></tr><tr><td>id</td><td>${useId}</td></tr></table>`;
+  if(query) rows+=`<div class="grp">Query Params</div><table><tr><th>Key</th><th>Value</th></tr>${qs.map(q=>{const [k,v]=q.split('=');return `<tr><td>${k}</td><td>${v}</td></tr>`}).join('')}</table>`;
+  if(!rows) rows='<div class="grp" style="padding:12px">Sin parámetros</div>';
+  rows+=`<div class="grp">Environment: ${env.toUpperCase()}</div><table><tr><td>baseUrl</td><td>https://${host}/api/v1</td></tr></table>`;
+  $('pmParams').innerHTML=rows;
+  $('portNote').innerHTML = port
+    ? `🔌 El puerto <b>${port}</b> se escribe porque no es el predeterminado. Si se omite, se usa <b>443</b> para https y <b>80</b> para http.`
+    : `🔌 No se ve el puerto porque se usa el <b>predeterminado</b>: <b>443</b> para https (80 para http). Equivale a escribir <code>https://${HOST[env]}:443/…</code>`;
+  $('id').disabled = m==='POST';
+  $('q1').disabled=$('q2').disabled = m!=='GET';
+}
+['method','env','port','res','id','q1','q2'].forEach(k=>$(k).addEventListener('input',build));
+build();
+})();
+</script>
+</body></html>

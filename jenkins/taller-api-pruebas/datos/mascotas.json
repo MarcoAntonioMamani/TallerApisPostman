@@ -1,0 +1,27 @@
+[
+  {
+    "nombre": "Firulais",
+    "categoria": "Perros",
+    "status": "available"
+  },
+  {
+    "nombre": "Michi",
+    "categoria": "Gatos",
+    "status": "pending"
+  },
+  {
+    "nombre": "Rocky",
+    "categoria": "Perros",
+    "status": "sold"
+  },
+  {
+    "nombre": "Luna",
+    "categoria": "Gatos",
+    "status": "available"
+  },
+  {
+    "nombre": "Kira",
+    "categoria": "Perros",
+    "status": "perdida"
+  }
+]

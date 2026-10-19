@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tu primer job</title>
+<link rel="stylesheet" href="pm/pm.css">
+<link rel="stylesheet" href="ci/ci.css">
+<style>
+.lab3{display:grid;grid-template-columns:330px 1fr;gap:14px;align-items:start}
+.lab3 .steps2{max-height:calc(100vh - 40px);overflow:auto;position:sticky;top:10px}
+.jk .hl{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
+.jk .sec{font-weight:800;font-size:15px;margin:4px 0 10px;border-bottom:1px solid #eee;padding-bottom:6px}
+.jk .types{display:grid;gap:6px}
+.jk .types div{border:1px solid #e3e3e3;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#555}
+.jk .types b{display:block;color:#1c1c1c;font-size:13.5px}
+.jk pre.ed{background:#f6f8fa;border:1px solid #dcdcdc;border-radius:8px;padding:10px 12px;font-family:Consolas,monospace;font-size:12px;line-height:1.5;margin:0;white-space:pre;overflow:auto;color:#24292f}
+.jk pre.ed .k{color:#cf222e}.jk pre.ed .s{color:#0a3069}.jk pre.ed .c{color:#6e7781}.jk pre.ed .f{color:#8250df}
+.jk .files div{display:flex;gap:8px;padding:6px 8px;border-bottom:1px solid #f0f0f0;font-size:12.5px}
+.jk .files div span{margin-left:auto;color:#888}
+.jk .vars td{padding:5px 8px;border-bottom:1px solid #f0f0f0;font-size:12px}
+.jk .vars td:first-child{font-family:Consolas,monospace;font-weight:700;color:#b4232a}
+.jk .snip{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.jk a.lnk{color:#1c64f2;text-decoration:underline;cursor:pointer}
+.ex{margin-top:10px;background:var(--panel2);border-radius:10px;padding:11px 13px;font-size:13.5px;line-height:1.6;color:var(--muted)}
+.ex b{color:var(--text)}
+@media(max-width:1000px){.lab3{grid-template-columns:1fr}.lab3 .steps2{position:static;max-height:none}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Tu primer job: “hola-jenkins”</h1>
+<div class="sub">Antes de conectar repositorios y pruebas, un job <b>sencillo</b> para conocer cada parte de Jenkins: crear un item, escribir un pipeline, ejecutarlo, leer la consola, ver el workspace y los artefactos, usar parámetros y entender un fallo. <b>No clona nada</b>: el código del pipeline se escribe directamente en Jenkins.</div>
+
+<div class="lab3">
+  <div class="steps2" id="steps">
+    <div class="st" data-s="0"><b class="h"><span class="n">1</span>El Dashboard</b>La página principal: lista de jobs con su estado, y el menú de la izquierda.</div>
+    <div class="st" data-s="1"><b class="h"><span class="n">2</span>New Item</b>Nombre <code>hola-jenkins</code>, tipo <b>Pipeline</b> → OK.</div>
+    <div class="st" data-s="2"><b class="h"><span class="n">3</span>General: descripción</b>Una descripción y, opcional, <i>Discard old builds</i>. Todo lo demás se puede dejar como está.</div>
+    <div class="st" data-s="3"><b class="h"><span class="n">4</span>Pipeline script</b>Definition <b>Pipeline script</b> y pega el código. Cuatro stages: saludar, ver información del build, crear un archivo y llamar a una API con <code>curl</code>.</div>
+    <div class="st" data-s="4"><b class="h"><span class="n">5</span>Build Now</b>Guarda y ejecuta. La <b>Stage View</b> muestra cada etapa en vivo con su tiempo.</div>
+    <div class="st" data-s="5"><b class="h"><span class="n">6</span>Console Output</b>El log completo del build. Es <b>lo primero</b> que se revisa cuando algo falla.</div>
+    <div class="st" data-s="6"><b class="h"><span class="n">7</span>Workspace y artefactos</b>La carpeta donde trabajó el build y los archivos que se guardaron como evidencia.</div>
+    <div class="st" data-s="7"><b class="h"><span class="n">8</span>Variables de Jenkins</b>Jenkins entrega datos del build como variables de entorno: número, nombre del job, URL…</div>
+    <div class="st" data-s="8"><b class="h"><span class="n">9</span>Build with Parameters</b>Desde el segundo build aparece el formulario. Cambia el nombre y el ambiente, y ejecuta.</div>
+    <div class="st" data-s="9"><b class="h"><span class="n">10</span>Un build que falla</b>Rompemos un paso a propósito para aprender a leer el error.</div>
+    <div class="st" data-s="10"><b class="h"><span class="n">11</span>Pipeline Syntax</b>El generador de código de Jenkins: eliges un paso en un formulario y te da la línea para pegar.</div>
+  </div>
+  <div><div id="scr"></div><div class="ex" id="ex"></div></div>
+</div>
+
+<div class="key"><strong>Lo que ya sabes:</strong> crear un job, escribir y ejecutar un pipeline, leer la consola, encontrar archivos en el workspace, guardar artefactos, usar parámetros y diagnosticar un fallo. El siguiente paso es el mismo pipeline… pero <strong>leído desde GitHub</strong> y ejecutando Newman.</div>
+</div>
+
+<script src="ci/ci.js"></script>
+<script>
+(()=>{
+const {$,esc}=CI;
+const SCRIPT=`pipeline {
+    agent any
+    parameters {
+        string(name: 'NOMBRE', defaultValue: 'Taller', description: '¿A quién saludamos?')
+        choice(name: 'AMBIENTE', choices: ['QA', 'DEV'], description: 'Ambiente de ejemplo')
+    }
+    stages {
+        stage('Saludo') {
+            steps {
+                echo "Hola \${params.NOMBRE}, este es el build \${env.BUILD_NUMBER} en \${params.AMBIENTE}"
+            }
+        }
+        stage('Información') {
+            steps {
+                bat 'echo Job: %JOB_NAME%  Carpeta: %WORKSPACE%'
+                bat 'dir'
+            }
+        }
+        stage('Crear archivo') {
+            steps {
+                writeFile file: 'saludo.txt', text: "Hola \${params.NOMBRE} - build \${env.BUILD_NUMBER}"
+                archiveArtifacts artifacts: 'saludo.txt'
+            }
+        }
+        stage('Llamar a una API') {
+            steps {
+                bat 'curl -s -o inventario.json -w "Status HTTP: %%{http_code}" https://petstore.swagger.io/v2/store/inventory'
+            }
+        }
+    }
+    post {
+        success { echo 'Terminó bien 🎉' }
+        failure { echo 'Algo falló: revisa la consola' }
+    }
+}`;
+const hi=s=>esc(s).replace(/('[^'\n]*'|"[^"\n]*")/g,'<span class="s">$1</span>')
+  .replace(/\b(pipeline|agent|any|parameters|stages|stage|steps|post|success|failure)\b/g,'<span class="k">$1</span>')
+  .replace(/\b(string|choice|echo|bat|writeFile|archiveArtifacts)\b/g,'<span class="f">$1</span>');
+const shell=(crumb,side,main)=>`<div class="jk"><div class="jk-top"><div class="lg"><span>🤵</span>Jenkins</div><div class="r">👤 ana · log out</div></div><div class="jk-crumb">${crumb}</div><div class="jk-body"><div class="jk-side">${side}</div><div class="jk-main">${main}</div></div></div>`;
+const DSIDE=hl=>`<div class="${hl?'on hl':''}">＋ New Item</div><div>👥 People</div><div>📊 Build History</div><div>⚙️ Manage Jenkins</div><div>🖥️ My Views</div>`;
+const JSIDE=(hl,param)=>[['Status','📋'],['Changes','✏️'],[param?'Build with Parameters':'Build Now','▶️'],['Configure','⚙️'],['Delete Pipeline','🗑️'],['Stages','🧱'],['Pipeline Syntax','❔']].map(([t,i])=>`<div class="${t===hl||(hl==='Build'&&t.startsWith('Build'))?'on hl':''}">${i} ${t}</div>`).join('');
+const HIST=b=>`<div class="hist"><small>Builds</small>${b.map(([n,c,t])=>`<div><span class="dot ${c}"></span> #${n} <span style="color:#888;margin-left:auto">${t}</span></div>`).join('')}</div>`;
+const STAGES=['Saludo','Información','Crear archivo','Llamar a una API'];
+const svTable=rows=>`<div class="sv"><table><tr><th></th>${STAGES.map(s=>`<th>${s}</th>`).join('')}</tr>${rows.map(r=>`<tr><td><b>#${r.n}</b> ${r.t}<br><small>${r.by}</small></td>${r.c.map(c=>`<td class="c-${c[0]}">${c[1]}</td>`).join('')}</tr>`).join('')}</table></div>`;
+const CON1=`Started by user Ana Quispe
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\hola-jenkins
+[Pipeline] { (Saludo)
+[Pipeline] echo
+<span class="w">Hola Taller, este es el build 1 en QA</span>
+[Pipeline] { (Información)
+[Pipeline] bat
+C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\hola-jenkins&gt;echo Job: hola-jenkins  Carpeta: C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\hola-jenkins
+<span class="w">Job: hola-jenkins  Carpeta: C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\hola-jenkins</span>
+[Pipeline] bat
+ Directorio de C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\hola-jenkins
+               0 archivos              0 bytes
+[Pipeline] { (Crear archivo)
+[Pipeline] writeFile
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] { (Llamar a una API)
+[Pipeline] bat
+C:\\...\\hola-jenkins&gt;curl -s -o inventario.json -w "Status HTTP: %{http_code}" https://petstore.swagger.io/v2/store/inventory
+<span class="w">Status HTTP: 200</span>
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] echo
+Terminó bien 🎉
+[Pipeline] End of Pipeline
+<span class="g">Finished: SUCCESS</span>`;
+const CONFAIL=`Started by user Ana Quispe
+…
+[Pipeline] { (Llamar a una API)
+[Pipeline] bat
+C:\\...\\hola-jenkins&gt;curl -s -f -o inventario.json -w "Status HTTP: %{http_code}" https://petstore.swagger.io/v2/store/inventario
+<span class="w">Status HTTP: 404</span>
+<span class="r">script returned exit code 22</span>
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] echo
+Algo falló: revisa la consola
+[Pipeline] End of Pipeline
+<span class="r">ERROR: script returned exit code 22</span>
+<span class="r">Finished: FAILURE</span>`;
+let anim=null;
+function runBuild(rowsBefore,newRow,doneMsg){
+  clearInterval(anim);let k=0;const times=['0.2s','1s','0.4s','1s'];
+  const paint=()=>{const r={...newRow,c:STAGES.map((_,i)=>i<k?(newRow.fail&&i===3?['ko','1s']:['ok',times[i]]):i===k?['run','']:['skip',''])};
+    $('svbox').innerHTML=svTable([r,...rowsBefore]);};
+  paint();anim=setInterval(()=>{k++;paint();if(k>=4){clearInterval(anim);$('svmsg').innerHTML=doneMsg;document.querySelectorAll('#scr .dot.run').forEach(d=>d.className='dot '+(newRow.fail?'ko':'ok'))}},900);
+}
+const S=[
+ {scr:()=>shell('<b>Dashboard</b>',DSIDE(1),`<h3>Dashboard</h3><table style="width:100%;border-collapse:collapse;font-size:12.5px"><tr style="background:#f5f5f5"><th style="padding:7px;text-align:left">S</th><th style="text-align:left">Name</th><th style="text-align:left">Last Success</th><th style="text-align:left">Last Failure</th></tr><tr><td colspan="4" style="padding:14px;color:#888">Aún no hay jobs. Empieza con <b>＋ New Item</b>.</td></tr></table>`),
+  ex:'El <b>Dashboard</b> lista todos los jobs: el círculo de color es el estado del último build. A la izquierda: <b>New Item</b> (crear), <b>Build History</b> (todos los builds) y <b>Manage Jenkins</b> (configuración, plugins, credenciales).'},
+ {scr:()=>shell('Dashboard › <b>New Item</b>',DSIDE(1),`<div class="fld"><label>Enter an item name</label><input type="text" value="hola-jenkins" class="hl" style="width:280px"><small>Sin espacios ni tildes: el nombre se usa como carpeta.</small></div><div class="types"><div><b>Freestyle project</b>Job clásico configurado con formularios.</div><div class="hl" style="background:#eef6ff"><b>Pipeline</b>Los pasos se escriben como código.</div><div><b>Folder</b>Agrupa jobs por equipo o proyecto.</div></div><div style="margin-top:10px"><button class="jbtn">OK</button></div>`),
+  ex:'Un <b>item</b> es cualquier cosa que Jenkins administra. Elegimos <b>Pipeline</b>: describe todo el trabajo como código. Los <b>Folder</b> sirven para ordenar cuando hay muchos jobs.'},
+ {scr:()=>shell('Dashboard › hola-jenkins › <b>Configuration</b>','<div class="on">General</div><div>Triggers</div><div>Pipeline</div><div>Advanced</div>',`<div class="sec">General</div><div class="fld"><label>Description</label><input type="text" value="Mi primer job: conocer Jenkins paso a paso" class="hl" style="width:100%"></div>
+  ${['Discard old builds','Do not allow concurrent builds','This project is parameterized','GitHub project'].map((t,i)=>`<label style="display:flex;gap:8px;align-items:center;margin:6px 0;color:#444"><input type="checkbox" ${i===0?'checked':''}> ${t}</label>`).join('')}
+  <div class="sec" style="margin-top:14px">Triggers</div>${['Build periodically','Poll SCM','Build after other projects are built'].map(t=>`<label style="display:flex;gap:8px;align-items:center;margin:6px 0;color:#444"><input type="checkbox"> ${t}</label>`).join('')}`),
+  ex:'La configuración tiene secciones: <b>General</b>, <b>Triggers</b> (cuándo se ejecuta solo), <b>Pipeline</b> (el código) y <b>Advanced</b>. En un pipeline, casi todo esto (parámetros, triggers, descarte de builds) también se puede escribir en el código: es lo que haremos con el Jenkinsfile.'},
+ {scr:()=>shell('Dashboard › hola-jenkins › <b>Configuration</b>','<div>General</div><div>Triggers</div><div class="on">Pipeline</div><div>Advanced</div>',`<div class="sec">Pipeline</div><div class="fld"><label>Definition</label><select class="hl"><option>Pipeline script</option></select></div><div class="fld"><label>Script</label><pre class="ed" style="max-height:340px">${hi(SCRIPT)}</pre></div><label style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><input type="checkbox" checked> Use Groovy Sandbox</label><button class="jbtn">Save</button> <a class="lnk" style="margin-left:10px;font-size:12px">Pipeline Syntax</a>`),
+  ex:'<b>parameters</b>: los campos del formulario. <b>stages</b>: las etapas, cada una con sus <b>steps</b>:<br>• <code>echo</code> escribe en la consola · <code>bat</code> ejecuta un comando de Windows (en Linux o Docker: <code>sh</code>)<br>• <code>writeFile</code> crea un archivo · <code>archiveArtifacts</code> lo guarda como evidencia del build<br>• <code>curl</code> llama a la API de Petstore desde el agente.<br>En <code>bat</code>, el <code>%</code> se escribe doble (<code>%%</code>) cuando debe llegar literal a curl.'},
+ {scr:()=>shell('Dashboard › <b>hola-jenkins</b>',JSIDE('Build')+HIST([[1,'run','ahora']]),`<h3><span class="dot run"></span> hola-jenkins</h3><p style="color:#555;margin:0 0 8px">Mi primer job: conocer Jenkins paso a paso</p><b style="font-size:13px">Stage View</b><div id="svbox"></div><p id="svmsg" style="color:#555;font-size:12.5px"></p>`),
+  after:()=>runBuild([], {n:1,t:'ahora',by:'Started by user ana'},'✅ Build <b>#1</b> terminado en verde. Cada columna es un <b>stage</b> y cada celda muestra cuánto tardó.'),
+  ex:'<b>Build Now</b> crea el build <b>#1</b>. La <b>Stage View</b> pinta una fila por build y una columna por stage: azul rayado = en ejecución, verde = bien, rojo = falló. Abajo a la izquierda queda el <b>historial</b> de builds.'},
+ {scr:()=>shell('Dashboard › hola-jenkins › #1 › <b>Console Output</b>','<div>📋 Status</div><div>✏️ Changes</div><div class="on hl">🖥️ Console Output</div><div>📂 Workspaces</div><div>🔁 Replay</div><div>🧱 Pipeline Steps</div>',`<h3><span class="dot ok"></span> Console Output</h3><div class="jk-console" style="height:400px">${CON1}</div>`),
+  ex:'La <b>consola</b> muestra cada step con <code>[Pipeline]</code>, los comandos ejecutados y su salida. La última línea dice cómo terminó: <b>Finished: SUCCESS</b>. <b>Replay</b> permite volver a ejecutar el build con el código modificado, sin tocar la configuración: ideal para probar cambios.'},
+ {scr:()=>shell('Dashboard › hola-jenkins › <b>#1</b>','<div class="on">📋 Status</div><div>🖥️ Console Output</div><div class="hl">📂 Workspaces</div>',`<h3><span class="dot ok"></span> Build #1</h3><div class="box" style="border:1px solid #e3e3e3;border-radius:8px;padding:10px;margin-bottom:10px"><b>📦 Build Artifacts</b><div class="files"><div class="hl">📄 saludo.txt <span>34 B · view · download</span></div></div></div>
+  <div style="border:1px solid #e3e3e3;border-radius:8px;padding:10px"><b>📂 Workspace de hola-jenkins</b> <small style="color:#888">C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\hola-jenkins</small><div class="files"><div>📄 saludo.txt <span>34 B</span></div><div>📄 inventario.json <span>412 B</span></div></div></div>
+  <p style="color:#555;font-size:12.5px;margin-top:10px">saludo.txt → <code style="color:#b4232a">Hola Taller - build 1</code></p>`),
+  ex:'El <b>workspace</b> es la carpeta de trabajo del job en el agente: aquí quedaron <code>saludo.txt</code> y la respuesta de la API. Se <b>reutiliza</b> en cada build y se puede limpiar. Los <b>artefactos</b> son distintos: Jenkins los guarda <b>por build</b>, y quedan disponibles para descargar aunque el workspace cambie. Son tu evidencia.'},
+ {scr:()=>shell('Dashboard › hola-jenkins › <b>Pipeline Syntax › Global Variables</b>','<div>Snippet Generator</div><div class="on hl">Global Variables Reference</div>',`<h3>Variables de entorno más útiles</h3><table class="vars" style="width:100%;border-collapse:collapse">${[['BUILD_NUMBER','Número del build: 1, 2, 3…'],['JOB_NAME','Nombre del job: hola-jenkins'],['WORKSPACE','Carpeta de trabajo en el agente'],['BUILD_URL','Dirección web del build (para enlaces en correos)'],['NODE_NAME','Agente donde se ejecuta'],['params.X','Valor de un parámetro (en el código del pipeline)']].map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join('')}</table>
+  <pre class="ed" style="margin-top:12px"><span class="c">// en el código del pipeline (Groovy)</span>
+<span class="f">echo</span> <span class="s">"Build \${env.BUILD_NUMBER} de \${env.JOB_NAME}"</span>
+<span class="c">// dentro de bat (Windows)        dentro de sh (Linux)</span>
+<span class="f">bat</span> <span class="s">'echo %BUILD_NUMBER%'</span>         <span class="f">sh</span> <span class="s">'echo $BUILD_NUMBER'</span></pre>`),
+  ex:'Jenkins entrega información del build como <b>variables de entorno</b>. En el código Groovy se leen con <code>env.NOMBRE</code>; dentro de un comando de Windows con <code>%NOMBRE%</code> y en Linux con <code>$NOMBRE</code>. La lista completa está en <b>Pipeline Syntax → Global Variables Reference</b>.'},
+ {scr:()=>shell('Dashboard › hola-jenkins › <b>Build with Parameters</b>',JSIDE('Build',1)+HIST([[1,'ok','5 min']]),`<h3>Pipeline hola-jenkins</h3><p style="color:#555;margin:0 0 10px">This build requires parameters:</p>
+  <div class="fld"><label>NOMBRE</label><input type="text" value="Equipo QA" class="hl"><small>¿A quién saludamos?</small></div>
+  <div class="fld"><label>AMBIENTE</label><select class="hl"><option>DEV</option></select><small>Ambiente de ejemplo</small></div><button class="jbtn" id="bp">Build</button><div id="svbox" style="margin-top:12px"></div><p id="svmsg" style="color:#555;font-size:12.5px"></p>`),
+  after:()=>{$('bp').onclick=()=>{$('bp').disabled=true;runBuild([{n:1,t:'5 min',by:'Started by user ana',c:STAGES.map((_,i)=>['ok',['0.2s','1s','0.4s','1s'][i]])}],{n:2,t:'ahora',by:'NOMBRE=Equipo QA · AMBIENTE=DEV'},'✅ Build <b>#2</b>. En la consola: <code>Hola Equipo QA, este es el build 2 en DEV</code>.')}},
+  ex:'Como el build #1 ya leyó el bloque <code>parameters</code>, el menú ahora dice <b>Build with Parameters</b>. Los valores que elijas llegan al pipeline como <code>params.NOMBRE</code> y <code>params.AMBIENTE</code>. Presiona <b>Build</b>.'},
+ {scr:()=>shell('Dashboard › <b>hola-jenkins</b>',JSIDE('Status',1)+HIST([[3,'ko','ahora'],[2,'ok','2 min'],[1,'ok','7 min']]),`<h3><span class="dot ko"></span> hola-jenkins</h3><div id="svbox"></div><p id="svmsg" style="color:#555;font-size:12.5px"></p><div class="jk-console" style="height:230px">${CONFAIL}</div>`),
+  after:()=>runBuild([{n:2,t:'2 min',by:'NOMBRE=Equipo QA',c:STAGES.map((_,i)=>['ok',['0.2s','1s','0.4s','1s'][i]])}],{n:3,t:'ahora',by:'Started by user ana',fail:1},'❌ Build <b>#3</b> en rojo: el stage <b>Llamar a una API</b> falló y la consola dice por qué.'),
+  ex:'Cambiamos la URL a <code>/store/inventario</code> (no existe) y agregamos <code>-f</code> a curl, que hace terminar el comando con error cuando la API responde 4xx o 5xx. Jenkins ve un <b>código de salida distinto de 0</b> y marca el build en <b>FAILURE</b>. Para diagnosticar: 1) mira <b>qué stage</b> está en rojo, 2) abre la <b>consola</b> y busca la primera línea de error (<code>Status HTTP: 404</code> → <code>exit code 22</code>).'},
+ {scr:()=>shell('Dashboard › hola-jenkins › <b>Pipeline Syntax</b>','<div class="on hl">Snippet Generator</div><div>Declarative Directive Generator</div><div>Global Variables Reference</div>',`<h3>Snippet Generator</h3><div class="fld"><label>Sample Step</label><select class="hl"><option>archiveArtifacts: Archive the artifacts</option></select></div><div class="fld"><label>Files to archive</label><input type="text" value="reports/*.html"></div><label style="display:flex;gap:8px;align-items:center;margin-bottom:10px;color:#444"><input type="checkbox" checked> Do not fail build if archiving returns nothing</label><button class="jbtn">Generate Pipeline Script</button>
+  <pre class="ed" style="margin-top:10px">archiveArtifacts allowEmptyArchive: true, artifacts: 'reports/*.html'</pre>`),
+  ex:'No hace falta memorizar la sintaxis: <b>Pipeline Syntax</b> (en el menú del job) tiene un <b>Snippet Generator</b>. Eliges un paso (<code>bat</code>, <code>archiveArtifacts</code>, <code>junit</code>, <code>withCredentials</code>…), llenas el formulario y copias la línea generada a tu pipeline. Muestra solo los pasos de los <b>plugins instalados</b>.'},
+];
+const box=$('steps');
+function show(i){clearInterval(anim);box.querySelectorAll('.st').forEach(s=>s.classList.toggle('on',+s.dataset.s===i));$('scr').innerHTML=S[i].scr();$('ex').innerHTML=S[i].ex;S[i].after&&S[i].after()}
+box.onclick=e=>{const s=e.target.closest('.st');if(s)show(+s.dataset.s)};
+show(0);
+})();
+</script>
+</body></html>

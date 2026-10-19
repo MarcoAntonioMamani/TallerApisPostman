@@ -1,0 +1,6 @@
+firstname,lastname,totalprice,depositpaid,noches,additionalneeds
+Lucia,Andino,420,true,2,Desayuno
+Mateo,Andino,300,false,3,Late checkout
+Valentina,Andino,780,true,5,Cama extra
+Diego,Andino,150,false,1,Ninguno
+Camila,Andino,560,true,4,Traslado al aeropuerto
